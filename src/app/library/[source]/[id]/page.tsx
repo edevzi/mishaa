@@ -31,7 +31,7 @@ interface ComicDetails {
   status: string;
   year?: string;
   author?: string;
-  source: 'mangadex' | 'archive';
+  source: 'mangadex' | 'archive' | 'nhentai';
   aniListId?: string;
 }
 
@@ -57,9 +57,12 @@ export default function ComicDetailsPage() {
   const [scrollProgress, setScrollProgress] = useState(0);
   const [zoom, setZoom] = useState(1);
   const [isMobile, setIsMobile] = useState(false);
+  const [isSpreadCover, setIsSpreadCover] = useState(true);
+  const [showNav, setShowNav] = useState(false);
   
   const readerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLDivElement>(null);
+  const lastScrollY = useRef(0);
   const uiTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Check device type
@@ -71,13 +74,13 @@ export default function ComicDetailsPage() {
   }, []);
 
   // UI Auto-hide logic
-  const handleUserActivity = () => {
+  const handleUserActivity = useCallback(() => {
     setUiVisible(true);
     if (uiTimeoutRef.current) clearTimeout(uiTimeoutRef.current);
     uiTimeoutRef.current = setTimeout(() => {
       if (reading) setUiVisible(false);
-    }, 3000);
-  };
+    }, 4000);
+  }, [reading]);
 
   useEffect(() => {
     fetchComicDetails();
@@ -92,6 +95,13 @@ export default function ComicDetailsPage() {
       if (canvas.scrollTop > 100) setScrolled(true);
       else setScrolled(false);
 
+      // Intelligent UI Hiding on Scroll
+      const currentScrollY = canvas.scrollTop;
+      if (currentScrollY > lastScrollY.current + 5) {
+        if (uiVisible) setUiVisible(false);
+      }
+      lastScrollY.current = currentScrollY;
+
       const total = canvas.scrollHeight - canvas.clientHeight;
       if (total > 200) {
         setScrollProgress((canvas.scrollTop / total) * 100);
@@ -103,7 +113,7 @@ export default function ComicDetailsPage() {
     const canvas = canvasRef.current;
     if (canvas) canvas.addEventListener('scroll', handleScroll);
     return () => canvas?.removeEventListener('scroll', handleScroll);
-  }, [reading, viewMode]);
+  }, [reading, viewMode, uiVisible]);
 
   const fetchComicDetails = async () => {
     setLoading(true);
@@ -167,6 +177,25 @@ export default function ComicDetailsPage() {
           } catch (e) {}
         }
         setComic(details);
+      } else if (source === 'nhentai') {
+        const res = await fetch(`/api/proxy/nhentai?path=${encodeURIComponent(`gallery/${id}`)}`);
+        if (!res.ok) throw new Error("Failed to fetch nhentai");
+        const data = await res.json();
+        const typeMap: Record<string, string> = { j: 'jpg', p: 'png', g: 'gif' };
+        const ext = typeMap[data.images.cover.t] || 'jpg';
+        
+        setComic({
+          id: data.id.toString(),
+          title: data.title.english || data.title.japanese || data.title.pretty,
+          description: data.tags.map((t: any) => t.name).join(', '),
+          coverUrl: `https://t.nhentai.net/galleries/${data.media_id}/cover.${ext}`,
+          rating: 'pornographic',
+          genres: data.tags.filter((t: any) => t.type === 'tag').map((t: any) => t.name),
+          status: 'Completed',
+          author: data.tags.find((t: any) => t.type === 'artist')?.name || 'Unknown',
+          source: 'nhentai'
+        });
+        setChapters([{ id: data.id.toString(), title: 'Full Gallery', chapterNum: '1' }]);
       } else {
         const res = await fetch(`https://archive.org/metadata/${id}`);
         const data = await res.json();
@@ -207,12 +236,26 @@ export default function ComicDetailsPage() {
         setPages(urls);
         // Preload first 3 pages
         urls.slice(0, 3).forEach((u: string) => { const img = new Image(); img.src = u; });
+      } else if (source === 'nhentai') {
+        const res = await fetch(`/api/proxy/nhentai?path=${encodeURIComponent(`gallery/${id}`)}`);
+        const data = await res.json();
+        const typeMap: Record<string, string> = { j: 'jpg', p: 'png', g: 'gif' };
+        const nhPages = data.images.pages.map((p: any, i: number) => {
+           const ext = typeMap[p.t] || 'jpg';
+           return `https://i.nhentai.net/galleries/${data.media_id}/${i + 1}.${ext}`;
+        });
+        setPages(nhPages);
       } else {
         const res = await fetch(`https://archive.org/metadata/${id}`);
         const data = await res.json();
         let archivePages = [];
-        let count = parseInt(data.metadata?.page_count || "60");
-        for(let i=0; i<count; i++) archivePages.push(`https://archive.org/services/img/${id}/${i}`);
+        let count = parseInt(data.metadata?.page_count || data.item_last_updated || "60");
+        // Limit to 1000 pages to avoid infinite loops if data is weird
+        count = Math.min(count, 1000);
+        for(let i=0; i<count; i++) {
+          // Use high quality scale and fullsize for comics
+          archivePages.push(`https://archive.org/services/img/${id}/${i}?scale=8&fullsize=1`);
+        }
         setPages(archivePages);
       }
     } catch (e) {
@@ -246,24 +289,34 @@ export default function ComicDetailsPage() {
     }
   };
 
+  const handleNextPage = () => {
+    const step = (viewMode === 'journal' && !(isSpreadCover && currentPage === 0)) ? 2 : 1;
+    if (currentPage < pages.length - step) {
+      setCurrentPage(p => p + step);
+      canvasRef.current?.scrollTo({ top: 0, behavior: 'instant' });
+    } else {
+      nextChapter();
+    }
+  };
+
+  const handlePrevPage = () => {
+    const step = (viewMode === 'journal' && !(isSpreadCover && currentPage <= 1)) ? 2 : 1;
+    if (currentPage > 0) {
+      setCurrentPage(p => Math.max(0, p - step));
+      canvasRef.current?.scrollTo({ top: 0, behavior: 'instant' });
+    } else {
+      prevChapter();
+    }
+  };
+
   // Keyboard navigation
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (!reading) return;
       
-      const step = viewMode === 'journal' ? 2 : 1;
-      
-      if (e.key === 'ArrowLeft') {
-         if (currentPage > 0) {
-           setCurrentPage(p => Math.max(0, p - step));
-           canvasRef.current?.scrollTo({ top: 0, behavior: 'instant' });
-         } else prevChapter();
-      }
+      if (e.key === 'ArrowLeft') handlePrevPage();
       if (e.key === 'ArrowRight' || e.key === ' ') {
-         if (currentPage < pages.length - step) {
-           setCurrentPage(p => Math.min(pages.length - 1, p + step));
-           canvasRef.current?.scrollTo({ top: 0, behavior: 'instant' });
-         } else nextChapter();
+         handleNextPage();
          if (e.key === ' ') e.preventDefault();
       }
       if (e.key === 'ArrowDown' || e.key === 'PageDown') {
@@ -290,7 +343,7 @@ export default function ComicDetailsPage() {
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [reading, currentPage, pages.length, viewMode, currentChapterIdx]);
+  }, [reading, currentPage, pages.length, viewMode, currentChapterIdx, isSpreadCover]);
 
   if (loading) return (
     <div className="min-h-screen bg-[#020202] flex items-center justify-center">
@@ -402,7 +455,19 @@ export default function ComicDetailsPage() {
       {/* IDEAL PRO READER */}
       <AnimatePresence>
         {reading && (
-          <motion.div ref={readerRef} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onMouseMove={handleUserActivity} onTouchStart={handleUserActivity} className="fixed inset-0 z-[10000] bg-black flex flex-col overflow-hidden select-none">
+          <motion.div 
+            ref={readerRef} 
+            initial={{ opacity: 0 }} 
+            animate={{ opacity: 1 }} 
+            exit={{ opacity: 0 }} 
+            onClick={(e) => {
+              // Only toggle if clicking the background/canvas, not buttons
+              if (e.target === e.currentTarget || (e.target as HTMLElement).closest('#reader-canvas')) {
+                setUiVisible(!uiVisible);
+              }
+            }}
+            className="fixed inset-0 z-[10000] bg-black flex flex-col overflow-hidden select-none"
+          >
             
             {/* Minimal Top Header */}
             <motion.div animate={{ y: uiVisible ? 0 : -100 }} transition={{ type: 'spring', damping: 25 }} className="fixed top-0 left-0 right-0 z-[10020] h-20 bg-gradient-to-b from-black via-black/80 to-transparent px-8 flex items-center justify-between pointer-events-auto">
@@ -416,16 +481,21 @@ export default function ComicDetailsPage() {
 
                {/* View Mode Controls (Responsive) */}
                 <div className="absolute left-1/2 -translate-x-1/2 flex items-center bg-white/5 border border-white/10 rounded-full p-1 shadow-2xl backdrop-blur-xl">
+                  {!isLongStrip && (
+                    <button onClick={() => setViewMode('classic')} className={`flex items-center gap-2 px-5 py-2.5 rounded-full text-[10px] font-black uppercase transition-all ${viewMode === 'classic' ? 'bg-[#ff4d00] text-white shadow-lg' : 'text-white/30 hover:text-white'}`}>
+                      <Monitor size={14} className="hidden sm:block"/>
+                      <Smartphone size={14} className="sm:hidden"/>
+                      Classic
+                    </button>
+                  )}
                   {!isLongStrip && !isMobile && (
-                    <>
-                      <button onClick={() => setViewMode('classic')} className={`flex items-center gap-2 px-5 py-2.5 rounded-full text-[10px] font-black uppercase transition-all ${viewMode === 'classic' ? 'bg-[#ff4d00] text-white shadow-lg' : 'text-white/30 hover:text-white'}`}><Monitor size={14}/> Classic</button>
-                      <button onClick={() => setViewMode('journal')} className={`flex items-center gap-2 px-5 py-2.5 rounded-full text-[10px] font-black uppercase transition-all ${viewMode === 'journal' ? 'bg-[#ff4d00] text-white shadow-lg' : 'text-white/30 hover:text-white'}`}><Columns size={14}/> Journal</button>
-                    </>
+                    <button onClick={() => setViewMode('journal')} className={`flex items-center gap-2 px-5 py-2.5 rounded-full text-[10px] font-black uppercase transition-all ${viewMode === 'journal' ? 'bg-[#ff4d00] text-white shadow-lg' : 'text-white/30 hover:text-white'}`}>
+                      <Columns size={14}/> Journal
+                    </button>
                   )}
-                  {isMobile && !isLongStrip && (
-                     <button onClick={() => setViewMode('classic')} className={`flex items-center gap-2 px-5 py-2.5 rounded-full text-[10px] font-black uppercase transition-all ${viewMode === 'classic' ? 'bg-[#ff4d00] text-white shadow-lg' : 'text-white/30 hover:text-white'}`}><Smartphone size={14}/> Classic</button>
-                  )}
-                  <button onClick={() => setViewMode('flow')} className={`flex items-center gap-2 px-5 py-2.5 rounded-full text-[10px] font-black uppercase transition-all ${viewMode === 'flow' ? 'bg-[#ff4d00] text-white shadow-lg' : 'text-white/30 hover:text-white'}`}><Smartphone size={14}/> Flow</button>
+                  <button onClick={() => setViewMode('flow')} className={`flex items-center gap-2 px-5 py-2.5 rounded-full text-[10px] font-black uppercase transition-all ${viewMode === 'flow' ? 'bg-[#ff4d00] text-white shadow-lg' : 'text-white/30 hover:text-white'}`}>
+                    <Smartphone size={14}/> Flow
+                  </button>
                 </div>
 
                <div className="flex items-center gap-4">
@@ -438,7 +508,7 @@ export default function ComicDetailsPage() {
             <div ref={canvasRef} className="flex-1 w-full bg-[#020202] overflow-y-auto custom-scrollbar relative scroll-smooth" id="reader-canvas">
                {/* Scroll Hint */}
                <AnimatePresence>
-                 {!scrolled && !readerLoading && pages.length > 0 && (
+                 {!scrolled && !readerLoading && pages.length > 0 && viewMode === 'flow' && (
                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed bottom-24 left-1/2 -translate-x-1/2 z-[10015] flex flex-col items-center gap-2 pointer-events-none">
                       <div className="text-[8px] font-black uppercase tracking-[0.4em] text-white/30">Initiate_Scroll</div>
                       <motion.div animate={{ y: [0, 8, 0] }} transition={{ repeat: Infinity, duration: 2 }}><ChevronDown className="text-[#ff4d00]" size={20}/></motion.div>
@@ -446,44 +516,33 @@ export default function ComicDetailsPage() {
                  )}
                </AnimatePresence>
 
-               {/* Carousel-Style Nav Buttons (Desktop) */}
-               {viewMode !== 'flow' && !isMobile && (
+               {/* Carousel-Style Nav Buttons (Interactive Areas) */}
+               {viewMode !== 'flow' && (
                  <>
                    {/* Left Hover Area */}
                    <div 
-                     className="fixed inset-y-0 left-0 w-[20%] z-[10015] group/nav cursor-pointer" 
-                     onClick={() => { 
-                       if (currentPage > 0) { 
-                         setCurrentPage(p => Math.max(0, p - (viewMode === 'journal' ? 2 : 1))); 
-                         canvasRef.current?.scrollTo({ top: 0, behavior: 'instant' }); 
-                       } else prevChapter(); 
-                     }}
+                     className="fixed inset-y-0 left-0 w-[15%] md:w-[20%] z-[10015] group/nav cursor-pointer" 
+                     onClick={handlePrevPage}
                    >
-                      <div className="absolute top-1/2 left-8 -translate-y-1/2 opacity-0 group-hover/nav:opacity-100 transition-all duration-300 transform -translate-x-4 group-hover/nav:translate-x-0">
-                        <div className="w-16 h-16 rounded-full bg-white/10 backdrop-blur-xl border border-white/20 flex items-center justify-center hover:bg-[#ff4d00] hover:scale-110 transition-all shadow-[0_0_30px_rgba(0,0,0,0.5)]">
+                      <div className="absolute top-1/2 left-8 -translate-y-1/2 opacity-0 group-hover/nav:opacity-100 transition-all duration-300 transform -translate-x-4 group-hover/nav:translate-x-0 hidden md:block">
+                        <div className="w-16 h-16 rounded-full bg-white/10 backdrop-blur-xl border border-white/20 flex items-center justify-center hover:bg-[#ff4d00] hover:scale-110 transition-all shadow-[0_0_50px_rgba(0,0,0,0.5)]">
                            <ChevronLeft size={32} className="text-white" />
                         </div>
                       </div>
-                      <div className="absolute inset-y-0 left-0 w-full bg-gradient-to-r from-black/20 to-transparent opacity-0 group-hover/nav:opacity-100 transition-opacity pointer-events-none" />
+                      <div className="absolute inset-y-0 left-0 w-full bg-gradient-to-r from-black/40 to-transparent opacity-0 group-hover/nav:opacity-100 transition-opacity pointer-events-none" />
                    </div>
 
                    {/* Right Hover Area */}
                    <div 
-                     className="fixed inset-y-0 right-0 w-[20%] z-[10015] group/nav cursor-pointer" 
-                     onClick={() => { 
-                       const step = viewMode === 'journal' ? 2 : 1; 
-                       if (currentPage < pages.length - step) { 
-                         setCurrentPage(p => p + step); 
-                         canvasRef.current?.scrollTo({ top: 0, behavior: 'instant' }); 
-                       } else nextChapter(); 
-                     }}
+                     className="fixed inset-y-0 right-0 w-[15%] md:w-[20%] z-[10015] group/nav cursor-pointer" 
+                     onClick={handleNextPage}
                    >
-                      <div className="absolute top-1/2 right-8 -translate-y-1/2 opacity-0 group-hover/nav:opacity-100 transition-all duration-300 transform translate-x-4 group-hover/nav:translate-x-0 text-right">
-                        <div className="w-16 h-16 rounded-full bg-white/10 backdrop-blur-xl border border-white/20 flex items-center justify-center hover:bg-[#ff4d00] hover:scale-110 transition-all shadow-[0_0_30px_rgba(0,0,0,0.5)]">
+                      <div className="absolute top-1/2 right-8 -translate-y-1/2 opacity-0 group-hover/nav:opacity-100 transition-all duration-300 transform translate-x-4 group-hover/nav:translate-x-0 text-right hidden md:block">
+                        <div className="w-16 h-16 rounded-full bg-white/10 backdrop-blur-xl border border-white/20 flex items-center justify-center hover:bg-[#ff4d00] hover:scale-110 transition-all shadow-[0_0_50px_rgba(0,0,0,0.5)]">
                            <ChevronRight size={32} className="text-white" />
                         </div>
                       </div>
-                      <div className="absolute inset-y-0 right-0 w-full bg-gradient-to-l from-black/20 to-transparent opacity-0 group-hover/nav:opacity-100 transition-opacity pointer-events-none" />
+                      <div className="absolute inset-y-0 right-0 w-full bg-gradient-to-l from-black/40 to-transparent opacity-0 group-hover/nav:opacity-100 transition-opacity pointer-events-none" />
                    </div>
                  </>
                )}
@@ -499,41 +558,65 @@ export default function ComicDetailsPage() {
                     <div className="text-[10px] font-black uppercase tracking-widest text-white/20">Empty_Chapter_Buffer</div>
                  </div>
                ) : (
-                  <div className={`mx-auto flex flex-col items-center transition-all duration-500 ${viewMode === 'flow' ? 'max-w-4xl pt-32 pb-20 px-4' : 'min-h-full pt-32 pb-40'}`}>
+                  <div className={`mx-auto flex flex-col items-center transition-all duration-500 ${viewMode === 'flow' ? 'max-w-4xl pt-32 pb-20 px-4' : 'min-h-full justify-center pt-20 pb-20'}`}>
                     
                     {viewMode === 'classic' ? (
-                       <motion.img 
-                        key={currentPage} 
-                        initial={{ opacity: 0, scale: 0.98, filter: 'blur(10px)' }} 
-                        animate={{ opacity: 1, scale: 1, filter: 'blur(0px)' }} 
-                        src={pages[currentPage]} 
-                        style={{ transform: `scale(${zoom})`, transformOrigin: 'top center', maxWidth: isMobile ? '100%' : '1000px', width: '100%', height: 'auto' }} 
-                        className="shadow-[0_0_150px_rgba(0,0,0,0.9)] border border-white/10" alt="" 
-                       />
+                       <div className="relative flex items-center justify-center w-full min-h-[80vh]">
+                         <motion.img 
+                          key={currentPage} 
+                          initial={{ opacity: 0, x: 20, filter: 'blur(10px)' }} 
+                          animate={{ opacity: 1, x: 0, filter: 'blur(0px)' }} 
+                          exit={{ opacity: 0, x: -20, filter: 'blur(10px)' }}
+                          transition={{ type: 'spring', damping: 25, stiffness: 120 }}
+                          src={pages[currentPage]} 
+                          style={{ transform: `scale(${zoom})`, transformOrigin: 'center center', maxWidth: isMobile ? '100%' : '80vw', maxHeight: '90vh', width: 'auto', height: 'auto' }} 
+                          className="shadow-[0_0_150px_rgba(0,0,0,0.9)] border border-white/10 rounded-sm object-contain" alt="" 
+                         />
+                       </div>
                     ) : viewMode === 'journal' ? (
-                       <div className="flex items-start justify-center w-full max-w-[98vw] gap-0 transition-transform duration-300" style={{ transform: `scale(${zoom})`, transformOrigin: 'top center' }}>
-                          <motion.img 
-                            key={currentPage} 
-                            initial={{ opacity: 0, x: -20, filter: 'blur(5px)' }} 
-                            animate={{ opacity: 1, x: 0, filter: 'blur(0px)' }} 
-                            src={pages[currentPage]} 
-                            style={{ width: pages[currentPage+1] ? '50%' : 'auto', maxWidth: pages[currentPage+1] ? 'none' : '1000px', height: 'auto' }} 
-                            className={`${pages[currentPage+1] ? 'border-r border-white/5 shadow-2xl' : 'shadow-2xl border border-white/10'}`} 
-                          />
-                          {pages[currentPage + 1] && (
-                            <motion.img 
-                              key={currentPage+1} 
-                              initial={{ opacity: 0, x: 20, filter: 'blur(5px)' }} 
-                              animate={{ opacity: 1, x: 0, filter: 'blur(0px)' }} 
-                              src={pages[currentPage+1]} 
-                              style={{ width: '50%', height: 'auto' }} 
-                              className="shadow-2xl" 
-                            />
-                          )}
+                       <div className="flex items-center justify-center w-full max-w-[98vw] gap-0 transition-all duration-500 min-h-[85vh]" style={{ transform: `scale(${zoom})`, transformOrigin: 'center center' }}>
+                          {/* Left Page */}
+                          <AnimatePresence mode="wait">
+                            {(currentPage === 0 && isSpreadCover) ? (
+                              <motion.div 
+                                key="cover" 
+                                initial={{ opacity: 0, scale: 0.95 }} 
+                                animate={{ opacity: 1, scale: 1 }} 
+                                className="flex justify-center w-full"
+                              >
+                                <img 
+                                  src={pages[0]} 
+                                  className="max-h-[90vh] w-auto shadow-2xl border border-white/10 rounded-sm" 
+                                  alt="cover" 
+                                />
+                              </motion.div>
+                            ) : (
+                              <div className="flex items-center justify-center w-full gap-0">
+                                <motion.img 
+                                  key={currentPage} 
+                                  initial={{ opacity: 0, x: 20 }} 
+                                  animate={{ opacity: 1, x: 0 }} 
+                                  src={pages[currentPage]} 
+                                  style={{ width: pages[currentPage+1] ? '50%' : 'auto', maxWidth: pages[currentPage+1] ? '45vw' : '80vw', height: 'auto', maxHeight: '90vh' }} 
+                                  className={`object-contain ${pages[currentPage+1] ? 'border-r border-white/5 shadow-2xl rounded-l-sm' : 'shadow-2xl border border-white/10 rounded-sm'}`} 
+                                />
+                                {pages[currentPage + 1] && (
+                                  <motion.img 
+                                    key={currentPage+1} 
+                                    initial={{ opacity: 0, x: -20 }} 
+                                    animate={{ opacity: 1, x: 0 }} 
+                                    src={pages[currentPage+1]} 
+                                    style={{ width: '50%', maxWidth: '45vw', height: 'auto', maxHeight: '90vh' }} 
+                                    className="object-contain shadow-2xl rounded-r-sm" 
+                                  />
+                                )}
+                              </div>
+                            )}
+                          </AnimatePresence>
                        </div>
                     ) : (
-                       <div className="flex flex-col items-center gap-0 w-full transition-all duration-300" style={{ maxWidth: isMobile ? '100%' : `${zoom * 1000}px` }}>
-                          {pages.map((p, i) => <img key={i} src={p} className="w-full h-auto" loading="lazy" />)}
+                       <div className="flex flex-col items-center gap-0 w-full transition-all duration-300" style={{ maxWidth: isMobile ? '100%' : `${zoom * 800}px` }}>
+                          {pages.map((p, i) => <img key={i} id={`page-${i}`} src={p + (source === 'archive' ? '?scale=2' : '')} className="w-full h-auto" loading="lazy" />)}
                           {currentChapterIdx < chapters.length - 1 && (
                             <button onClick={nextChapter} className="w-full py-40 mt-20 border-2 border-dashed border-white/5 hover:border-[#ff4d00]/50 hover:bg-[#ff4d00]/5 transition-all group flex flex-col items-center gap-4">
                                <div className="text-[12px] font-black uppercase tracking-[0.5em] text-white/20 group-hover:text-white">Next_Chapter_Ready</div>
@@ -555,24 +638,40 @@ export default function ComicDetailsPage() {
                       <button onClick={() => setZoom(z => Math.min(3, z + 0.1))} className="w-10 h-10 border border-white/10 flex items-center justify-center hover:bg-white/5 transition-colors"><ZoomIn size={16}/></button>
                    </div>
                    <div className="h-4 w-px bg-white/10 hidden sm:block" />
-                   <div className="hidden md:flex items-center gap-4 text-[9px] font-black uppercase tracking-[0.2em] text-white/30">
-                      <MousePointer2 size={14}/> ENGINE_STABLE
-                   </div>
+                   {viewMode === 'journal' && (
+                      <button 
+                        onClick={() => setIsSpreadCover(!isSpreadCover)} 
+                        className={`px-4 py-2 border border-white/10 text-[8px] font-black uppercase tracking-widest transition-all ${isSpreadCover ? 'bg-white text-black' : 'text-white/40'}`}
+                      >
+                        Cover_Offset: {isSpreadCover ? 'ON' : 'OFF'}
+                      </button>
+                   )}
+                   {viewMode === 'flow' && (
+                      <button onClick={() => canvasRef.current?.scrollTo({ top: 0, behavior: 'smooth' })} className="w-10 h-10 border border-white/10 flex items-center justify-center hover:bg-white/5 transition-colors"><ChevronUp size={16}/></button>
+                   )}
                 </div>
 
                  {/* Intelligent Progress Scrubber */}
-                 <div className="flex-1 max-w-2xl mx-10 sm:mx-20 relative">
+                 <div className="flex-1 max-w-2xl mx-10 sm:mx-20 relative flex items-center">
                     <div className="absolute -top-6 left-1/2 -translate-x-1/2 text-[8px] font-black text-white/20 uppercase tracking-[0.3em] whitespace-nowrap">
-                       {viewMode === 'flow' ? 'Scroll_Velocity' : `Page_Sequence_${currentPage + 1}_of_${pages.length}`}
+                       {viewMode === 'flow' ? 'Reading_Progress' : `Page_Sequence_${currentPage + 1}_of_${pages.length}`}
                     </div>
-                    <div className="relative h-1 bg-white/5 rounded-full overflow-hidden">
-                       <motion.div 
-                         className="absolute h-full bg-[#ff4d00] transition-all duration-100" 
-                         style={{ 
-                           width: viewMode === 'flow' ? `${scrollProgress}%` : `${((currentPage + 1) / (pages.length || 1)) * 100}%` 
-                         }} 
-                       />
-                    </div>
+                    <input 
+                      type="range" 
+                      min="0" 
+                      max={pages.length - 1} 
+                      value={viewMode === 'flow' ? Math.floor((scrollProgress / 100) * (pages.length - 1)) : currentPage} 
+                      onChange={(e) => {
+                        const val = parseInt(e.target.value);
+                        setCurrentPage(val);
+                        if (viewMode === 'flow') {
+                          document.getElementById(`page-${val}`)?.scrollIntoView({ behavior: 'smooth' });
+                        } else {
+                          canvasRef.current?.scrollTo({ top: 0, behavior: 'instant' });
+                        }
+                      }}
+                      className="w-full h-1 bg-white/10 appearance-none cursor-pointer accent-[#ff4d00] rounded-full hover:bg-white/20 transition-all"
+                    />
                  </div>
 
                 <div className="flex items-center gap-6">
@@ -592,6 +691,15 @@ export default function ComicDetailsPage() {
         .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(255, 77, 0, 0.5); }
         .description-content strong { color: white; }
         .description-content em { color: rgba(255,255,255,0.7); font-style: italic; }
+        input[type="range"]::-webkit-slider-thumb {
+          -webkit-appearance: none;
+          height: 12px;
+          width: 12px;
+          border-radius: 50%;
+          background: #ff4d00;
+          cursor: pointer;
+          box-shadow: 0 0 10px rgba(255, 77, 0, 0.5);
+        }
       `}</style>
     </div>
   );

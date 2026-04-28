@@ -15,17 +15,19 @@ interface Comic {
   description: string;
   coverUrl: string;
   rating: string;
-  source: 'mangadex' | 'archive';
+  source: 'mangadex' | 'archive' | 'nhentai';
 }
 
 const CATEGORIES = [
-  { label: 'Marvel Universe', query: 'subject:("Marvel Comics") AND language:(eng) AND NOT collection:printdisabled', source: 'archive' },
-  { label: 'DC Universe', query: 'subject:("DC Comics") AND language:(eng) AND NOT collection:printdisabled', source: 'archive' },
-  { label: 'Classic Comics', query: 'collection:(comic_books_archive OR digitalcomicmuseum) AND NOT collection:printdisabled', source: 'archive' },
-  { label: 'Graphic Novels', query: 'subject:(graphic novels) AND language:(eng) AND NOT collection:printdisabled', source: 'archive' },
+  { label: 'Marvel Universe', query: '(subject:"Marvel Comics" OR subject:"Spider-man" OR subject:"Avengers") AND mediatype:texts AND -subject:"Art Book" AND -subject:"Making of" AND -collection:printdisabled AND date:[1960-01-01 TO 2025-12-31]', source: 'archive' },
+  { label: 'DC Universe', query: '(subject:"DC Comics" OR subject:"Batman" OR subject:"Justice League") AND mediatype:texts AND -subject:"Art Book" AND -subject:"Making of" AND -collection:printdisabled AND date:[1960-01-01 TO 2025-12-31]', source: 'archive' },
+  { label: 'Classic Comics', query: 'collection:(comic_books_archive) AND mediatype:texts AND -subject:magazine AND -subject:fanzine AND -collection:printdisabled AND date:[1950-01-01 TO 2025-12-31]', source: 'archive' },
+  { label: 'Graphic Novels', query: 'subject:("Graphic Novel" OR "Comic Book") AND mediatype:texts AND language:(eng) AND -subject:"Art Book" AND -collection:printdisabled AND date:[1980-01-01 TO 2025-12-31]', source: 'archive' },
   { label: 'Manga Hub', query: '', source: 'mangadex' },
   { label: 'Webtoons', query: 'webtoon', source: 'mangadex' },
   { label: 'Manhwa', query: 'manhwa', source: 'mangadex' },
+  { label: 'Doujinshi', query: 'all', nsfw: true, source: 'nhentai' },
+  { label: 'New Doujinshi', query: 'language:english', nsfw: true, source: 'nhentai' },
   { label: 'Hentai', query: '', nsfw: true, source: 'mangadex', ratings: ['pornographic'] },
   { label: 'Erotica', query: '', nsfw: true, source: 'mangadex', ratings: ['erotica'] },
 ];
@@ -110,10 +112,10 @@ export default function ComicLibrary() {
     try {
       let searchFilter = `(${query})`;
       if (!query.includes('collection:') && !query.includes('subject:')) {
-        searchFilter = `(${query}) AND (collection:comic_books_archive OR collection:digitalcomicmuseum OR subject:"Comic Books")`;
+        searchFilter = `(${query}) AND (collection:comic_books_archive OR subject:"Comic Books") AND -subject:magazine AND -subject:fanzine`;
       }
       
-      const url = `https://archive.org/advancedsearch.php?q=${searchFilter}+AND+mediatype:texts&fl[]=identifier,title,description&rows=${LIMIT}&page=${page + 1}&output=json`;
+      const url = `https://archive.org/advancedsearch.php?q=${searchFilter}+AND+mediatype:texts&fl[]=identifier,title,description,downloads,avg_rating&sort[]=downloads+desc&rows=${LIMIT}&page=${page + 1}&output=json`;
       const res = await fetch(url);
       if (!res.ok) return [];
       const data = await res.json();
@@ -129,6 +131,28 @@ export default function ComicLibrary() {
     } catch (e) { return []; }
   };
 
+  // Fetch from nhentai
+  const fetchNHentai = async (query: string, page: number) => {
+    try {
+      let path = query === 'all' || !query ? `galleries/all?page=${page + 1}` : `galleries/search?query=${query}&page=${page + 1}`;
+      const res = await fetch(`/api/proxy/nhentai?path=${encodeURIComponent(path)}`);
+      if (!res.ok) return [];
+      const data = await res.json();
+      const results = data.result || data.galleries || [];
+      return results.map((item: any) => {
+        const typeMap: Record<string, string> = { j: 'jpg', p: 'png', g: 'gif' };
+        const ext = typeMap[item.images.cover.t] || 'jpg';
+        return {
+          id: item.id.toString(),
+          title: item.title.english || item.title.japanese || item.title.pretty,
+          coverUrl: `https://t.nhentai.net/galleries/${item.media_id}/cover.${ext}`,
+          source: 'nhentai',
+          rating: 'pornographic'
+        };
+      });
+    } catch (e) { return []; }
+  };
+
   const loadData = async (append: boolean = false) => {
     if (offset === 0) setLoading(true);
     else setLoadingMore(true);
@@ -140,19 +164,22 @@ export default function ComicLibrary() {
       let results: Comic[] = [];
 
       if (query) {
-        // Global search: search both sources
-        const [mdResults, arcResults] = await Promise.all([
+        // Global search: search all sources
+        const [mdResults, arcResults, nhResults] = await Promise.all([
           fetchMangaDex(query, offset),
-          fetchArchive(query, offset)
+          fetchArchive(query, offset),
+          fetchNHentai(query, offset)
         ]);
         
-        results = [...mdResults, ...arcResults].sort((a, b) => a.title.localeCompare(b.title));
+        results = [...mdResults, ...arcResults, ...nhResults].sort((a, b) => a.title.localeCompare(b.title));
       } else {
         const source = cat?.source || 'mangadex';
         const catQuery = cat?.query || '';
         
         if (source === 'mangadex') {
           results = await fetchMangaDex(catQuery, offset, cat?.ratings);
+        } else if (source === 'nhentai') {
+          results = await fetchNHentai(catQuery, offset);
         } else {
           results = await fetchArchive(catQuery, offset);
         }
@@ -209,7 +236,8 @@ export default function ComicLibrary() {
         if (!srvData.chapter || !srvData.chapter.data) throw new Error("Chapter data is unavailable");
         
         setPages(srvData.chapter.data.map((n: string) => `${srvData.baseUrl}/data/${srvData.chapter.hash}/${n}`));
-      } else {
+      } 
+      else if (comic.source === 'archive') {
         const url = `https://archive.org/metadata/${comic.id}`;
         const res = await fetch(url);
         const data = await res.json();
@@ -244,14 +272,26 @@ export default function ComicLibrary() {
           if (pageCount > 0) {
             for(let i=0; i<pageCount; i++) {
                // Official Archive.org Page Image Service (very stable)
-               archivePages.push(`https://archive.org/services/img/${comic.id}/${i}`);
+               archivePages.push(`https://archive.org/services/img/${comic.id}/${i}?scale=8&fullsize=1`);
             }
           }
         }
 
         if (archivePages.length === 0) throw new Error("No readable pages found");
         setPages(archivePages);
+      } 
+      else if (comic.source === 'nhentai') {
+        const res = await fetch(`/api/proxy/nhentai?path=${encodeURIComponent(`gallery/${comic.id}`)}`);
+        if (!res.ok) throw new Error("Failed to fetch nhentai gallery");
+        const data = await res.json();
+        const typeMap: Record<string, string> = { j: 'jpg', p: 'png', g: 'gif' };
+        const nhPages = data.images.pages.map((p: any, i: number) => {
+           const ext = typeMap[p.t] || 'jpg';
+           return `https://i.nhentai.net/galleries/${data.media_id}/${i + 1}.${ext}`;
+        });
+        setPages(nhPages);
       }
+      
       setCurrentPage(0);
       setSelectedComic(comic);
     } catch (e) { 
@@ -311,6 +351,13 @@ export default function ComicLibrary() {
 
               <div className="flex flex-col gap-4 w-full md:w-auto">
                  <div className="flex items-center gap-2">
+                    <button onClick={() => {
+                      const randomOffset = Math.floor(Math.random() * 10);
+                      setOffset(randomOffset);
+                      loadData(false);
+                    }} className="w-16 h-16 flex items-center justify-center border border-white/10 text-white/20 hover:bg-[#ff4d00] hover:text-white transition-all">
+                       <Shuffle size={20} />
+                    </button>
                     <div className="relative flex-1 md:w-96">
                        <input type="text" placeholder="SEARCH_GLOBAL_ARCHIVES..." className="w-full bg-white/5 border border-white/10 py-5 px-12 text-[11px] font-black uppercase focus:border-[#ff4d00] transition-all outline-none" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/20" />
