@@ -12,6 +12,10 @@ import {
   Settings, Columns, Smartphone, Monitor,
   ChevronDown, ChevronUp, Menu, MousePointer2
 } from 'lucide-react';
+import AgeGateOverlay from '@/components/AgeGateOverlay';
+import RichTextContent from '@/components/RichTextContent';
+import { isAdultComic, persistAgeVerification, readAgeVerification } from '@/lib/age-verification';
+import { translations, Lang } from '@/lib/translations';
 
 interface Chapter {
   id: string;
@@ -31,9 +35,59 @@ interface ComicDetails {
   status: string;
   year?: string;
   author?: string;
-  source: 'mangadex' | 'archive' | 'nhentai';
+  source: 'mangadex' | 'archive' | 'nhentai' | 'marvel';
   aniListId?: string;
 }
+
+interface MarvelCreator {
+  id: number;
+  name: string;
+  role: string;
+}
+
+interface MarvelIssue {
+  id: number;
+  digitalId?: number;
+  title: string;
+  issueNumber: string;
+  description?: string;
+  modified?: string;
+  pageCount?: number;
+  detailUrl: string;
+  seriesId: number;
+  seriesName: string;
+  onSaleDate?: string;
+  unlimitedDate?: string;
+  yearPage?: number;
+  creators?: MarvelCreator[];
+  cover?: {
+    path: string;
+    extension: string;
+  };
+}
+
+interface MarvelSeriesIssue {
+  id: number;
+  title: string;
+  issueNumber: string;
+  detailUrl: string;
+  seriesId: number;
+  seriesName: string;
+  onSaleDate?: string;
+  unlimitedDate?: string;
+  yearPage?: number;
+}
+
+const formatMarvelDate = (value?: string) => {
+  if (!value) return 'Unknown';
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return value;
+  return parsed.toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+  });
+};
 
 export default function ComicDetailsPage() {
   const params = useParams();
@@ -41,6 +95,8 @@ export default function ComicDetailsPage() {
   const { source, id } = params;
   
   const [comic, setComic] = useState<ComicDetails | null>(null);
+  const [marvelIssue, setMarvelIssue] = useState<MarvelIssue | null>(null);
+  const [marvelSeriesIssues, setMarvelSeriesIssues] = useState<MarvelSeriesIssue[]>([]);
   const [loading, setLoading] = useState(true);
   const [reading, setReading] = useState(false);
   
@@ -61,6 +117,10 @@ export default function ComicDetailsPage() {
   const [showNav, setShowNav] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showGrid, setShowGrid] = useState(false);
+  const [isAgeVerified, setIsAgeVerified] = useState(false);
+  const [showAgeGate, setShowAgeGate] = useState(false);
+  const [lang, setLang] = useState<Lang>('en');
+  const t = (translations[lang] as any).library;
   
   const readerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLDivElement>(null);
@@ -72,6 +132,18 @@ export default function ComicDetailsPage() {
     const checkMobile = () => setIsMobile(window.innerWidth < 768);
     checkMobile();
     window.addEventListener('resize', checkMobile);
+
+    // Check age verification
+    const verified = readAgeVerification();
+    setIsAgeVerified(verified);
+    if (verified) persistAgeVerification();
+
+    // Language handling
+    const savedLang = localStorage.getItem('lang') as Lang;
+    if (savedLang && translations[savedLang]) {
+      setLang(savedLang);
+    }
+
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
@@ -92,7 +164,7 @@ export default function ComicDetailsPage() {
 
   useEffect(() => {
     fetchComicDetails();
-  }, [id, source]);
+  }, [id, source, isAgeVerified]);
 
   // Handle Scroll for progress and indicators
   useEffect(() => {
@@ -126,7 +198,46 @@ export default function ComicDetailsPage() {
   const fetchComicDetails = async () => {
     setLoading(true);
     try {
-      if (source === 'mangadex') {
+      if (source === 'nhentai' && !isAgeVerified) {
+        setShowAgeGate(true);
+        return;
+      }
+
+      if (source === 'marvel') {
+        const issueRes = await fetch(`/api/marvel/issues/${id}`);
+        if (!issueRes.ok) {
+          throw new Error('Failed to load Marvel issue metadata');
+        }
+
+        const issue = await issueRes.json() as MarvelIssue;
+        setMarvelIssue(issue);
+
+        const seriesRes = await fetch(`/api/marvel/series/${issue.seriesId}/issues`);
+        const seriesData = seriesRes.ok ? await seriesRes.json() : null;
+        const seriesIssues = Array.isArray(seriesData?.items) ? seriesData.items as MarvelSeriesIssue[] : [];
+        setMarvelSeriesIssues(seriesIssues);
+
+        const issueCreators = issue.creators || [];
+        const writer = issueCreators.find((creator) => creator.role === 'writer') || issueCreators[0];
+
+        setComic({
+          id: String(issue.id),
+          title: issue.title,
+          description: issue.description || 'Marvel metadata only.',
+          coverUrl: issue.cover
+            ? `${issue.cover.path.replace(/^http:\/\//, 'https://')}.${issue.cover.extension}`
+            : '/logo.png',
+          bannerUrl: issue.cover
+            ? `${issue.cover.path.replace(/^http:\/\//, 'https://')}.${issue.cover.extension}`
+            : undefined,
+          rating: issue.pageCount ? `${issue.pageCount} pages` : 'Marvel Metadata',
+          genres: [issue.seriesName, 'Marvel Comics', 'Issue Metadata'].filter(Boolean) as string[],
+          status: 'Metadata',
+          year: issue.yearPage ? String(issue.yearPage) : issue.onSaleDate?.slice(0, 4),
+          author: writer?.name || 'Marvel',
+          source: 'marvel',
+        });
+      } else if (source === 'mangadex') {
         const res = await fetch(`https://api.mangadex.org/manga/${id}?includes[]=cover_art&includes[]=author&includes[]=artist&contentRating[]=safe&contentRating[]=suggestive&contentRating[]=erotica&contentRating[]=pornographic`);
         const data = await res.json();
         const manga = data.data;
@@ -202,6 +313,9 @@ export default function ComicDetailsPage() {
           source: 'nhentai'
         });
         setChapters([{ id: data.id.toString(), title: 'Full Gallery', chapterNum: '1' }]);
+        if (!isAgeVerified) {
+          setShowAgeGate(true);
+        }
       } else {
         const res = await fetch(`https://archive.org/metadata/${id}`);
         const data = await res.json();
@@ -244,6 +358,18 @@ export default function ComicDetailsPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  useEffect(() => {
+    if (comic && isAdultComic(comic) && !isAgeVerified) {
+      setShowAgeGate(true);
+    }
+  }, [comic, isAgeVerified]);
+
+  const handleAgeVerify = () => {
+    persistAgeVerification();
+    setIsAgeVerified(true);
+    setShowAgeGate(false);
   };
 
   const loadChapterPages = async (idx: number) => {
@@ -399,22 +525,303 @@ export default function ComicDetailsPage() {
     </div>
   );
 
+  if (!comic && showAgeGate) {
+    return (
+      <div className="min-h-screen bg-[#020202] text-white overflow-x-hidden selection:bg-[#ff4d00] selection:text-white">
+        <AnimatePresence>
+          {showAgeGate && (
+            <AgeGateOverlay
+              title={t.restricted}
+              description={t.ageDesc}
+              confirmLabel={t.verifyBtn}
+              cancelLabel={t.cancelBtn}
+              confirmAction={handleAgeVerify}
+              cancelAction={() => router.push('/library')}
+              zIndex={10000}
+            />
+          )}
+        </AnimatePresence>
+      </div>
+    );
+  }
+
   if (!comic) return null;
+
+  if (comic.source === 'marvel' && !marvelIssue) {
+    return (
+      <div className="min-h-screen bg-[#020202] flex items-center justify-center">
+        <div className="flex flex-col items-center gap-6">
+          <Loader2 className="w-12 h-12 text-[#ff4d00] animate-spin" />
+          <div className="text-[10px] font-black uppercase tracking-[0.5em] text-white/20">Loading_Marvel_Metadata...</div>
+        </div>
+      </div>
+    );
+  }
+
+  if (comic.source === 'marvel' && marvelIssue) {
+    return (
+      <div className="min-h-screen bg-[#050505] text-white overflow-x-hidden selection:bg-[#ff4d00] selection:text-white">
+        <div className="fixed inset-0 z-0 h-[65vh]">
+          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#050505]/85 to-[#050505] z-10" />
+          <img
+            src={comic.bannerUrl || comic.coverUrl}
+            className="w-full h-full object-cover opacity-20 grayscale blur-3xl scale-110"
+            alt=""
+          />
+        </div>
+
+        <main className="relative z-10 pt-28 pb-24 px-6 md:px-20 max-w-7xl mx-auto">
+          <motion.button
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            onClick={() => router.back()}
+            className="mb-10 flex items-center gap-3 text-[10px] font-black uppercase tracking-widest text-white/40 hover:text-[#ff4d00] transition-all group"
+          >
+            <ChevronLeft size={16} className="group-hover:-translate-x-1 transition-transform" />
+            Back_To_Marvel
+          </motion.button>
+
+          <div className="grid grid-cols-1 lg:grid-cols-[360px_1fr] gap-12 lg:gap-20 items-start">
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="sticky top-28 space-y-6"
+            >
+              <div className="relative aspect-[2/3] w-full overflow-hidden border border-white/10 bg-[#0a0a0a] shadow-[0_40px_120px_rgba(0,0,0,0.85)]">
+                <img
+                  src={comic.coverUrl}
+                  className="w-full h-full object-cover"
+                  alt={comic.title}
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent" />
+                <div className="absolute top-4 left-4 px-3 py-1 bg-[#ff4d00] text-white text-[9px] font-black uppercase tracking-[0.35em]">
+                  Marvel
+                </div>
+                <div className="absolute bottom-4 left-4 right-4">
+                  <div className="text-[10px] font-black uppercase tracking-[0.35em] text-[#ff4d00]">
+                    Issue {marvelIssue.issueNumber || '?'}
+                  </div>
+                  <div className="mt-2 text-2xl font-black uppercase tracking-tighter leading-[0.9]">
+                    {comic.title}
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <a
+                  href={marvelIssue.detailUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="py-4 px-4 bg-white text-black text-[10px] font-black uppercase tracking-[0.25em] hover:bg-[#ff4d00] hover:text-white transition-all text-center"
+                >
+                  Open_Official
+                </a>
+                <button
+                  onClick={() => router.push('/library')}
+                  className="py-4 px-4 bg-white/5 border border-white/10 text-white/60 text-[10px] font-black uppercase tracking-[0.25em] hover:bg-white/10 hover:text-white transition-all"
+                >
+                  Back_To_Library
+                </button>
+              </div>
+
+              <div className="bg-white/5 border border-white/10 p-5 space-y-3">
+                <div className="text-[9px] font-black uppercase tracking-[0.35em] text-white/30">Issue_Metadata</div>
+                <div className="grid grid-cols-2 gap-3 text-[10px] uppercase tracking-[0.2em] text-white/55">
+                  <div>
+                    <div className="text-white/25">Series</div>
+                    <div className="mt-1 font-black text-white">{marvelIssue.seriesName}</div>
+                  </div>
+                  <div>
+                    <div className="text-white/25">Year</div>
+                    <div className="mt-1 font-black text-white">{marvelIssue.yearPage || 'Unknown'}</div>
+                  </div>
+                  <div>
+                    <div className="text-white/25">On Sale</div>
+                    <div className="mt-1 font-black text-white">{formatMarvelDate(marvelIssue.onSaleDate)}</div>
+                  </div>
+                  <div>
+                    <div className="text-white/25">Unlimited</div>
+                    <div className="mt-1 font-black text-white">{formatMarvelDate(marvelIssue.unlimitedDate)}</div>
+                  </div>
+                  <div>
+                    <div className="text-white/25">Pages</div>
+                    <div className="mt-1 font-black text-white">{marvelIssue.pageCount ?? 'Unknown'}</div>
+                  </div>
+                  <div>
+                    <div className="text-white/25">Modified</div>
+                    <div className="mt-1 font-black text-white">{formatMarvelDate(marvelIssue.modified)}</div>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, x: 30 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.1 }}
+              className="space-y-10"
+            >
+              <div className="space-y-6">
+                <div className="flex flex-wrap items-center gap-3">
+                  <span className="px-4 py-2 bg-[#ff4d00] text-white text-[10px] font-black uppercase tracking-[0.3em]">
+                    Marvel_Metadata
+                  </span>
+                  <span className="px-4 py-2 bg-white/5 border border-white/10 text-white/45 text-[10px] font-black uppercase tracking-[0.3em]">
+                    Issue #{marvelIssue.issueNumber || '?'}
+                  </span>
+                  <span className="px-4 py-2 bg-white/5 border border-white/10 text-white/45 text-[10px] font-black uppercase tracking-[0.3em]">
+                    {comic.rating}
+                  </span>
+                </div>
+
+                <h1 className="text-5xl md:text-7xl font-black italic uppercase tracking-tighter leading-[0.88]">
+                  {comic.title}
+                </h1>
+                <p className="max-w-3xl text-white/55 text-base md:text-lg leading-relaxed">
+                  {comic.description}
+                </p>
+              </div>
+
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="bg-white/5 border border-white/10 p-5">
+                  <div className="text-[9px] uppercase tracking-[0.35em] text-white/25">Series</div>
+                  <div className="mt-2 text-sm font-black uppercase tracking-tight">{marvelIssue.seriesName}</div>
+                </div>
+                <div className="bg-white/5 border border-white/10 p-5">
+                  <div className="text-[9px] uppercase tracking-[0.35em] text-white/25">Issue</div>
+                  <div className="mt-2 text-sm font-black uppercase tracking-tight">#{marvelIssue.issueNumber || '?'}</div>
+                </div>
+                <div className="bg-white/5 border border-white/10 p-5">
+                  <div className="text-[9px] uppercase tracking-[0.35em] text-white/25">Year</div>
+                  <div className="mt-2 text-sm font-black uppercase tracking-tight">{marvelIssue.yearPage || 'Unknown'}</div>
+                </div>
+                <div className="bg-white/5 border border-white/10 p-5">
+                  <div className="text-[9px] uppercase tracking-[0.35em] text-white/25">Pages</div>
+                  <div className="mt-2 text-sm font-black uppercase tracking-tight">{marvelIssue.pageCount ?? 'Unknown'}</div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 xl:grid-cols-[1.1fr_0.9fr] gap-8">
+                <div className="bg-[#0a0a0a] border border-white/10 p-6 md:p-8 space-y-6">
+                  <div className="flex items-center justify-between gap-4">
+                    <div>
+                      <div className="text-[9px] uppercase tracking-[0.35em] text-white/25">Creators</div>
+                      <h2 className="mt-2 text-2xl font-black uppercase tracking-tight">Credits</h2>
+                    </div>
+                    <BookOpen className="text-[#ff4d00]" />
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {(marvelIssue.creators || []).map((creator) => (
+                      <div key={`${creator.id}-${creator.role}`} className="p-4 bg-white/5 border border-white/10">
+                        <div className="text-[8px] uppercase tracking-[0.35em] text-white/25">{creator.role}</div>
+                        <div className="mt-2 text-sm font-black uppercase leading-tight">{creator.name}</div>
+                      </div>
+                    ))}
+                    {(marvelIssue.creators || []).length === 0 && (
+                      <div className="sm:col-span-2 p-6 text-center text-white/30 text-[10px] font-black uppercase tracking-[0.35em] border border-dashed border-white/10">
+                        No creator metadata available.
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="bg-[#0a0a0a] border border-white/10 p-6 md:p-8 space-y-6">
+                  <div className="flex items-center justify-between gap-4">
+                    <div>
+                      <div className="text-[9px] uppercase tracking-[0.35em] text-white/25">Series Order</div>
+                      <h2 className="mt-2 text-2xl font-black uppercase tracking-tight">Issues</h2>
+                    </div>
+                    <span className="text-[10px] font-black uppercase tracking-[0.35em] text-white/35">
+                      {marvelSeriesIssues.length} total
+                    </span>
+                  </div>
+
+                  <div className="max-h-[640px] overflow-auto pr-2 space-y-3">
+                    {marvelSeriesIssues.slice(0, 18).map((issue) => (
+                      <button
+                        key={issue.id}
+                        onClick={() => router.push(`/library/marvel/${issue.id}`)}
+                        className="w-full text-left p-4 bg-white/5 border border-white/10 hover:border-[#ff4d00]/60 hover:bg-[#ff4d00]/10 transition-all flex items-center justify-between gap-4"
+                      >
+                        <div className="min-w-0">
+                          <div className="text-[8px] uppercase tracking-[0.35em] text-white/25">
+                            #{issue.issueNumber || issue.id}
+                          </div>
+                          <div className="mt-2 text-sm font-black uppercase leading-tight truncate">
+                            {issue.title}
+                          </div>
+                          <div className="mt-1 text-[9px] uppercase tracking-[0.25em] text-white/30 truncate">
+                            {formatMarvelDate(issue.onSaleDate)}
+                          </div>
+                        </div>
+                        <div className="text-[#ff4d00] text-[9px] font-black uppercase tracking-[0.3em]">
+                          Open
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  const titleLength = comic.title.trim().length;
+  const titleSizeClass = titleLength > 80
+    ? 'text-[clamp(2rem,3.8vw,4.4rem)]'
+    : titleLength > 55
+      ? 'text-[clamp(2.3rem,4.2vw,5rem)]'
+      : titleLength > 35
+        ? 'text-[clamp(2.7rem,5vw,6rem)]'
+        : 'text-[clamp(3rem,5.4vw,6.8rem)]';
+  const titleWidthClass = titleLength > 55
+    ? 'max-w-[12ch] 2xl:max-w-[14ch]'
+    : 'max-w-[14ch] 2xl:max-w-[16ch]';
+  const pageBackdropStyle = {
+    backgroundImage: `
+      radial-gradient(circle at 18% 18%, rgba(255, 77, 0, 0.14), transparent 26%),
+      radial-gradient(circle at 82% 12%, rgba(255, 255, 255, 0.05), transparent 22%),
+      radial-gradient(circle at 50% 100%, rgba(255, 77, 0, 0.07), transparent 30%),
+      linear-gradient(180deg, #090909 0%, #050505 45%, #020202 100%)
+    `
+  };
 
   return (
     <div className="min-h-screen bg-[#020202] text-white overflow-x-hidden selection:bg-[#ff4d00] selection:text-white">
-      {/* Immersive Backdrop */}
-      <div className="fixed inset-0 z-0 h-[70vh]">
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#020202]/90 to-[#020202] z-10" />
-        <img src={comic.bannerUrl || comic.coverUrl} className="w-full h-full object-cover opacity-20 grayscale blur-3xl scale-110" alt="" />
+      {/* Age Gate Overlay */}
+      <AnimatePresence>
+        {showAgeGate && (
+          <AgeGateOverlay
+            title={t.restricted}
+            description={t.ageDesc}
+            confirmLabel={t.verifyBtn}
+            cancelLabel={t.cancelBtn}
+            confirmAction={handleAgeVerify}
+            cancelAction={() => router.push('/library')}
+            zIndex={20000}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Clean Backdrop */}
+      <div className="fixed inset-0 z-0 overflow-hidden bg-[#020202]" style={pageBackdropStyle}>
+        <div className="absolute inset-0 opacity-[0.08] mix-blend-soft-light" style={{
+          backgroundImage: 'linear-gradient(to right, rgba(255,255,255,0.08) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,0.08) 1px, transparent 1px)',
+          backgroundSize: '72px 72px'
+        }} />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0%,rgba(0,0,0,0.2)_58%,rgba(0,0,0,0.6)_100%)]" />
       </div>
 
-      <main className="relative z-10 pt-32 pb-32 px-6 md:px-20 max-w-7xl mx-auto">
+      <main className="relative z-10 pt-24 pb-24 px-6 md:px-20 max-w-7xl mx-auto">
         <motion.button initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} onClick={() => router.back()} className="mb-12 flex items-center gap-3 text-[10px] font-black uppercase tracking-widest text-white/40 hover:text-[#ff4d00] transition-all group">
           <ChevronLeft size={16} className="group-hover:-translate-x-1 transition-transform" /> Neural_Backtrack
         </motion.button>
 
-        <div className="grid grid-cols-1 lg:grid-cols-[380px_1fr] gap-16 lg:gap-24 items-start">
+        <div className="rounded-[2rem] border border-white/8 bg-white/[0.03] backdrop-blur-xl shadow-[0_40px_140px_rgba(0,0,0,0.45)] overflow-hidden">
+          <div className="grid grid-cols-1 lg:grid-cols-[380px_1fr] gap-16 lg:gap-24 items-start p-6 md:p-10 lg:p-12">
           {/* Side Info */}
           <motion.div initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} className="space-y-10 sticky top-32">
             <div className="group relative aspect-[2/3] w-full bg-[#0a0a0a] border border-white/10 shadow-[0_50px_100px_rgba(0,0,0,0.9)] overflow-hidden">
@@ -446,9 +853,9 @@ export default function ComicDetailsPage() {
                  <div className="px-4 py-2 bg-[#ff4d00]/10 border border-[#ff4d00]/30 text-[#ff4d00] text-[10px] font-black uppercase tracking-widest">{comic.status}</div>
               </div>
               
-              <h1 className="text-5xl md:text-7xl lg:text-8xl font-black italic uppercase tracking-tighter leading-none break-words max-w-full">
-                {comic.title}
-              </h1>
+                <h1 className={`${titleSizeClass} ${titleWidthClass} font-black italic uppercase tracking-tighter leading-[0.92] text-balance break-words`}>
+                  {comic.title}
+                </h1>
 
               <div className="flex flex-wrap gap-2 pt-4">
                 {comic.genres.map(genre => (
@@ -464,15 +871,15 @@ export default function ComicDetailsPage() {
                   <h3 className="text-[11px] font-black uppercase tracking-[0.5em] text-[#ff4d00]">Story_Archive_Log</h3>
                   <div className="h-px flex-1 bg-gradient-to-r from-white/10 to-transparent" />
                </div>
-               <div 
-                 className="text-xl md:text-2xl text-white/50 font-medium leading-relaxed max-w-3xl italic description-content"
-                 dangerouslySetInnerHTML={{ 
-                   __html: String(comic.description || "")
-                     .replace(/\[b\]/g, '<strong>').replace(/\[\/b\]/g, '</strong>')
-                     .replace(/\[i\]/g, '<em>').replace(/\[\/i\]/g, '</em>')
-                     .replace(/\n/g, '<br />')
-                 }}
-               />
+               <div className="max-w-4xl rounded-2xl border border-white/10 bg-white/[0.02] p-5 md:p-6 text-base md:text-lg text-white/65 italic leading-relaxed description-content max-h-[44vh] overflow-y-auto pr-3">
+                 <RichTextContent
+                   content={String(comic.description || "")
+                     .replace(/\[b\]/g, '')
+                     .replace(/\[\/b\]/g, '')
+                     .replace(/\[i\]/g, '')
+                     .replace(/\[\/i\]/g, '')}
+                 />
+               </div>
             </div>
 
             {/* Chapters */}
@@ -486,7 +893,7 @@ export default function ComicDetailsPage() {
                     <button key={ch.id} onClick={() => { setCurrentChapterIdx(i); setReading(true); loadChapterPages(i); }} className="group flex items-center justify-between p-5 bg-white/5 border border-white/5 hover:border-[#ff4d00]/50 transition-all text-left">
                        <div className="space-y-1">
                           <div className="text-[10px] font-black uppercase tracking-widest text-[#ff4d00]">Vol.{ch.volume || '0'} Ch.{ch.chapterNum}</div>
-                          <div className="text-[13px] font-black uppercase tracking-tight group-hover:text-[#ff4d00] transition-colors">{ch.title}</div>
+                          <div className="text-[13px] font-black uppercase tracking-tight group-hover:text-[#ff4d00] transition-colors break-words line-clamp-2">{ch.title}</div>
                        </div>
                        <ChevronRight size={20} className="text-white/20 group-hover:text-[#ff4d00] group-hover:translate-x-1 transition-all" />
                     </button>
@@ -494,6 +901,7 @@ export default function ComicDetailsPage() {
                </div>
             </div>
           </motion.div>
+        </div>
         </div>
       </main>
 
@@ -664,10 +1072,10 @@ export default function ComicDetailsPage() {
                           </AnimatePresence>
                        </div>
                      ) : (
-                       <div 
+                      <div 
                          className="flex flex-col items-center gap-0 w-full transition-all duration-500" 
                          style={{ 
-                           maxWidth: (isMobile || isFullscreen) ? '100%' : `${zoom * 800}px`,
+                           maxWidth: isMobile ? '100%' : `${zoom * 800}px`,
                            width: '100%'
                          }}
                        >

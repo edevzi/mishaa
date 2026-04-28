@@ -194,7 +194,13 @@ export const translations = {
     forge_core: 'Forge_Core',
     properties: 'Properties',
     layers: 'Layers',
-    neural: 'Neural'
+    neural: 'Neural',
+    library: {
+      restricted: 'RESTRICTED',
+      ageDesc: 'This archive contains explicit material intended for adult audiences only. You must be 18+ to access.',
+      verifyBtn: 'I AM 18 OR OLDER',
+      cancelBtn: 'ABORT_ACCESS'
+    }
   },
   ru: {
     nav: {
@@ -388,7 +394,13 @@ export const translations = {
     forge_core: 'Ядро_Кузницы',
     properties: 'Свойства',
     layers: 'Слои',
-    neural: 'Нейрон'
+    neural: 'Нейрон',
+    library: {
+      restricted: 'ОГРАНИЧЕНО',
+      ageDesc: 'Этот архив содержит материалы только для взрослых. Вам должно быть 18+, чтобы получить доступ.',
+      verifyBtn: 'МНЕ ЕСТЬ 18 ЛЕТ',
+      cancelBtn: 'ОТМЕНИТЬ'
+    }
   },
   uz: {
     nav: {
@@ -582,6 +594,12 @@ export const translations = {
     forge_core: 'Bolg‘a_Yadrosi',
     properties: 'Xususiyatlar',
     layers: 'Qatlamlar',
-    neural: 'Neyron'
-  },
+    neural: 'Neyron',
+    library: {
+      restricted: 'CHЕKLANGAN',
+      ageDesc: 'Ushbu arxiv faqat kattalar uchun mo‘ljallangan materiallarni o‘z ichiga oladi. Kirish uchun 18+ bo‘lishingiz kerak.',
+      verifyBtn: 'MЕN 18 YOSHDAN KATTAMAN',
+      cancelBtn: 'BЕKOR_QILISH'
+    }
+  }
 };

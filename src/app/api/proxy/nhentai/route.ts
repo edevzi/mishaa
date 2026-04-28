@@ -1,6 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { AGE_VERIFICATION_COOKIE } from '@/lib/age-verification';
 
 export async function GET(req: NextRequest) {
+  const ageVerified = req.cookies.get(AGE_VERIFICATION_COOKIE)?.value === 'true';
+  if (!ageVerified) {
+    return NextResponse.json(
+      { error: 'Age verification required', code: 'AGE_VERIFICATION_REQUIRED' },
+      { status: 403 }
+    );
+  }
+
   const { searchParams } = new URL(req.url);
   const path = searchParams.get('path');
 
@@ -21,7 +30,7 @@ export async function GET(req: NextRequest) {
     const targetUrl = `https://nhentai.net/api/v2/${path}`;
     console.log(`Proxying to: ${targetUrl}`);
     
-    let res = await fetch(targetUrl, { headers });
+    const res = await fetch(targetUrl, { headers });
 
     // If 404/403, try fallback search
     if (!res.ok) {
@@ -34,8 +43,9 @@ export async function GET(req: NextRequest) {
 
     const data = await res.json();
     return NextResponse.json(data);
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Unknown proxy error';
     console.error('Proxy Error:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

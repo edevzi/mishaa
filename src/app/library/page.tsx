@@ -5,30 +5,90 @@ import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   BookOpen, Search, X, ChevronLeft, ChevronRight, 
-  Loader2, Maximize2, Minimize2, List, Eye, EyeOff, AlertTriangle,
+  Loader2, Maximize2, Minimize2, List, Eye, EyeOff,
   ZoomIn, ZoomOut, Columns, FileText, Sparkles, TrendingUp, Clock, Star, Shuffle, Globe, Flag
 } from 'lucide-react';
+import AgeGateOverlay from '@/components/AgeGateOverlay';
+import { isAdultComic, persistAgeVerification, readAgeVerification } from '@/lib/age-verification';
+import { translations, Lang } from '@/lib/translations';
 
 interface Comic {
   id: string;
   title: string;
   description: string;
-  coverUrl: string;
+  coverUrl?: string;
   rating: string;
-  source: 'mangadex' | 'archive' | 'nhentai';
+  source: 'mangadex' | 'archive' | 'nhentai' | 'marvel';
+  issueNumber?: string;
+  seriesName?: string;
+  onSaleDate?: string;
+  yearPage?: number;
+  detailUrl?: string;
+  pageCount?: number;
+  creators?: { id: number; name: string; role: string }[];
 }
 
-const CATEGORIES = [
-  { label: 'Manga Hub', query: '', source: 'mangadex' },
+interface MarvelIssueSummary {
+  id: number | string;
+  title?: string;
+  issueNumber?: string;
+  seriesName?: string;
+  onSaleDate?: string;
+  yearPage?: number;
+  detailUrl?: string;
+  pageCount?: number;
+  cover?: {
+    path?: string;
+    extension?: string;
+  };
+}
+
+type Category = {
+  label: string;
+  query?: string;
+  source: Comic['source'];
+  nsfw?: boolean;
+  ratings?: string[];
+  originalLanguages?: string[];
+};
+
+type LoadResult = {
+  items: Comic[];
+  hasMore: boolean;
+};
+
+const CATEGORIES: Category[] = [
+  { label: 'Marvel Universe', source: 'marvel' },
+  { label: 'Manga Hub', source: 'mangadex' },
   { label: 'Webtoons', query: 'webtoon', source: 'mangadex' },
-  { label: 'Manhwa', query: 'manhwa', source: 'mangadex' },
+  { label: 'Manhwa', source: 'mangadex', originalLanguages: ['ko'] },
   { label: 'Doujinshi', query: 'all', nsfw: true, source: 'nhentai' },
   { label: 'New Doujinshi', query: 'language:english', nsfw: true, source: 'nhentai' },
-  { label: 'Hentai', query: '', nsfw: true, source: 'mangadex', ratings: ['pornographic'] },
-  { label: 'Erotica', query: '', nsfw: true, source: 'mangadex', ratings: ['erotica'] },
+  { label: 'Hentai', source: 'mangadex', nsfw: true, ratings: ['pornographic'] },
+  { label: 'Erotica', source: 'mangadex', nsfw: true, ratings: ['erotica'] },
 ];
 
 const LIMIT = 36;
+const MARVEL_COVER_PREFETCH_COUNT = 12;
+const MARVEL_COVER_FETCH_RETRIES = 2;
+
+const formatMarvelDate = (value?: string) => {
+  if (!value) return 'Unknown';
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return value;
+  return parsed.toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+  });
+};
+
+const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+const normalizeMarvelCover = (cover?: { path?: string; extension?: string }) => {
+  if (!cover?.path || !cover.extension) return '';
+  return `${String(cover.path).replace(/^http:\/\//, 'https://')}.${cover.extension}`;
+};
 
 export default function ComicLibrary() {
   const [comics, setComics] = useState<Comic[]>([]);
@@ -40,27 +100,34 @@ export default function ComicLibrary() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [reading, setReading] = useState(false);
   const [viewMode, setViewMode] = useState<'single' | 'webtoon' | 'spread'>('single');
-  const [nsfwEnabled, setNsfwEnabled] = useState(false);
-  const [isAgeVerified, setIsAgeVerified] = useState(false);
+  const [isAgeVerified, setIsAgeVerified] = useState(() => readAgeVerification());
+  const [nsfwEnabled, setNsfwEnabled] = useState(() => readAgeVerification());
   const [showAgeGate, setShowAgeGate] = useState(false);
   const [activeCategory, setActiveCategory] = useState('Marvel Universe');
   const [offset, setOffset] = useState(0);
   const [hasMore, setHasMore] = useState(true);
   const [zoom, setZoom] = useState(1);
+  const [lang] = useState<Lang>(() => {
+    if (typeof window === 'undefined') return 'en';
+    const savedLang = localStorage.getItem('lang') as Lang;
+    return savedLang && translations[savedLang] ? savedLang : 'en';
+  });
+  const t_lib = (translations[lang] as any).library;
+  const requestIdRef = useRef(0);
+  const skipNextOffsetFetchRef = useRef(false);
   
   const router = useRouter();
   const readerRef = useRef<HTMLDivElement>(null);
   const observer = useRef<IntersectionObserver | null>(null);
 
-  // Initialize age verification from localStorage
   useEffect(() => {
-    const verified = localStorage.getItem('age_verified') === 'true';
-    setIsAgeVerified(verified);
-    if (verified) setNsfwEnabled(true);
-  }, []);
+    if (isAgeVerified) {
+      persistAgeVerification();
+    }
+  }, [isAgeVerified]);
 
   const handleAgeVerify = () => {
-    localStorage.setItem('age_verified', 'true');
+    persistAgeVerification();
     setIsAgeVerified(true);
     setNsfwEnabled(true);
     setShowAgeGate(false);
@@ -78,33 +145,57 @@ export default function ComicLibrary() {
   }, [loading, loadingMore, hasMore]);
 
   // Fetch from MangaDex
-  const fetchMangaDex = async (query: string, currentOffset: number, ratingsOverride?: string[]) => {
+  const fetchMangaDex = useCallback(async (
+    query: string,
+    currentOffset: number,
+    ratingsOverride?: string[],
+    originalLanguages?: string[]
+  ): Promise<LoadResult> => {
     try {
-      const defaultRatings = nsfwEnabled ? ['safe', 'suggestive', 'erotica', 'pornographic'] : ['safe', 'suggestive'];
-      const ratings = ratingsOverride || defaultRatings;
-      const ratingParams = ratings.map(r => `contentRating[]=${r}`).join('&');
+      const ratings = ratingsOverride || ['safe', 'suggestive'];
+      const params = new URLSearchParams();
+      params.set('limit', LIMIT.toString());
+      params.set('offset', String(currentOffset * LIMIT));
+      params.append('includes[]', 'cover_art');
+      params.append('availableTranslatedLanguage[]', 'en');
+      ratings.forEach((rating) => params.append('contentRating[]', rating));
+      originalLanguages?.forEach((language) => params.append('originalLanguage[]', language));
       // Added order by relevance if query exists, else followedCount
-      const orderParam = query ? 'order[relevance]=desc' : 'order[followedCount]=desc';
-      const url = `https://api.mangadex.org/manga?limit=${LIMIT}&offset=${currentOffset * LIMIT}&includes[]=cover_art&${ratingParams}&availableTranslatedLanguage[]=en&title=${query}&${orderParam}`;
+      if (query.trim().length >= 2) {
+        params.set('title', query.trim());
+        params.set('order[relevance]', 'desc');
+      } else {
+        params.set('order[followedCount]', 'desc');
+      }
+
+      const url = `https://api.mangadex.org/manga?${params.toString()}`;
       const res = await fetch(url);
-      if (!res.ok) return [];
+      if (!res.ok) return { items: [], hasMore: false };
       const data = await res.json();
-      if (!data.data) return [];
-      return data.data.map((item: any) => {
-        const coverFileName = item.relationships.find((r: any) => r.type === 'cover_art')?.attributes?.fileName;
-        return {
-          id: item.id,
-          title: item.attributes.title.en || Object.values(item.attributes.title)[0],
-          coverUrl: coverFileName ? `https://uploads.mangadex.org/covers/${item.id}/${coverFileName}.512.jpg` : '/logo.png',
-          source: 'mangadex',
-          rating: item.attributes.contentRating
-        };
-      });
-    } catch (e) { return []; }
-  };
+      const items = Array.isArray(data?.data) ? data.data : [];
+      const total = Number(data?.total ?? 0);
+      const hasMore = Number.isFinite(total)
+        ? (currentOffset + 1) * LIMIT < total
+        : items.length === LIMIT;
+
+      return {
+        items: items.map((item: any) => {
+          const coverFileName = item.relationships?.find((r: any) => r.type === 'cover_art')?.attributes?.fileName;
+          return {
+            id: item.id,
+            title: item.attributes.title.en || Object.values(item.attributes.title)[0],
+            coverUrl: coverFileName ? `https://uploads.mangadex.org/covers/${item.id}/${coverFileName}.512.jpg` : '/logo.png',
+            source: 'mangadex',
+            rating: item.attributes.contentRating
+          };
+        }),
+        hasMore,
+      };
+    } catch (e) { return { items: [], hasMore: false }; }
+  }, []);
 
   // Fetch from Archive.org
-  const fetchArchive = async (query: string, page: number) => {
+  const fetchArchive = useCallback(async (query: string, page: number): Promise<LoadResult> => {
     try {
       let searchFilter = `(${query})`;
       if (!query.includes('collection:') && !query.includes('subject:')) {
@@ -113,32 +204,42 @@ export default function ComicLibrary() {
       
       const url = `https://archive.org/advancedsearch.php?q=${searchFilter}+AND+mediatype:texts&fl[]=identifier,title,description,downloads,avg_rating&sort[]=downloads+desc&rows=${LIMIT}&page=${page + 1}&output=json`;
       const res = await fetch(url);
-      if (!res.ok) return [];
+      if (!res.ok) return { items: [], hasMore: false };
       const data = await res.json();
       
-      if (!data.response || !data.response.docs) return [];
+      if (!data.response || !data.response.docs) return { items: [], hasMore: false };
+      const docs = Array.isArray(data.response.docs) ? data.response.docs : [];
+      const total = Number(data.response.numFound ?? 0);
 
-      return data.response.docs.map((item: any) => ({
-        id: item.identifier,
-        title: item.title,
-        coverUrl: `https://archive.org/services/img/${item.identifier}`,
-        source: 'archive'
-      }));
-    } catch (e) { return []; }
-  };
+      return {
+        items: docs.map((item: any) => ({
+          id: item.identifier,
+          title: item.title,
+          coverUrl: `https://archive.org/services/img/${item.identifier}`,
+          source: 'archive'
+        })),
+        hasMore: Number.isFinite(total)
+          ? (page + 1) * LIMIT < total
+          : docs.length === LIMIT,
+      };
+    } catch (e) { return { items: [], hasMore: false }; }
+  }, []);
 
   // Fetch from nhentai
-  const fetchNHentai = async (query: string, page: number) => {
+  const fetchNHentai = useCallback(async (query: string, page: number): Promise<LoadResult> => {
     try {
       let path = (query === 'all' || !query) 
         ? `galleries?page=${page + 1}` 
         : `search?query=${encodeURIComponent(query)}&page=${page + 1}`;
         
       const res = await fetch(`/api/proxy/nhentai?path=${encodeURIComponent(path)}`);
-      if (!res.ok) return [];
+      if (!res.ok) return { items: [], hasMore: false };
       const data = await res.json();
-      const results = data.result || data || [];
-      return results.map((item: any) => {
+      const results = Array.isArray(data?.result) ? data.result : Array.isArray(data) ? data : [];
+      const numPages = Number(data?.num_pages ?? 0);
+
+      return {
+        items: results.map((item: any) => {
         return {
           id: item.id.toString(),
           title: item.english_title || item.title?.english || item.title?.japanese || "Untitled",
@@ -147,69 +248,200 @@ export default function ComicLibrary() {
           source: 'nhentai',
           rating: 'pornographic'
         };
-      });
+        }),
+        hasMore: Number.isFinite(numPages) && numPages > 0 ? page + 1 < numPages : results.length > 0,
+      };
     } catch (e) {
       console.error(e);
-      return [];
+      return { items: [], hasMore: false };
     }
-  };
+  }, []);
 
-  const loadData = async (append: boolean = false) => {
-    if (offset === 0) setLoading(true);
-    else setLoadingMore(true);
+  const fetchMarvelIssues = useCallback(async (query: string, currentOffset: number): Promise<LoadResult> => {
+    try {
+      const normalizedQuery = query.trim();
+      const params = new URLSearchParams();
+      if (normalizedQuery.length >= 2) {
+        params.set('q', normalizedQuery);
+      } else {
+        params.set('limit', LIMIT.toString());
+        params.set('offset', String(currentOffset * LIMIT));
+      }
+
+      const res = await fetch(`/api/marvel/issues?${params.toString()}`);
+      if (!res.ok) return { items: [], hasMore: false };
+
+      const data = await res.json();
+      const items: MarvelIssueSummary[] = Array.isArray(data?.items) ? data.items : [];
+      const total = Number(data?.total ?? 0);
+      const hasNext = data?.has_next;
+
+      const mappedItems: Comic[] = items.map((item) => ({
+          id: String(item.id),
+          title: item.title || `Issue ${item.issueNumber || item.id}`,
+          description: item.seriesName || 'Marvel Comics metadata',
+          coverUrl: normalizeMarvelCover(item.cover),
+          rating: item.pageCount ? `${item.pageCount} pages` : item.yearPage ? String(item.yearPage) : 'Marvel',
+          source: 'marvel' as const,
+          issueNumber: item.issueNumber,
+          seriesName: item.seriesName,
+          onSaleDate: item.onSaleDate,
+          yearPage: item.yearPage,
+          detailUrl: item.detailUrl,
+          pageCount: item.pageCount,
+        }));
+
+      const preferredMarvelItems = await Promise.all(
+        mappedItems.map(async (comic, index) => {
+          if (index >= MARVEL_COVER_PREFETCH_COUNT || comic.coverUrl) return comic;
+
+          for (let attempt = 0; attempt <= MARVEL_COVER_FETCH_RETRIES; attempt += 1) {
+            try {
+              const detailRes = await fetch(`/api/marvel/issues/${comic.id}`);
+              if (!detailRes.ok) {
+                if (attempt < MARVEL_COVER_FETCH_RETRIES) {
+                  await wait(400 * (attempt + 1));
+                  continue;
+                }
+                return comic;
+              }
+
+              const detail = await detailRes.json();
+              const coverUrl = normalizeMarvelCover(detail?.cover);
+              if (coverUrl) {
+                return { ...comic, coverUrl };
+              }
+
+              return comic;
+            } catch {
+              if (attempt < MARVEL_COVER_FETCH_RETRIES) {
+                await wait(400 * (attempt + 1));
+                continue;
+              }
+              return comic;
+            }
+          }
+
+          return comic;
+        })
+      );
+
+      return {
+        items: preferredMarvelItems,
+        hasMore: typeof hasNext === 'boolean'
+          ? hasNext
+          : Number.isFinite(total)
+            ? (currentOffset + 1) * LIMIT < total
+            : items.length === LIMIT,
+      };
+    } catch (error) {
+      console.error(error);
+      return { items: [], hasMore: false };
+    }
+  }, []);
+
+  const loadData = useCallback(async (pageIndex: number = 0, append: boolean = false) => {
+    const requestId = ++requestIdRef.current;
+    if (append) setLoadingMore(true);
+    else setLoading(true);
 
     try {
       const cat = CATEGORIES.find(c => c.label === activeCategory);
-      const query = searchQuery;
+      const query = searchQuery.trim();
+      const safeMarvelQuery = query;
       
-      let results: Comic[] = [];
+      const canAccessAdultContent = isAgeVerified;
+      const defaultRatings = canAccessAdultContent ? ['safe', 'suggestive', 'erotica', 'pornographic'] : ['safe', 'suggestive'];
+      let result: LoadResult = { items: [], hasMore: false };
 
       if (query) {
-        // Global search: search all sources
-        const [mdResults, arcResults, nhResults] = await Promise.all([
-          fetchMangaDex(query, offset),
-          fetchArchive(query, offset),
-          fetchNHentai(query, offset)
-        ]);
-        
-        results = [...mdResults, ...arcResults, ...nhResults].sort((a, b) => a.title.localeCompare(b.title));
+        if (cat?.source === 'marvel') {
+          result = await fetchMarvelIssues(safeMarvelQuery, pageIndex);
+        } else {
+          // Global search: search all sources
+          const nhentaiSearch = canAccessAdultContent ? fetchNHentai(query, pageIndex) : Promise.resolve<LoadResult>({ items: [], hasMore: false });
+          const [mdResults, arcResults, nhResults] = await Promise.all([
+            fetchMangaDex(query, pageIndex, defaultRatings),
+            fetchArchive(query, pageIndex),
+            nhentaiSearch
+          ]);
+
+          const combinedItems = [...mdResults.items, ...arcResults.items, ...nhResults.items].sort((a, b) => a.title.localeCompare(b.title));
+          result = {
+            items: combinedItems,
+            hasMore: mdResults.hasMore || arcResults.hasMore || nhResults.hasMore,
+          };
+        }
       } else {
         const source = cat?.source || 'mangadex';
         const catQuery = cat?.query || '';
         
         if (source === 'mangadex') {
-          results = await fetchMangaDex(catQuery, offset, cat?.ratings);
+          result = await fetchMangaDex(catQuery, pageIndex, cat?.ratings || defaultRatings, cat?.originalLanguages);
         } else if (source === 'nhentai') {
-          results = await fetchNHentai(catQuery, offset);
+          if (!canAccessAdultContent) {
+            setShowAgeGate(true);
+            if (requestId === requestIdRef.current) {
+              setLoading(false);
+              setLoadingMore(false);
+            }
+            return;
+          }
+          result = await fetchNHentai(catQuery, pageIndex);
+        } else if (source === 'marvel') {
+          result = await fetchMarvelIssues(safeMarvelQuery, pageIndex);
         } else {
-          results = await fetchArchive(catQuery, offset);
+          result = await fetchArchive(catQuery, pageIndex);
         }
       }
 
-      if (results.length < LIMIT) setHasMore(false);
+      if (requestId !== requestIdRef.current) return;
+
+      let results = result.items;
+      if (!canAccessAdultContent) {
+        results = results.filter((comic) => !isAdultComic(comic));
+      }
+
+      setHasMore(result.hasMore && results.length > 0);
       setComics(prev => append ? [...prev, ...results] : results);
     } catch (e) { 
+      if (requestId !== requestIdRef.current) return;
       console.error(e); 
       if (!append) setComics([]);
     } finally { 
-      setLoading(false); 
-      setLoadingMore(false); 
+      if (requestId === requestIdRef.current) {
+        setLoading(false); 
+        setLoadingMore(false);
+      }
     }
-  };
+  }, [activeCategory, fetchArchive, fetchMangaDex, fetchMarvelIssues, fetchNHentai, isAgeVerified, nsfwEnabled, searchQuery]);
 
   useEffect(() => {
+    // Filters intentionally refetch the library; this is the synchronization point.
+    /* eslint-disable react-hooks/set-state-in-effect */
+    requestIdRef.current += 1;
     setOffset(0);
     setHasMore(true);
-    loadData(false);
-  }, [activeCategory, searchQuery, nsfwEnabled]);
+    setComics([]);
+    loadData(0, false);
+    /* eslint-enable react-hooks/set-state-in-effect */
+  }, [activeCategory, searchQuery, nsfwEnabled, loadData]);
 
   useEffect(() => {
-    if (offset > 0) loadData(true);
-  }, [offset]);
+    // Infinite scroll advances the page index and fetches the next batch.
+    /* eslint-disable react-hooks/set-state-in-effect */
+    if (skipNextOffsetFetchRef.current) {
+      skipNextOffsetFetchRef.current = false;
+      /* eslint-enable react-hooks/set-state-in-effect */
+      return;
+    }
+    if (offset > 0) loadData(offset, true);
+    /* eslint-enable react-hooks/set-state-in-effect */
+  }, [offset, loadData]);
 
   const fetchPages = async (comic: Comic) => {
     // Check for adult content age gate
-    if ((comic.rating === 'erotica' || comic.rating === 'pornographic') && !isAgeVerified) {
+    if (isAdultComic(comic) && !isAgeVerified) {
       setShowAgeGate(true);
       return;
     }
@@ -320,17 +552,15 @@ export default function ComicLibrary() {
       {/* Age Gate */}
       <AnimatePresence>
         {showAgeGate && (
-          <div className="fixed inset-0 z-[10000] bg-black/95 backdrop-blur-3xl flex items-center justify-center p-6">
-             <div className="max-w-md w-full bg-[#0a0a0a] border border-red-900/40 p-12 text-center shadow-[0_0_100px_rgba(255,0,0,0.1)]">
-                <AlertTriangle className="w-16 h-16 text-red-600 mx-auto mb-6" />
-                <h2 className="text-4xl font-black italic uppercase mb-2 tracking-tighter">RESTRICTED</h2>
-                <p className="text-[10px] text-white/40 uppercase tracking-widest mb-8">This content is for adults only (18+)</p>
-                <div className="flex flex-col gap-3">
-                  <button onClick={handleAgeVerify} className="w-full py-5 bg-red-600 text-white font-black uppercase tracking-widest text-[10px] hover:bg-red-700 transition-colors">I AM 18 OR OLDER</button>
-                  <button onClick={() => setShowAgeGate(false)} className="w-full py-5 bg-white/5 text-white/40 font-black uppercase tracking-widest text-[10px] hover:text-white transition-colors">GO BACK</button>
-                </div>
-             </div>
-          </div>
+          <AgeGateOverlay
+            title={t_lib.restricted}
+            description={t_lib.ageDesc}
+            confirmLabel={t_lib.verifyBtn}
+            cancelLabel={t_lib.cancelBtn}
+            confirmAction={handleAgeVerify}
+            cancelAction={() => setShowAgeGate(false)}
+            zIndex={10000}
+          />
         )}
       </AnimatePresence>
 
@@ -354,8 +584,9 @@ export default function ComicLibrary() {
                  <div className="flex items-center gap-2">
                     <button onClick={() => {
                       const randomOffset = Math.floor(Math.random() * 10);
+                      skipNextOffsetFetchRef.current = true;
                       setOffset(randomOffset);
-                      loadData(false);
+                      loadData(randomOffset, false);
                     }} className="w-16 h-16 flex items-center justify-center border border-white/10 text-white/20 hover:bg-[#ff4d00] hover:text-white transition-all">
                        <Shuffle size={20} />
                     </button>
@@ -378,6 +609,7 @@ export default function ComicLibrary() {
                   className={`px-6 py-3 text-[10px] font-black uppercase tracking-widest border transition-all ${activeCategory === cat.label ? 'bg-[#ff4d00] border-[#ff4d00] text-white' : 'border-white/10 text-white/30 hover:border-white/80'}`}
                 >
                   {cat.source === 'archive' && <Flag size={10} className="inline mr-2" />}
+                  {cat.source === 'marvel' && <BookOpen size={10} className="inline mr-2" />}
                   {cat.label}
                 </button>
               ))}
@@ -400,17 +632,58 @@ export default function ComicLibrary() {
                   ref={comics.length === index + 1 ? lastComicRef : null}
                   key={comic.id + index} 
                   whileHover={{ y: -20, scale: 1.05 }}
-                  onClick={() => router.push(`/library/${comic.source}/${comic.id}`)} 
+                  onClick={() => {
+                    if (isAdultComic(comic) && !isAgeVerified) {
+                      setShowAgeGate(true);
+                      return;
+                    }
+                    router.push(`/library/${comic.source}/${comic.id}`);
+                  }}
                   className="relative group cursor-pointer"
                 >
                   <div className="aspect-[2/3] border border-white/5 bg-[#0a0a0a] overflow-hidden relative shadow-[0_40px_80px_rgba(0,0,0,0.8)]">
-                    <img src={comic.coverUrl} className="w-full h-full object-cover grayscale opacity-40 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-700" alt={comic.title} />
+                    {comic.source === 'marvel' ? (
+                      comic.coverUrl ? (
+                        <img
+                          src={comic.coverUrl}
+                          className="w-full h-full object-cover opacity-100 transition-all duration-700"
+                          alt={comic.title}
+                        />
+                      ) : (
+                        <div className="w-full h-full relative overflow-hidden bg-[radial-gradient(circle_at_top,_rgba(255,77,0,0.3),_transparent_45%),linear-gradient(180deg,#171717_0%,#060606_100%)]">
+                          <div className="absolute inset-0 opacity-[0.08]" style={{ backgroundImage: 'linear-gradient(rgba(255,255,255,0.4) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.4) 1px, transparent 1px)', backgroundSize: '20px 20px' }} />
+                          <div className="absolute inset-0 flex flex-col justify-between p-4">
+                            <div className="flex items-center justify-between gap-2">
+                              <span className="px-2 py-1 text-[7px] font-black uppercase tracking-[0.35em] bg-white text-black">MARVEL</span>
+                              <span className="text-[8px] font-black uppercase tracking-[0.4em] text-white/35">{comic.yearPage || '----'}</span>
+                            </div>
+                            <div className="space-y-2">
+                              <div className="text-[11px] font-black uppercase tracking-[0.35em] text-[#ff4d00]">Issue {comic.issueNumber || '?'}</div>
+                              <div className="text-xl font-black uppercase leading-[0.9] tracking-tighter text-white line-clamp-3">{comic.title}</div>
+                              <div className="text-[8px] uppercase tracking-[0.28em] text-white/35 line-clamp-2">{comic.seriesName || comic.description}</div>
+                            </div>
+                          </div>
+                        </div>
+                      )
+                    ) : (
+                      <img src={comic.coverUrl} className="w-full h-full object-cover opacity-100 transition-all duration-700" alt={comic.title} />
+                    )}
                     <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black to-transparent flex items-center justify-between">
                        <span className="text-[7px] font-black uppercase tracking-widest text-[#ff4d00]">{comic.source}</span>
-                       {(comic.rating === 'erotica' || comic.rating === 'pornographic') && <span className="px-1.5 py-0.5 bg-red-600 text-white text-[6px] font-black uppercase">18+</span>}
+                       {comic.source === 'marvel' ? (
+                         <span className="text-[6px] font-black uppercase tracking-[0.35em] text-white/40">{comic.onSaleDate ? formatMarvelDate(comic.onSaleDate) : 'Metadata only'}</span>
+                       ) : (
+                         (comic.rating === 'erotica' || comic.rating === 'pornographic') && <span className="px-1.5 py-0.5 bg-red-600 text-white text-[6px] font-black uppercase">18+</span>
+                       )}
                     </div>
                   </div>
                   <h3 className="mt-6 text-[10px] font-black uppercase tracking-widest text-white/20 group-hover:text-white leading-relaxed line-clamp-2">{comic.title}</h3>
+                  {comic.source === 'marvel' && (
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      <span className="px-2 py-1 border border-white/10 text-[7px] font-black uppercase tracking-[0.25em] text-white/45">#{comic.issueNumber || '?'}</span>
+                      <span className="px-2 py-1 border border-white/10 text-[7px] font-black uppercase tracking-[0.25em] text-white/45">{comic.pageCount ? `${comic.pageCount} p.` : 'No pages'}</span>
+                    </div>
+                  )}
                 </motion.div>
               ))}
             </div>
