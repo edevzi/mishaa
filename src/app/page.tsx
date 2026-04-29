@@ -7,6 +7,7 @@ import { startTransition, useEffect, useState } from 'react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { translations, Lang } from '@/lib/translations';
+import { readStorageItem } from '@/lib/browser-storage';
 
 interface SessionUser {
    id: string;
@@ -124,7 +125,7 @@ export default function Home() {
       void loadUser();
 
       // Language handling
-      const savedLang = localStorage.getItem('lang') as Lang;
+      const savedLang = readStorageItem('lang') as Lang;
       if (savedLang && translations[savedLang]) {
         setLang(savedLang);
       }

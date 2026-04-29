@@ -141,7 +141,7 @@ export default function StoryViewer() {
             initial={{ opacity: 0, scale: 0.9, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: -20 }}
-            className="fixed top-1/2 left-1/2 -ms-center z-[1000] bg-white text-black px-12 py-6 rounded-[2.5rem] shadow-[0_20px_50px_rgba(255,255,255,0.2)] font-black text-xl italic tracking-tight -translate-x-1/2 -translate-y-1/2"
+            className="fixed top-1/2 left-1/2 -ms-center z-[1000] bg-white text-black px-12 py-6 rounded-[2.5rem] shadow-[0_20px_50px_rgba(255,255,255,0.2)] font-black text-xl italic tracking-tight -translate-x-1/2 -translate-y-1/2 max-md:px-6 max-md:py-4 max-md:text-base"
           >
             COPIED! 🙏
           </motion.div>
@@ -149,7 +149,7 @@ export default function StoryViewer() {
       </AnimatePresence>
 
       {/* Progress Bars */}
-      <div className="absolute top-12 left-0 right-0 z-[1100] flex gap-1 px-2 md:top-6 md:px-4">
+      <div className="absolute top-12 left-0 right-0 z-[1100] flex gap-1 px-2 md:top-6 md:px-4 max-md:top-3 max-md:px-1">
         {slides.map((_, i) => (
           <div key={i} className="h-[2px] flex-1 bg-white/20 rounded-full overflow-hidden">
             <motion.div
@@ -165,12 +165,12 @@ export default function StoryViewer() {
       </div>
 
       {/* Audio Toggle Button */}
-      <div className="absolute top-20 right-4 z-[1200] md:top-12 md:right-8">
+      <div className="absolute top-20 right-4 z-[1200] md:top-12 md:right-8 max-md:top-4 max-md:right-3">
         <button
           onClick={toggleAudio}
-          className="p-4 rounded-full bg-black/50 backdrop-blur-2xl border border-white/20 text-white hover:bg-black/80 transition-all active:scale-90 shadow-2xl"
+          className="p-4 rounded-full bg-black/50 backdrop-blur-2xl border border-white/20 text-white hover:bg-black/80 transition-all active:scale-90 shadow-2xl max-md:p-3"
         >
-          {isPlaying ? <Volume2 className="w-7 h-7" /> : <VolumeX className="w-7 h-7" />}
+          {isPlaying ? <Volume2 className="w-7 h-7 max-md:w-5 max-md:h-5" /> : <VolumeX className="w-7 h-7 max-md:w-5 max-md:h-5" />}
         </button>
 
       </div>
@@ -212,12 +212,12 @@ export default function StoryViewer() {
                   initial={{ opacity: 0, letterSpacing: "0.2em" }}
                   animate={{ opacity: 1, letterSpacing: "0.6em" }}
                   transition={{ delay: 0.5, duration: 1.5 }}
-                  className="text-white/40 text-sm md:text-base uppercase font-black mb-6 block tracking-[0.6em]"
+                className="text-white/40 text-sm md:text-base uppercase font-black mb-6 block tracking-[0.6em] max-md:text-[10px] max-md:tracking-[0.35em] max-md:mb-4"
                 >
                   {currentSlide.subtitleText}
                 </motion.span>
 
-                <h1 className="text-7xl md:text-[12rem] font-black text-white italic tracking-tighter leading-none relative">
+                <h1 className="text-7xl md:text-[12rem] font-black text-white italic tracking-tighter leading-none relative max-md:text-5xl">
                   <span className="relative z-10">{currentSlide.titleText}</span>
                   {/* Dramatic Shadow/Glow */}
                   <span className="absolute inset-0 text-white/20 blur-2xl z-0 scale-110 pointer-events-none italic">
@@ -234,7 +234,7 @@ export default function StoryViewer() {
               </motion.div>
             </div>
           ) : (
-            <div className="absolute inset-0 w-full h-full bg-[#050505] flex items-center justify-center p-6 md:p-12 pt-24 z-[999] pointer-events-none overflow-hidden text-white">
+            <div className="absolute inset-0 w-full h-full bg-[#050505] flex items-center justify-center p-6 md:p-12 pt-24 z-[999] pointer-events-none overflow-hidden text-white max-md:pt-20 max-md:p-4">
               {/* Ambient Background Glows */}
               <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-indigo-600/10 blur-[120px] rounded-full" />
               <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-rose-600/10 blur-[120px] rounded-full" />
@@ -242,29 +242,29 @@ export default function StoryViewer() {
               <motion.div
                 initial={{ y: 40, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
-                className="relative z-[1000] max-w-4xl w-full flex flex-col md:flex-row items-center gap-12 md:gap-20 pointer-events-auto"
+                className="relative z-[1000] max-w-4xl w-full flex flex-col md:flex-row items-center gap-12 md:gap-20 pointer-events-auto max-md:gap-8"
               >
                 {/* Left Side: Illustration/Brand */}
-                <div className="flex-1 text-center md:text-left">
+                <div className="flex-1 text-center md:text-left max-md:space-y-4">
                   <motion.div
                     initial={{ scale: 0.8, rotate: -5 }}
                     animate={{ scale: 1, rotate: 3 }}
                     transition={{ duration: 1, repeat: Infinity, repeatType: 'reverse' }}
-                    className="w-24 h-24 md:w-32 md:h-32 bg-gradient-to-tr from-rose-500 via-orange-500 to-yellow-500 rounded-[2rem] flex items-center justify-center mx-auto md:mx-0 mb-8 shadow-[0_20px_40px_rgba(244,63,94,0.3)]"
+                    className="w-24 h-24 md:w-32 md:h-32 bg-gradient-to-tr from-rose-500 via-orange-500 to-yellow-500 rounded-[2rem] flex items-center justify-center mx-auto md:mx-0 mb-8 shadow-[0_20px_40px_rgba(244,63,94,0.3)] max-md:w-16 max-md:h-16 max-md:mb-4"
                   >
-                    <Heart className="w-12 h-12 md:w-16 md:h-16 text-white fill-white" />
+                    <Heart className="w-12 h-12 md:w-16 md:h-16 text-white fill-white max-md:w-8 max-md:h-8" />
                   </motion.div>
-                  <h2 className="text-5xl md:text-8xl font-black mb-6 italic tracking-tight text-white uppercase leading-[0.9]">
+                  <h2 className="text-5xl md:text-8xl font-black mb-6 italic tracking-tight text-white uppercase leading-[0.9] max-md:text-3xl max-md:mb-4">
                     SEND <br className="hidden md:block" /> HELP 🙏
                   </h2>
-                  <p className="text-white/40 text-lg md:text-xl max-w-md leading-relaxed">
+                  <p className="text-white/40 text-lg md:text-xl max-w-md leading-relaxed max-md:text-sm">
                     Every contribution helps a brother get through these tough times. Your support means everything.
                   </p>
                 </div>
 
                 {/* Right Side: Card & Actions */}
                 <div className="w-full max-w-sm">
-                  <div className="relative bg-white/[0.03] backdrop-blur-3xl border border-white/10 rounded-[3.5rem] p-8 md:p-10 shadow-2xl overflow-hidden group">
+                  <div className="relative bg-white/[0.03] backdrop-blur-3xl border border-white/10 rounded-[3.5rem] p-8 md:p-10 shadow-2xl overflow-hidden group max-md:rounded-[2rem] max-md:p-5">
                     {/* Card Shine Effect */}
                     <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
 
@@ -278,7 +278,7 @@ export default function StoryViewer() {
 
                     <div className="mb-10">
                       <span className="text-[10px] uppercase tracking-[0.4em] text-white/20 font-black mb-3 block">Card Number</span>
-                      <p className="text-2xl md:text-3xl font-mono tracking-tighter text-white font-black whitespace-nowrap">
+                      <p className="text-2xl md:text-3xl font-mono tracking-tighter text-white font-black whitespace-nowrap max-md:text-lg max-md:whitespace-normal">
                         5614 6816 0771 9857
                       </p>
                     </div>

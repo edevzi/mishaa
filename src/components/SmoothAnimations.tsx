@@ -20,7 +20,7 @@ const REDUCED_MOTION_QUERY = '(prefers-reduced-motion: reduce)';
 const LERP_FACTOR = 0.08; 
 
 const getBaseTransform = (element: HTMLElement) => {
-  if (!Object.hasOwn(element.dataset, 'baseTransform')) {
+  if (!Object.prototype.hasOwnProperty.call(element.dataset, 'baseTransform')) {
     element.dataset.baseTransform = element.style.transform || '';
   }
   return element.dataset.baseTransform ?? '';
@@ -34,6 +34,7 @@ export default function SmoothAnimations() {
   const animationFrameRef = useRef<number | null>(null);
   const depthLayersRef = useRef<DepthLayer[]>([]);
   const tiltCardsRef = useRef<TiltCard[]>([]);
+  const isRunningRef = useRef(false);
   
   const mouseRef = useRef({
     x: typeof window === 'undefined' ? 0 : window.innerWidth / 2,
@@ -50,6 +51,7 @@ export default function SmoothAnimations() {
     const finePointer = window.matchMedia(FINE_POINTER_QUERY);
     const reducedMotion = window.matchMedia(REDUCED_MOTION_QUERY);
     const root = document.documentElement;
+    const motionEnabled = finePointer.matches && !reducedMotion.matches;
 
     const collectAnimatedElements = () => {
       depthLayersRef.current = Array.from(document.querySelectorAll<HTMLElement>('[data-depth]')).map(
@@ -150,13 +152,26 @@ export default function SmoothAnimations() {
     const tick = () => {
       const dx = mouseRef.current.x - easedRef.current.x;
       const dy = mouseRef.current.y - easedRef.current.y;
+      const hasMovement = Math.abs(dx) > 0.01 || Math.abs(dy) > 0.01;
 
-      if (Math.abs(dx) > 0.01 || Math.abs(dy) > 0.01 || tiltCardsRef.current.length > 0) {
+      if (hasMovement || tiltCardsRef.current.length > 0) {
         easedRef.current.x += dx * LERP_FACTOR;
         easedRef.current.y += dy * LERP_FACTOR;
         updateVisuals();
       }
 
+      if (!easedRef.current.active && !hasMovement) {
+        isRunningRef.current = false;
+        animationFrameRef.current = null;
+        return;
+      }
+
+      animationFrameRef.current = window.requestAnimationFrame(tick);
+    };
+
+    const startTicker = () => {
+      if (isRunningRef.current) return;
+      isRunningRef.current = true;
       animationFrameRef.current = window.requestAnimationFrame(tick);
     };
 
@@ -168,11 +183,12 @@ export default function SmoothAnimations() {
       
       if (!easedRef.current.active) {
         easedRef.current.active = true;
-        animationFrameRef.current = window.requestAnimationFrame(tick);
+        startTicker();
       }
     };
 
     const handlePointerLeave = () => {
+      easedRef.current.active = false;
       resetTransforms();
     };
 
@@ -185,6 +201,17 @@ export default function SmoothAnimations() {
     });
 
     collectAnimatedElements();
+
+    if (!motionEnabled) {
+      resetTransforms();
+      root.style.setProperty('--mouse-x', '50vw');
+      root.style.setProperty('--mouse-y', '50vh');
+      return () => {
+        isRunningRef.current = false;
+        mutationObserver.disconnect();
+      };
+    }
+
     mutationObserver.observe(document.body, { childList: true, subtree: true });
 
     window.addEventListener('pointermove', handlePointerMove, { passive: true });
@@ -197,6 +224,7 @@ export default function SmoothAnimations() {
       if (animationFrameRef.current !== null) {
         window.cancelAnimationFrame(animationFrameRef.current);
       }
+      isRunningRef.current = false;
       mutationObserver.disconnect();
       window.removeEventListener('pointermove', handlePointerMove);
       window.removeEventListener('resize', handleResize);

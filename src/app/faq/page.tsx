@@ -17,6 +17,7 @@ import {
   Globe
 } from 'lucide-react';
 import { translations, Lang } from '@/lib/translations';
+import { readStorageItem } from '@/lib/browser-storage';
 
 export default function FAQPage() {
   const [openIndex, setOpenIndex] = useState<number | null>(0);
@@ -25,7 +26,7 @@ export default function FAQPage() {
   const t = translations[lang].faq;
 
   useEffect(() => {
-    const savedLang = localStorage.getItem('lang') as Lang;
+    const savedLang = readStorageItem('lang') as Lang;
     if (savedLang && translations[savedLang]) setLang(savedLang);
 
     const handleLang = (e: any) => setLang(e.detail as Lang);

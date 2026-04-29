@@ -6,6 +6,7 @@ import { motion } from 'framer-motion';
 import { Layout, Archive, ArrowRight, Clock, Trash2, ExternalLink } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import { translations, Lang } from '@/lib/translations';
+import { readStorageItem } from '@/lib/browser-storage';
 
 interface GalleryStory {
   id: string;
@@ -22,7 +23,7 @@ export default function Gallery() {
   const t = translations[lang].gallery;
 
   useEffect(() => {
-    const savedLang = localStorage.getItem('lang') as Lang;
+    const savedLang = readStorageItem('lang') as Lang;
     if (savedLang && translations[savedLang]) setLang(savedLang);
 
     const handleLang = (e: any) => setLang(e.detail as Lang);

@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Zap, Box, LayoutGrid, Info, X, Menu, Globe } from 'lucide-react';
 import { translations, Lang } from '@/lib/translations';
+import { readStorageItem, writeStorageItem } from '@/lib/browser-storage';
 
 interface SessionUser {
   id: string;
@@ -36,7 +37,7 @@ export default function Navbar() {
     fetchUser();
 
     // Initial lang from storage
-    const savedLang = localStorage.getItem('lang') as Lang;
+    const savedLang = readStorageItem('lang') as Lang;
     if (savedLang && translations[savedLang]) {
       setLang(savedLang);
     }
@@ -59,18 +60,18 @@ export default function Navbar() {
   const handleLangChange = (l: string) => {
     const newLang = l.toLowerCase() as Lang;
     setLang(newLang);
-    localStorage.setItem('lang', newLang);
+    writeStorageItem('lang', newLang);
     window.dispatchEvent(new CustomEvent('langChange', { detail: newLang }));
   };
 
   return (
-    <nav className="fixed top-8 left-1/2 -translate-x-1/2 z-[1000] w-[95%] max-w-6xl">
-      <div className="bg-[#0a0a0a]/80 backdrop-blur-3xl border border-white/10 p-1 flex items-center justify-between overflow-hidden relative shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
+    <nav className="fixed top-8 left-1/2 -translate-x-1/2 z-[1000] w-[95%] max-w-6xl max-md:top-3 max-md:w-[calc(100%-1rem)]">
+      <div className="bg-[#0a0a0a]/80 backdrop-blur-3xl border border-white/10 p-1 flex items-center justify-between overflow-hidden relative shadow-[0_20px_50px_rgba(0,0,0,0.5)] max-md:px-2">
         {/* Architectural Accent */}
         <div className="absolute top-0 left-0 w-1 h-full bg-[#ff4d00]" />
         
         {/* Branding */}
-        <Link href="/" className="flex items-center gap-3 md:gap-4 pl-4 md:pl-6 group py-2 md:py-3">
+        <Link href="/" className="flex items-center gap-3 md:gap-4 pl-4 md:pl-6 group py-2 md:py-3 max-md:pl-2">
            <div className="relative w-8 h-8 md:w-9 md:h-9 flex items-center justify-center bg-white border border-black group-hover:bg-[#ff4d00] transition-colors duration-500">
              <img src="/logo.png" className="w-4 h-4 md:w-5 md:h-5 object-contain" alt="iComics" />
            </div>
@@ -141,7 +142,7 @@ export default function Navbar() {
 
         {/* Mobile toggle */}
         <button 
-          className="lg:hidden text-white p-3 hover:text-[#ff4d00] transition-colors bg-white/5 mr-1"
+          className="lg:hidden text-white p-3 hover:text-[#ff4d00] transition-colors bg-white/5 mr-1 max-md:p-2"
           onClick={() => setIsOpen(!isOpen)}
         >
           {isOpen ? <X size={18} /> : <Menu size={18} />}
@@ -155,7 +156,7 @@ export default function Navbar() {
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
-            className="lg:hidden absolute top-full left-0 right-0 mt-4 bg-[#0a0a0a] border border-white/10 p-10 space-y-8 shadow-2xl"
+            className="lg:hidden absolute top-full left-0 right-0 mt-4 bg-[#0a0a0a] border border-white/10 p-6 md:p-10 space-y-8 shadow-2xl max-md:mt-2 max-md:p-5"
           >
             <div className="flex flex-col gap-6">
               {navLinks.map((link) => (

@@ -33,7 +33,7 @@ export function ProfessionalCanvas({ children, settings, isPreview }: Profession
       {settings.showRulers && (
         <>
           {/* Horizontal Ruler */}
-          <div className="absolute inset-x-0 -top-12 h-8 flex border-b border-black/5 pointer-events-none">
+          <div className="absolute inset-x-0 -top-12 h-8 flex border-b border-black/5 pointer-events-none max-md:hidden">
             {Array.from({ length: Math.ceil(format.width / 10) + 1 }).map((_, i) => (
               <div key={i} className="relative flex-1 border-l border-black/5 h-full">
                 {i % 5 === 0 && (
@@ -44,7 +44,7 @@ export function ProfessionalCanvas({ children, settings, isPreview }: Profession
             ))}
           </div>
           {/* Vertical Ruler */}
-          <div className="absolute top-0 -left-12 w-8 bottom-0 flex flex-col border-r border-black/5 pointer-events-none">
+          <div className="absolute top-0 -left-12 w-8 bottom-0 flex flex-col border-r border-black/5 pointer-events-none max-md:hidden">
             {Array.from({ length: Math.ceil(format.height / 10) + 1 }).map((_, i) => (
               <div key={i} className="relative flex-1 border-t border-black/5 w-full">
                 {i % 5 === 0 && (
@@ -59,14 +59,14 @@ export function ProfessionalCanvas({ children, settings, isPreview }: Profession
 
       {/* THE PHYSICAL BOARD */}
       <div 
-        className="relative bg-[#f8f7f2] shadow-[0_28px_90px_rgba(0,0,0,0.10)] transition-all duration-700 ease-out preserve-3d border border-black/5 rounded-[2rem]"
+        className="relative bg-[#f8f7f2] shadow-[0_28px_90px_rgba(0,0,0,0.10)] transition-all duration-700 ease-out preserve-3d border border-black/5 rounded-[2rem] max-md:rounded-[1.25rem]"
         style={{ 
           width: boardWidth, 
           height: boardHeight,
         }}
       >
         {/* CLEANER GRID (Less Distracting) */}
-        <div className="absolute -inset-20 bg-[rgba(255,255,255,0.72)] -z-10 rounded-[2.5rem] border border-black/5 flex items-center justify-center overflow-hidden">
+        <div className="absolute -inset-20 bg-[rgba(255,255,255,0.72)] -z-10 rounded-[2.5rem] border border-black/5 flex items-center justify-center overflow-hidden max-md:-inset-8">
            <div className="absolute inset-0" style={{ 
               backgroundImage: `linear-gradient(to right, rgba(0,0,0,0.02) 1px, transparent 1px), linear-gradient(to bottom, rgba(0,0,0,0.02) 1px, transparent 1px)`,
               backgroundSize: '40px 40px'
@@ -111,7 +111,7 @@ export function ProfessionalCanvas({ children, settings, isPreview }: Profession
            )))}
            
            {/* Color Bars (Pro detail) */}
-           <div className="absolute top-1/2 -right-8 -translate-y-1/2 flex flex-col gap-1 opacity-15 group-hover/canvas:opacity-50 transition-opacity">
+           <div className="absolute top-1/2 -right-8 -translate-y-1/2 flex flex-col gap-1 opacity-15 group-hover/canvas:opacity-50 transition-opacity max-md:hidden">
               {['#00ffff', '#ff00ff', '#ffff00', '#000000'].map(c => (
                  <div key={c} className="w-4 h-4" style={{ backgroundColor: c }} />
               ))}
@@ -178,7 +178,7 @@ export function ProfessionalCanvas({ children, settings, isPreview }: Profession
 
         {/* TECHNICAL METADATA OVERLAY (Hidden in Preview) */}
         {!isPreview && (
-          <div className="absolute -bottom-20 left-0 flex justify-between w-full p-4 border-t border-black/5 bg-white/85 backdrop-blur-md rounded-b-3xl">
+          <div className="absolute -bottom-20 left-0 flex justify-between w-full p-4 border-t border-black/5 bg-white/85 backdrop-blur-md rounded-b-3xl max-md:static max-md:mt-4 max-md:rounded-2xl max-md:flex-col max-md:gap-3">
              <div className="flex gap-8">
                 <div className="flex flex-col gap-1">
                    <span className="text-[7px] text-black/20 font-black uppercase tracking-[0.2em]">Technical_Format</span>

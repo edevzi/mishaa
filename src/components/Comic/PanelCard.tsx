@@ -102,7 +102,7 @@ export function PanelCard({
         borderStyle: 'solid'
       }}
     >
-      <div className={`relative w-full h-full overflow-hidden transition-all duration-700 ${
+          <div className={`relative w-full h-full overflow-hidden transition-all duration-700 ${
         isForge 
           ? `rounded-[1.3rem] border-2 ${isSelected ? 'border-[var(--accent)] shadow-[0_20px_40px_rgba(255,77,0,0.08)] bg-white' : 'border-black/10 hover:border-black/20 bg-white/90'}`
           : 'rounded-none border-none bg-white'
@@ -158,7 +158,7 @@ export function PanelCard({
         )}
 
         {isForge && (
-          <div className="absolute bottom-4 left-5 flex items-center gap-3 opacity-0 group-hover:opacity-100 transition-all duration-500 translate-y-2 group-hover:translate-y-0">
+          <div className="absolute bottom-4 left-5 flex items-center gap-3 opacity-0 group-hover:opacity-100 transition-all duration-500 translate-y-2 group-hover:translate-y-0 max-md:left-3 max-md:bottom-3">
              <div className="px-2 py-1 bg-white/80 backdrop-blur-md border border-black/5 rounded-lg flex items-center gap-2">
                 <span className="text-[8px] font-black text-[var(--accent)] uppercase">{finalColSpan}U</span>
                 <div className="w-[1px] h-2 bg-black/10" />
@@ -168,7 +168,7 @@ export function PanelCard({
         )}
 
         {isForge && isSelected && (
-          <div className="absolute top-4 right-4 flex items-center gap-2 z-[60]">
+          <div className="absolute top-4 right-4 flex items-center gap-2 z-[60] max-md:top-2 max-md:right-2">
              <div className="flex bg-white/90 backdrop-blur-xl border border-black/10 rounded-xl p-1 shadow-xl">
                 <button onClick={(e) => { e.stopPropagation(); onDuplicate(); }} className="w-8 h-8 flex items-center justify-center text-black/40 hover:text-black hover:bg-black/5 rounded-lg transition-all" title="Duplicate">
                    <Copy size={14} />
@@ -182,9 +182,9 @@ export function PanelCard({
 
         {isForge && isSelected && (
           <>
-            <div onMouseDown={(e) => handleResizeStart(e, 'h')} className="absolute top-0 right-0 w-1.5 h-full cursor-ew-resize hover:bg-[var(--accent)]/60 transition-colors z-[120]" />
-            <div onMouseDown={(e) => handleResizeStart(e, 'v')} className="absolute bottom-0 left-0 w-full h-1.5 cursor-ns-resize hover:bg-[var(--accent)]/60 transition-colors z-[120]" />
-            <div onMouseDown={(e) => handleResizeStart(e, 'both')} className="absolute bottom-0 right-0 w-6 h-6 cursor-nwse-resize z-[130] flex items-center justify-center group/corner">
+            <div onMouseDown={(e) => handleResizeStart(e, 'h')} className="absolute top-0 right-0 w-1.5 h-full cursor-ew-resize hover:bg-[var(--accent)]/60 transition-colors z-[120] max-md:hidden" />
+            <div onMouseDown={(e) => handleResizeStart(e, 'v')} className="absolute bottom-0 left-0 w-full h-1.5 cursor-ns-resize hover:bg-[var(--accent)]/60 transition-colors z-[120] max-md:hidden" />
+            <div onMouseDown={(e) => handleResizeStart(e, 'both')} className="absolute bottom-0 right-0 w-6 h-6 cursor-nwse-resize z-[130] flex items-center justify-center group/corner max-md:hidden">
                <div className="w-3 h-3 border-r-2 border-b-2 border-[var(--accent)] scale-75 group-hover/corner:scale-110 transition-transform shadow-[2px_2px_10px_rgba(255,77,0,0.3)]" />
             </div>
           </>
@@ -199,7 +199,7 @@ export function PanelCard({
 
       <AnimatePresence>
         {isForge && isSelected && (
-          <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="absolute -bottom-8 left-1/2 -translate-x-1/2 z-[100]">
+          <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="absolute -bottom-8 left-1/2 -translate-x-1/2 z-[100] max-md:-bottom-6">
              <button onClick={(e) => { e.stopPropagation(); onAddAfter(); }} className="w-8 h-8 rounded-full bg-[var(--accent)] text-white shadow-[0_0_20px_rgba(255,77,0,0.4)] flex items-center justify-center hover:scale-110 transition-all border-2 border-black">
                 <Plus size={16} strokeWidth={3} />
              </button>

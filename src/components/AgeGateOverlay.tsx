@@ -41,21 +41,21 @@ export default function AgeGateOverlay({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-black/95 backdrop-blur-3xl flex items-center justify-center p-6"
+      className="fixed inset-0 bg-black/95 backdrop-blur-3xl flex items-center justify-center p-6 max-md:p-4"
       style={{ zIndex }}
     >
       <motion.div
         initial={{ scale: 0.9, opacity: 0, y: 20 }}
         animate={{ scale: 1, opacity: 1, y: 0 }}
-        className="max-w-md w-full bg-[#0a0a0a] border border-red-900/40 p-12 text-center shadow-[0_0_100px_rgba(255,0,0,0.2)] relative overflow-hidden"
+        className="max-w-md w-full bg-[#0a0a0a] border border-red-900/40 p-12 text-center shadow-[0_0_100px_rgba(255,0,0,0.2)] relative overflow-hidden max-md:p-6"
       >
         <div className="absolute top-0 left-0 w-full h-1 bg-red-600 animate-pulse" />
 
-        <AlertTriangle className="w-20 h-20 text-red-600 mx-auto mb-8 animate-bounce" />
-        <h2 className="text-5xl font-black italic uppercase mb-4 tracking-tighter leading-none">
+        <AlertTriangle className="w-20 h-20 text-red-600 mx-auto mb-8 animate-bounce max-md:w-14 max-md:h-14 max-md:mb-5" />
+        <h2 className="text-5xl font-black italic uppercase mb-4 tracking-tighter leading-none max-md:text-3xl">
           {renderTitle(title)}
         </h2>
-        <p className="text-[10px] text-white/40 uppercase tracking-[0.3em] mb-10 leading-relaxed">
+        <p className="text-[10px] text-white/40 uppercase tracking-[0.3em] mb-10 leading-relaxed max-md:mb-6">
           {description}
         </p>
 

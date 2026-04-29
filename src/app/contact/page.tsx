@@ -6,13 +6,14 @@ import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { Mail, Send, MapPin, Globe } from 'lucide-react';
 import { translations, Lang } from '@/lib/translations';
+import { readStorageItem } from '@/lib/browser-storage';
 
 export default function ContactPage() {
   const [lang, setLang] = useState<Lang>('en');
   const t = translations[lang].contact;
 
   useEffect(() => {
-    const savedLang = localStorage.getItem('lang') as Lang;
+    const savedLang = readStorageItem('lang') as Lang;
     if (savedLang && translations[savedLang]) setLang(savedLang);
 
     const handleLang = (e: any) => setLang(e.detail as Lang);

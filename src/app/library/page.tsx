@@ -17,6 +17,7 @@ import {
   mapBooruSearchResults,
 } from '@/lib/booru';
 import { translations, Lang } from '@/lib/translations';
+import { readStorageItem } from '@/lib/browser-storage';
 import { 
   DEFAULT_MANGA_LANGUAGE,
   MANGA_LANGUAGE_OPTIONS,
@@ -197,7 +198,7 @@ function ComicLibrary() {
   const [zoom, setZoom] = useState(1);
   const [lang] = useState<Lang>(() => {
     if (typeof window === 'undefined') return 'en';
-    const savedLang = localStorage.getItem('lang') as Lang;
+    const savedLang = readStorageItem('lang') as Lang;
     return savedLang && translations[savedLang] ? savedLang : 'en';
   });
   const [mangaLanguage, setMangaLanguage] = useState<MangaLanguage>(readStoredMangaLanguage);

@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Eye, EyeOff, AtSign, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 import { translations, Lang } from '@/lib/translations';
+import { readStorageItem } from '@/lib/browser-storage';
 
 type Mode = 'login' | 'signup';
 
@@ -26,7 +27,7 @@ export default function AuthPage() {
   const t = translations[lang].auth;
 
   useEffect(() => {
-    const savedLang = localStorage.getItem('lang') as Lang;
+    const savedLang = readStorageItem('lang') as Lang;
     if (savedLang && translations[savedLang]) setLang(savedLang);
 
     const handleLang = (e: any) => setLang(e.detail as Lang);

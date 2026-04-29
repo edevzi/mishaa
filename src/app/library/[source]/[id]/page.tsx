@@ -23,6 +23,7 @@ import {
   mapBooruDetail,
 } from '@/lib/booru';
 import { translations, Lang } from '@/lib/translations';
+import { readStorageItem } from '@/lib/browser-storage';
 import {
   DEFAULT_MANGA_LANGUAGE,
   getMangaDexTranslatedLanguages,
@@ -180,6 +181,8 @@ export default function ComicDetailsPage() {
   const canvasRef = useRef<HTMLDivElement>(null);
   const lastScrollY = useRef(0);
   const uiTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const chapterPageCacheRef = useRef<Map<string, string[]>>(new Map());
+  const chapterPageRequestRef = useRef<Map<string, Promise<string[]>>>(new Map());
 
   // Check device type
   useEffect(() => {
@@ -193,7 +196,7 @@ export default function ComicDetailsPage() {
     if (verified) persistAgeVerification();
 
     // Language handling
-    const savedLang = localStorage.getItem('lang') as Lang;
+    const savedLang = readStorageItem('lang') as Lang;
     if (savedLang && translations[savedLang]) {
       setLang(savedLang);
     }
@@ -472,80 +475,132 @@ export default function ComicDetailsPage() {
     setShowAgeGate(false);
   };
 
-  const loadChapterPages = async (idx: number) => {
-    if (!chapters[idx]) return;
-    setReaderLoading(true);
+  const getChapterCacheKey = useCallback((chapterId: string) => {
+    return `${String(source)}:${String(id)}:${chapterId}`;
+  }, [id, source]);
+
+  const buildChapterPages = useCallback(async (chapter: Chapter) => {
+    if (source === 'mangadex') {
+      const res = await fetchMangaDexProxy(`at-home/server/${chapter.id}`);
+      const data = await res.json();
+      const urls = data.chapter.data.map((n: string) => `${data.baseUrl}/data/${data.chapter.hash}/${n}`);
+      urls.slice(0, 3).forEach((u: string) => {
+        const img = new Image();
+        img.src = proxyImageUrl(u);
+      });
+      return urls.map((url: string) => proxyImageUrl(url));
+    }
+
+    if (source === 'nhentai') {
+      const res = await fetch(`/api/proxy/nhentai?path=${encodeURIComponent(`galleries/${id}`)}`);
+      if (!res.ok) throw new Error("Failed to fetch nhentai gallery");
+      const data = await res.json();
+      return data.pages.map((p: any) => `https://i.nhentai.net/${p.path}`);
+    }
+
+    if (source === 'e621' || source === 'danbooru' || source === 'gelbooru') {
+      const res = source === 'danbooru'
+        ? await fetchDanbooruDirect('post', { id: String(id) })
+        : await fetchBooruProxy(source, 'post', { id: String(id) });
+      if (!res.ok) throw new Error(`Failed to fetch ${source} post`);
+      const data = await res.json();
+      const post = mapBooruDetail(source, data);
+      const imageUrl = post?.coverUrl;
+      if (!imageUrl) throw new Error(`No image available for ${source} post`);
+      return [imageUrl];
+    }
+
+    const res = await fetch(`https://archive.org/metadata/${id}`);
+    const data = await res.json();
+    const archivePages: string[] = [];
+    const isSubFile = chapter.id !== id;
+
+    let jp2File;
+    if (isSubFile) {
+      const baseName = chapter.id.replace(/\.[^/.]+$/, "");
+      jp2File = data.files?.find((f: any) => f.name.includes(baseName) && f.format === "Single Page Processed JP2 ZIP");
+    } else {
+      jp2File = data.files?.find((f: any) => f.format === "Single Page Processed JP2 ZIP");
+    }
+
+    let count = parseInt(jp2File?.filecount || data.metadata?.page_count || "1");
+
+    if (count <= 1) {
+      const targetFile = data.files?.find((f: any) => f.name === chapter.id);
+      count = parseInt(targetFile?.page_count || targetFile?.filecount || data.metadata?.page_count || "60");
+    }
+
+    count = Math.min(count, 1500);
+    for (let i = 0; i < count; i++) {
+      const url = isSubFile
+        ? `https://archive.org/services/img/${id}/${i}?scale=8&fullsize=1&file=${encodeURIComponent(chapter.id)}`
+        : `https://archive.org/services/img/${id}/${i}?scale=8&fullsize=1`;
+      archivePages.push(url);
+    }
+
+    return archivePages;
+  }, [id, source]);
+
+  const ensureChapterPages = useCallback(async (chapter: Chapter) => {
+    const cacheKey = getChapterCacheKey(chapter.id);
+    const cachedPages = chapterPageCacheRef.current.get(cacheKey);
+    if (cachedPages) return cachedPages;
+
+    const pending = chapterPageRequestRef.current.get(cacheKey);
+    if (pending) return pending;
+
+    const request = buildChapterPages(chapter)
+      .then((pages) => {
+        chapterPageCacheRef.current.set(cacheKey, pages);
+        return pages;
+      })
+      .finally(() => {
+        chapterPageRequestRef.current.delete(cacheKey);
+      });
+
+    chapterPageRequestRef.current.set(cacheKey, request);
+    return request;
+  }, [buildChapterPages, getChapterCacheKey]);
+
+  const preloadNeighborChapters = useCallback((idx: number) => {
+    [idx - 1, idx + 1].forEach((neighborIdx) => {
+      const chapter = chapters[neighborIdx];
+      if (!chapter) return;
+      void ensureChapterPages(chapter).catch(() => {});
+    });
+  }, [chapters, ensureChapterPages]);
+
+  const loadChapterPages = useCallback(async (idx: number) => {
+    const chapter = chapters[idx];
+    if (!chapter) return;
+
     setCurrentPage(0);
     setScrolled(false);
     setScrollProgress(0);
+
+    const cacheKey = getChapterCacheKey(chapter.id);
+    const cachedPages = chapterPageCacheRef.current.get(cacheKey);
+    if (cachedPages) {
+      setReaderLoading(false);
+      setPages(cachedPages);
+      canvasRef.current?.scrollTo(0, 0);
+      preloadNeighborChapters(idx);
+      return;
+    }
+
+    setReaderLoading(true);
     try {
-      if (source === 'mangadex') {
-        const res = await fetchMangaDexProxy(`at-home/server/${chapters[idx].id}`);
-        const data = await res.json();
-        const urls = data.chapter.data.map((n: string) => `${data.baseUrl}/data/${data.chapter.hash}/${n}`);
-        setPages(urls.map((url: string) => proxyImageUrl(url)));
-        // Preload first 3 pages
-        urls.slice(0, 3).forEach((u: string) => { const img = new Image(); img.src = proxyImageUrl(u); });
-      } else if (source === 'nhentai') {
-        const res = await fetch(`/api/proxy/nhentai?path=${encodeURIComponent(`galleries/${id}`)}`);
-        if (!res.ok) throw new Error("Failed to fetch nhentai gallery");
-        const data = await res.json();
-        const nhPages = data.pages.map((p: any) => {
-           return `https://i.nhentai.net/${p.path}`;
-        });
-        setPages(nhPages);
-      } else if (source === 'e621' || source === 'danbooru' || source === 'gelbooru') {
-        const res = source === 'danbooru'
-          ? await fetchDanbooruDirect('post', { id: String(id) })
-          : await fetchBooruProxy(source, 'post', { id: String(id) });
-        if (!res.ok) throw new Error(`Failed to fetch ${source} post`);
-        const data = await res.json();
-        const post = mapBooruDetail(source, data);
-        const imageUrl = post?.coverUrl;
-        if (!imageUrl) throw new Error(`No image available for ${source} post`);
-        setPages([imageUrl]);
-      } else {
-        const res = await fetch(`https://archive.org/metadata/${id}`);
-        const data = await res.json();
-        const archivePages: string[] = [];
-        
-        const ch = chapters[idx];
-        const isSubFile = ch.id !== id;
-        
-        // Find the most reliable page count
-        let jp2File;
-        if (isSubFile) {
-          // If it's a sub-file, we need to find its related jp2.zip or just use metadata
-          const baseName = ch.id.replace(/\.[^/.]+$/, "");
-          jp2File = data.files?.find((f: any) => f.name.includes(baseName) && f.format === "Single Page Processed JP2 ZIP");
-        } else {
-          jp2File = data.files?.find((f: any) => f.format === "Single Page Processed JP2 ZIP");
-        }
-
-        let count = parseInt(jp2File?.filecount || data.metadata?.page_count || "1");
-        
-        if (count <= 1) {
-          // Fallback to searching the file list for the specific file's page count if available
-          const targetFile = data.files?.find((f: any) => f.name === ch.id);
-          count = parseInt(targetFile?.page_count || targetFile?.filecount || data.metadata?.page_count || "60");
-        }
-
-        count = Math.min(count, 1500);
-        for(let i=0; i<count; i++) {
-          const url = isSubFile 
-            ? `https://archive.org/services/img/${id}/${i}?scale=8&fullsize=1&file=${encodeURIComponent(ch.id)}`
-            : `https://archive.org/services/img/${id}/${i}?scale=8&fullsize=1`;
-          archivePages.push(url);
-        }
-        setPages(archivePages);
-      }
+      const chapterPages = await ensureChapterPages(chapter);
+      setPages(chapterPages);
+      preloadNeighborChapters(idx);
     } catch (e) {
+      console.error(e);
       alert("Error loading chapter.");
     } finally {
       setReaderLoading(false);
-      canvasRef.current?.scrollTo(0,0);
+      canvasRef.current?.scrollTo(0, 0);
     }
-  }
+  }, [chapters, ensureChapterPages, getChapterCacheKey, preloadNeighborChapters]);
 
   useEffect(() => {
     fetchComicDetails();
@@ -556,14 +611,14 @@ export default function ComicDetailsPage() {
     setReading(true);
     if (isLongStrip) setViewMode('flow');
     else setViewMode('classic');
-    loadChapterPages(0);
+    void loadChapterPages(0);
   };
 
   const nextChapter = () => {
     if (currentChapterIdx < chapters.length - 1) {
       const next = currentChapterIdx + 1;
       setCurrentChapterIdx(next);
-      loadChapterPages(next);
+      void loadChapterPages(next);
     }
   };
 
@@ -571,7 +626,7 @@ export default function ComicDetailsPage() {
     if (currentChapterIdx > 0) {
       const prev = currentChapterIdx - 1;
       setCurrentChapterIdx(prev);
-      loadChapterPages(prev);
+      void loadChapterPages(prev);
     }
   };
 
@@ -1008,10 +1063,29 @@ export default function ComicDetailsPage() {
                </div>
                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[500px] overflow-y-auto custom-scrollbar pr-4">
                   {chapters.map((ch, i) => (
-                    <button key={ch.id} onClick={() => { setCurrentChapterIdx(i); setReading(true); loadChapterPages(i); }} className="group flex items-center justify-between p-5 bg-white/5 border border-white/5 hover:border-[#ff4d00]/50 transition-all text-left">
+                    <button
+                      key={ch.id}
+                      onClick={() => {
+                        setCurrentChapterIdx(i);
+                        setReading(true);
+                        void loadChapterPages(i);
+                      }}
+                      className={`group flex items-center justify-between p-5 transition-all text-left border ${
+                        i === currentChapterIdx
+                          ? 'bg-[#ff4d00]/10 border-[#ff4d00]/50 shadow-[0_0_0_1px_rgba(255,77,0,0.18)]'
+                          : 'bg-white/5 border-white/5 hover:border-[#ff4d00]/50'
+                      }`}
+                    >
                        <div className="space-y-1">
                           <div className="text-[10px] font-black uppercase tracking-widest text-[#ff4d00]">Vol.{ch.volume || '0'} Ch.{ch.chapterNum}</div>
-                          <div className="text-[13px] font-black uppercase tracking-tight group-hover:text-[#ff4d00] transition-colors break-words line-clamp-2">{ch.title}</div>
+                          <div className="text-[13px] font-black uppercase tracking-tight group-hover:text-[#ff4d00] transition-colors break-words line-clamp-2">
+                            {ch.title}
+                          </div>
+                          {i === currentChapterIdx && (
+                            <div className="text-[8px] font-black uppercase tracking-[0.35em] text-[#ff4d00]">
+                              Active_Chapter
+                            </div>
+                          )}
                        </div>
                        <ChevronRight size={20} className="text-white/20 group-hover:text-[#ff4d00] group-hover:translate-x-1 transition-all" />
                     </button>

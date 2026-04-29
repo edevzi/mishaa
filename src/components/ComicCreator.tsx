@@ -18,6 +18,7 @@ import { CharacterForgeModal } from './Comic/Modals/CharacterForgeModal';
 import { OnboardingWizard } from './Comic/Modals/OnboardingWizard';
 import { GlobalLogicHUD } from './Comic/GlobalLogicHUD';
 import { translations, type Lang } from '@/lib/translations';
+import { readStorageItem, writeStorageItem } from '@/lib/browser-storage';
 import type { BubbleType, Panel } from '@/types/comic';
 
 export default function ComicCreator() {
@@ -49,13 +50,13 @@ export default function ComicCreator() {
   const [isCharacterForgeOpen, setIsCharacterForgeOpen] = useState(false);
   const [isOnboardingOpen, setIsOnboardingOpen] = useState(() => {
     if (typeof window === 'undefined') return false;
-    return !localStorage.getItem('hasSeenOnboarding');
+    return !readStorageItem('hasSeenOnboarding');
   });
   const [storyInput, setStoryInput] = useState('');
   const [isSynthesizing, setIsSynthesizing] = useState(false);
 
   const completeOnboarding = () => {
-    localStorage.setItem('hasSeenOnboarding', 'true');
+    writeStorageItem('hasSeenOnboarding', 'true');
     setIsOnboardingOpen(false);
   };
 
@@ -231,7 +232,7 @@ export default function ComicCreator() {
     <div className="fixed inset-0 z-[1000] studio-shell text-[#111] font-sans selection:bg-[var(--accent)] selection:text-white overflow-hidden flex flex-col">
       
       {/* 🟢 TOP NAVIGATION BAR */}
-      <header className="h-20 px-8 md:px-10 flex items-center justify-between border-b border-black/5 bg-[rgba(255,255,255,0.72)] backdrop-blur-2xl z-[400] relative">
+      <header className="h-20 px-8 md:px-10 flex items-center justify-between border-b border-black/5 bg-[rgba(255,255,255,0.72)] backdrop-blur-2xl z-[400] relative max-md:h-auto max-md:flex-col max-md:items-stretch max-md:gap-3 max-md:px-4 max-md:py-4">
          <div className="absolute inset-0 bg-gradient-to-r from-[var(--accent)]/8 via-transparent to-transparent pointer-events-none" />
          <div className="flex items-center gap-6">
             <div className="flex items-center gap-3">
@@ -257,8 +258,8 @@ export default function ComicCreator() {
             </nav>
          </div>
 
-         <div className="flex items-center gap-5">
-            <div className="flex bg-white/80 p-1 rounded-2xl border border-black/5 shadow-sm">
+         <div className="flex items-center gap-5 max-md:flex-col max-md:items-stretch max-md:gap-3 max-md:w-full">
+            <div className="flex bg-white/80 p-1 rounded-2xl border border-black/5 shadow-sm max-md:justify-between">
                <button 
                   onClick={() => setViewMode('edit')}
                   className={`px-4 py-2 rounded-xl text-[8px] font-black uppercase tracking-widest transition-all ${viewMode === 'edit' ? 'bg-[var(--accent)] text-white shadow-lg' : 'text-black/45 hover:text-black'}`}
@@ -272,7 +273,7 @@ export default function ComicCreator() {
                   Reader_Sim
                </button>
             </div>
-            <div className="h-8 w-[1px] bg-black/10 mx-1" />
+            <div className="h-8 w-[1px] bg-black/10 mx-1 max-md:hidden" />
             <button 
               onClick={() => saveToCloud()}
               disabled={isSaving}
@@ -281,7 +282,7 @@ export default function ComicCreator() {
                {isSaving ? <RefreshCw size={12} className="animate-spin" /> : <RefreshCw size={12} />}
                <span className="text-[8px] font-black uppercase tracking-widest">{isSaving ? 'Syncing...' : 'Cloud_Sync'}</span>
             </button>
-            <div className="h-8 w-[1px] bg-black/10 mx-1" />
+            <div className="h-8 w-[1px] bg-black/10 mx-1 max-md:hidden" />
             <div className="flex flex-col items-end gap-1 px-2">
                <span className="text-[7px] font-black text-black/45 uppercase tracking-[0.3em]">{t('page_allocation')}</span>
                <div className="flex items-center gap-3">
@@ -297,9 +298,9 @@ export default function ComicCreator() {
          </div>
       </header>
 
-      <main className="flex-1 flex overflow-hidden relative bg-[var(--paper-bg)]">
+      <main className="flex-1 flex overflow-hidden relative bg-[var(--paper-bg)] max-md:flex-col max-md:overflow-auto">
          {/* 🔴 CAST REGISTRY (Obsidian Panel) */}
-         <aside className="w-80 xl:w-85 border-r border-black/5 bg-[rgba(255,255,255,0.72)] backdrop-blur-xl flex flex-col z-[300] shadow-[10px_0_40px_rgba(0,0,0,0.04)]">
+         <aside className="w-80 xl:w-85 border-r border-black/5 bg-[rgba(255,255,255,0.72)] backdrop-blur-xl flex flex-col z-[300] shadow-[10px_0_40px_rgba(0,0,0,0.04)] max-md:w-full max-md:border-r-0 max-md:border-b">
             <div className="p-6 flex items-center justify-between border-b border-black/5 bg-white/60">
                <div className="flex flex-col">
                   <h2 className="text-[9px] font-black text-black/45 uppercase tracking-[0.5em]">{t('global_assets')}</h2>
@@ -351,7 +352,7 @@ export default function ComicCreator() {
          </aside>
 
          {/* 🟢 MINIMALIST TOOLBAR (TOP CENTER) */}
-         <div className="fixed top-24 left-1/2 -translate-x-1/2 z-[330] flex items-center gap-1 p-1 bg-white/85 backdrop-blur-2xl border border-black/5 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.08)]">
+         <div className="fixed top-24 left-1/2 -translate-x-1/2 z-[330] flex items-center gap-1 p-1 bg-white/85 backdrop-blur-2xl border border-black/5 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.08)] max-md:top-auto max-md:bottom-4 max-md:left-4 max-md:right-4 max-md:translate-x-0 max-md:w-auto max-md:justify-between">
             <button 
               onClick={() => setCursorMode('move')}
               className={`w-10 h-10 flex items-center justify-center rounded-xl transition-all ${cursorMode === 'move' ? 'bg-[var(--accent)] text-white shadow-[0_0_15px_rgba(255,77,0,0.25)]' : 'text-black/40 hover:bg-black/5'}`}
@@ -398,7 +399,7 @@ export default function ComicCreator() {
             }`}
          >
             {/* The Infinite Drafting Orbit with Depth Gradient */}
-            <div className="min-h-[600vh] w-[600vw] flex items-center justify-center relative p-[300vh] bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.65)_0%,transparent_68%)]">
+            <div className="min-h-[600vh] w-[600vw] flex items-center justify-center relative p-[300vh] bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.65)_0%,transparent_68%)] max-md:min-h-0 max-md:w-[260vw] max-md:p-[40vh_30vw]">
                
                {/* Global Background Grid (Technical Layout) */}
                <div className="absolute inset-0 opacity-[0.025] pointer-events-none" style={{ 
@@ -407,7 +408,7 @@ export default function ComicCreator() {
                }} />
 
                {/* 🚀 ARTBOARD SEQUENCE (The Active Focus Area) */}
-               <div className="flex gap-[180px] xl:gap-[240px] items-start relative z-10">
+               <div className="flex gap-[180px] xl:gap-[240px] items-start relative z-10 max-md:gap-8 max-md:flex-col">
                   {pages.map((page, pIdx) => (
                     <div key={page.id} className="relative group/artboard">
                         <div className="absolute -top-12 left-0 flex items-center gap-3">
@@ -464,7 +465,7 @@ export default function ComicCreator() {
                   <div className="flex flex-col gap-6 items-center">
                      <div 
                        onClick={() => addPage()}
-                       className="w-[390px] h-[560px] border-2 border-dashed border-black/10 rounded-[2.2rem] flex items-center justify-center cursor-pointer hover:border-[var(--accent)]/40 hover:bg-white/40 transition-all group/newp bg-white/20"
+                       className="w-[390px] h-[560px] border-2 border-dashed border-black/10 rounded-[2.2rem] flex items-center justify-center cursor-pointer hover:border-[var(--accent)]/40 hover:bg-white/40 transition-all group/newp bg-white/20 max-md:w-[min(90vw,390px)] max-md:h-[56vh]"
                      >
                         <div className="flex flex-col items-center gap-6 opacity-20 group-hover:opacity-100 transition-all">
                            <Plus size={60} className="text-[var(--studio-text)]" />
@@ -528,7 +529,7 @@ export default function ComicCreator() {
          </section>
 
          {/* 🔴 MATRIX EDITOR (Top Level Sidebar) */}
-         <aside className="w-96 border-l border-black/5 bg-[rgba(255,255,255,0.76)] backdrop-blur-xl flex flex-col z-[300] shadow-[-10px_0_40px_rgba(0,0,0,0.05)]">
+         <aside className="w-96 border-l border-black/5 bg-[rgba(255,255,255,0.76)] backdrop-blur-xl flex flex-col z-[300] shadow-[-10px_0_40px_rgba(0,0,0,0.05)] max-md:w-full max-md:border-l-0 max-md:border-t">
             {/* Tab Switcher */}
          <div className="flex border-b border-black/5 bg-white/70">
                {rightTabs.map(tab => (

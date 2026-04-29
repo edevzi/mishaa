@@ -1,3 +1,5 @@
+import { readStorageItem, writeStorageItem } from './browser-storage';
+
 export type MangaLanguage = 'en' | 'ja' | 'ko' | 'ru' | 'es' | 'fr' | 'de' | 'pt-br' | 'zh' | 'zh-hk' | 'th' | 'it' | 'all';
 
 export const MANGA_LANGUAGE_STORAGE_KEY = 'mangaLanguage';
@@ -22,7 +24,7 @@ export const MANGA_LANGUAGE_OPTIONS: Array<{ value: MangaLanguage; label: string
 export const readStoredMangaLanguage = (): MangaLanguage => {
   if (typeof window === 'undefined') return DEFAULT_MANGA_LANGUAGE;
 
-  const stored = localStorage.getItem(MANGA_LANGUAGE_STORAGE_KEY) as MangaLanguage | null;
+  const stored = readStorageItem(MANGA_LANGUAGE_STORAGE_KEY) as MangaLanguage | null;
   return stored && MANGA_LANGUAGE_OPTIONS.some((option) => option.value === stored)
     ? stored
     : DEFAULT_MANGA_LANGUAGE;
@@ -30,7 +32,7 @@ export const readStoredMangaLanguage = (): MangaLanguage => {
 
 export const persistStoredMangaLanguage = (language: MangaLanguage) => {
   if (typeof window === 'undefined') return;
-  localStorage.setItem(MANGA_LANGUAGE_STORAGE_KEY, language);
+  writeStorageItem(MANGA_LANGUAGE_STORAGE_KEY, language);
 };
 
 export const getMangaDexTranslatedLanguages = (language: MangaLanguage) => {

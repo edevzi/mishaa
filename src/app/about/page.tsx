@@ -7,13 +7,14 @@ import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { Zap, BookOpen } from 'lucide-react';
 import { translations, Lang } from '@/lib/translations';
+import { readStorageItem } from '@/lib/browser-storage';
 
 export default function AboutPage() {
   const [lang, setLang] = useState<Lang>('en');
   const t = translations[lang].about;
 
   useEffect(() => {
-    const savedLang = localStorage.getItem('lang') as Lang;
+    const savedLang = readStorageItem('lang') as Lang;
     if (savedLang && translations[savedLang]) setLang(savedLang);
 
     const handleLang = (e: any) => setLang(e.detail as Lang);
