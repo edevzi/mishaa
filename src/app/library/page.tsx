@@ -104,6 +104,9 @@ const fetchMangaDexProxy = (path: string) =>
     cache: 'no-store',
   });
 
+const proxyMangaDexImage = (url: string) =>
+  `/api/proxy/mangadex/image?url=${encodeURIComponent(url)}`;
+
 export default function ComicLibrary() {
   const [comics, setComics] = useState<Comic[]>([]);
   const [selectedComic, setSelectedComic] = useState<Comic | null>(null);
@@ -207,7 +210,9 @@ export default function ComicLibrary() {
             id: item.id,
             title: title || Object.values(item.attributes.title || {})[0] || 'Untitled',
             description: description || 'No description available.',
-            coverUrl: coverFileName ? `https://uploads.mangadex.org/covers/${item.id}/${coverFileName}.512.jpg` : '/logo.png',
+            coverUrl: coverFileName
+              ? proxyMangaDexImage(`https://uploads.mangadex.org/covers/${item.id}/${coverFileName}.512.jpg`)
+              : '/logo.png',
             source: 'mangadex',
             rating: item.attributes.contentRating
           };
@@ -496,7 +501,11 @@ export default function ComicLibrary() {
         
         if (!srvData.chapter || !srvData.chapter.data) throw new Error("Chapter data is unavailable");
         
-        setPages(srvData.chapter.data.map((n: string) => `${srvData.baseUrl}/data/${srvData.chapter.hash}/${n}`));
+        setPages(
+          srvData.chapter.data.map((n: string) =>
+            proxyMangaDexImage(`${srvData.baseUrl}/data/${srvData.chapter.hash}/${n}`)
+          )
+        );
       } 
       else if (comic.source === 'archive') {
         const url = `https://archive.org/metadata/${comic.id}`;

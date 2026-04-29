@@ -101,6 +101,9 @@ const fetchMangaDexProxy = (path: string) =>
     cache: 'no-store',
   });
 
+const proxyMangaDexImage = (url: string) =>
+  `/api/proxy/mangadex/image?url=${encodeURIComponent(url)}`;
+
 export default function ComicDetailsPage() {
   const params = useParams();
   const router = useRouter();
@@ -268,7 +271,9 @@ export default function ComicDetailsPage() {
           id: manga.id,
           title: title || Object.values(manga.attributes.title || {})[0] as string,
           description: description || "No description available.",
-          coverUrl: coverFileName ? `https://uploads.mangadex.org/covers/${manga.id}/${coverFileName}.512.jpg` : '/logo.png',
+          coverUrl: coverFileName
+            ? proxyMangaDexImage(`https://uploads.mangadex.org/covers/${manga.id}/${coverFileName}.512.jpg`)
+            : '/logo.png',
           rating: manga.attributes.contentRating,
           genres: genres.length > 0 ? genres : manga.attributes.tags.map((t: any) => t.attributes.name.en),
           status: manga.attributes.status,
@@ -417,7 +422,9 @@ export default function ComicDetailsPage() {
         const res = await fetchMangaDexProxy(`at-home/server/${chapters[idx].id}`);
         const data = await res.json();
         const urls = data.chapter.data.map((n: string) => `${data.baseUrl}/data/${data.chapter.hash}/${n}`);
-        setPages(urls);
+        setPages(
+          urls.map((url: string) => proxyMangaDexImage(url))
+        );
         // Preload first 3 pages
         urls.slice(0, 3).forEach((u: string) => { const img = new Image(); img.src = u; });
       } else if (source === 'nhentai') {
