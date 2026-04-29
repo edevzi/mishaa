@@ -96,6 +96,11 @@ const formatMarvelDate = (value?: string) => {
   });
 };
 
+const fetchMangaDexProxy = (path: string) =>
+  fetch(`/api/proxy/mangadex?path=${encodeURIComponent(path)}`, {
+    cache: 'no-store',
+  });
+
 export default function ComicDetailsPage() {
   const params = useParams();
   const router = useRouter();
@@ -246,7 +251,7 @@ export default function ComicDetailsPage() {
           source: 'marvel',
         });
       } else if (source === 'mangadex') {
-        const res = await fetch(`https://api.mangadex.org/manga/${id}?includes[]=cover_art&includes[]=author&includes[]=artist&contentRating[]=safe&contentRating[]=suggestive&contentRating[]=erotica&contentRating[]=pornographic`);
+        const res = await fetchMangaDexProxy(`manga/${id}?includes[]=cover_art&includes[]=author&includes[]=artist&contentRating[]=safe&contentRating[]=suggestive&contentRating[]=erotica&contentRating[]=pornographic`);
         const data = await res.json();
         const manga = data.data;
         
@@ -291,10 +296,10 @@ export default function ComicDetailsPage() {
         feedParams.append('contentRating[]', 'pornographic');
         translatedLanguages?.forEach((language) => feedParams.append('translatedLanguage[]', language));
 
-        let feedRes = await fetch(`https://api.mangadex.org/manga/${id}/feed?${feedParams.toString()}`);
+        let feedRes = await fetchMangaDexProxy(`manga/${id}/feed?${feedParams.toString()}`);
         let feedData = await feedRes.json();
         if ((!feedData.data || feedData.data.length === 0) && mangaLanguage === DEFAULT_MANGA_LANGUAGE) {
-          feedRes = await fetch(`https://api.mangadex.org/manga/${id}/feed?limit=100&order[chapter]=asc&contentRating[]=safe&contentRating[]=suggestive&contentRating[]=erotica&contentRating[]=pornographic`);
+          feedRes = await fetchMangaDexProxy(`manga/${id}/feed?limit=100&order[chapter]=asc&contentRating[]=safe&contentRating[]=suggestive&contentRating[]=erotica&contentRating[]=pornographic`);
           feedData = await feedRes.json();
         }
         const chList = feedData.data?.map((ch: any) => ({
@@ -409,7 +414,7 @@ export default function ComicDetailsPage() {
     setScrollProgress(0);
     try {
       if (source === 'mangadex') {
-        const res = await fetch(`https://api.mangadex.org/at-home/server/${chapters[idx].id}`);
+        const res = await fetchMangaDexProxy(`at-home/server/${chapters[idx].id}`);
         const data = await res.json();
         const urls = data.chapter.data.map((n: string) => `${data.baseUrl}/data/${data.chapter.hash}/${n}`);
         setPages(urls);

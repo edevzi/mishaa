@@ -99,6 +99,11 @@ const normalizeMarvelCover = (cover?: { path?: string; extension?: string }) => 
   return `${String(cover.path).replace(/^http:\/\//, 'https://')}.${cover.extension}`;
 };
 
+const fetchMangaDexProxy = (path: string) =>
+  fetch(`/api/proxy/mangadex?path=${encodeURIComponent(path)}`, {
+    cache: 'no-store',
+  });
+
 export default function ComicLibrary() {
   const [comics, setComics] = useState<Comic[]>([]);
   const [selectedComic, setSelectedComic] = useState<Comic | null>(null);
@@ -184,8 +189,7 @@ export default function ComicLibrary() {
         params.set('order[followedCount]', 'desc');
       }
 
-      const url = `https://api.mangadex.org/manga?${params.toString()}`;
-      const res = await fetch(url);
+      const res = await fetchMangaDexProxy(`manga?${params.toString()}`);
       if (!res.ok) return { items: [], hasMore: false };
       const data = await res.json();
       const items = Array.isArray(data?.data) ? data.data : [];
@@ -475,19 +479,19 @@ export default function ComicLibrary() {
         feedParams.set('limit', '5');
         feedParams.set('order[chapter]', 'asc');
         translatedLanguages?.forEach((language) => feedParams.append('translatedLanguage[]', language));
-        let feedRes = await fetch(`https://api.mangadex.org/manga/${comic.id}/feed?${feedParams.toString()}`);
+        let feedRes = await fetchMangaDexProxy(`manga/${comic.id}/feed?${feedParams.toString()}`);
         let feedData = await feedRes.json();
         
         // Fallback to any language only for the default English browse mode.
         if ((!feedData.data || feedData.data.length === 0) && mangaLanguage === DEFAULT_MANGA_LANGUAGE) {
-          feedRes = await fetch(`https://api.mangadex.org/manga/${comic.id}/feed?limit=5&order[chapter]=asc`);
+          feedRes = await fetchMangaDexProxy(`manga/${comic.id}/feed?limit=5&order[chapter]=asc`);
           feedData = await feedRes.json();
         }
 
         if (!feedData.data || feedData.data.length === 0) throw new Error("No readable chapters found on MangaDex");
         
         const chId = feedData.data[0].id;
-        const srvRes = await fetch(`https://api.mangadex.org/at-home/server/${chId}`);
+        const srvRes = await fetchMangaDexProxy(`at-home/server/${chId}`);
         const srvData = await srvRes.json();
         
         if (!srvData.chapter || !srvData.chapter.data) throw new Error("Chapter data is unavailable");
@@ -603,7 +607,7 @@ export default function ComicLibrary() {
 
                 <div className="hidden md:flex items-center gap-4 text-[9px] font-black uppercase tracking-[0.45em] text-white/25">
                   <div className="h-[2px] w-16 bg-[#ff4d00]" />
-                  <span>Archive Index</span>
+                  <span>Library Vault</span>
                 </div>
 
                 <div className="flex items-center gap-3">

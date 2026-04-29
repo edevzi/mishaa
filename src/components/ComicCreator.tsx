@@ -1,12 +1,11 @@
 'use client';
 
 import React, { useState, useMemo, useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { 
-  Plus, Trash2, RefreshCw, Zap, Settings2, X, Sparkles, 
-  User, FilePlus, LayoutGrid, History, 
-  ChevronLeft, ChevronRight, Download, MousePointer2,
-  Maximize, Monitor, Smartphone, Type, Move, Hand, Layers,
+  Plus, Trash2, RefreshCw, Zap, X, Sparkles, 
+  User, FilePlus, MousePointer2,
+  Monitor, Type, Hand, Layers,
   Undo2, Redo2, BrainCircuit
 } from 'lucide-react';
 
@@ -18,14 +17,14 @@ import { StoryArchitectModal } from './Comic/Modals/StoryArchitectModal';
 import { CharacterForgeModal } from './Comic/Modals/CharacterForgeModal';
 import { OnboardingWizard } from './Comic/Modals/OnboardingWizard';
 import { GlobalLogicHUD } from './Comic/GlobalLogicHUD';
-import { PRINT_STANDARDS } from '@/constants/comic';
 import { translations } from '@/lib/translations';
+import type { BubbleType, Panel } from '@/types/comic';
 
 export default function ComicCreator() {
   const engine = useComicCreator();
   const { 
     pages, activePageIndex, activePage, selectedPanelId, selectedPanel, 
-    characters, studioSettings, setStudioSettings, title, setTitle, 
+    characters, studioSettings, title, setTitle, 
     updatePanel, addPanel, deletePanel, duplicatePanel, generatePanelImage, 
     addPage, setActivePageIndex, insertPanelAfter, addTextElement,
     draftPanels, addDraftPanel, setSelectedPanelId,
@@ -34,27 +33,26 @@ export default function ComicCreator() {
   } = engine;
   
   const [viewMode, setViewMode] = useState<'edit' | 'preview'>('edit');
-  const [activeRightTab, setActiveRightTab] = useState<'properties' | 'layers' | 'neural'>('properties');
+  const rightTabs = ['properties', 'layers', 'neural'] as const;
+  type RightTab = (typeof rightTabs)[number];
+  const [activeRightTab, setActiveRightTab] = useState<RightTab>('properties');
   const [cursorMode, setCursorMode] = useState<'move' | 'hand'>('move');
   const [zoom, setZoom] = useState(0.8);
-  const [lang, setLang] = useState('en');
+  const [lang] = useState('en');
   const t = (key: string): string => {
-    const val = (translations[lang as keyof typeof translations] as any)?.[key];
+    const locale = translations[lang as keyof typeof translations] as Record<string, string>;
+    const val = locale?.[key];
     return typeof val === 'string' ? val : key;
   };
 
   const [isArchitectOpen, setIsArchitectOpen] = useState(false);
   const [isCharacterForgeOpen, setIsCharacterForgeOpen] = useState(false);
-  const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
+  const [isOnboardingOpen, setIsOnboardingOpen] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return !localStorage.getItem('hasSeenOnboarding');
+  });
   const [storyInput, setStoryInput] = useState('');
   const [isSynthesizing, setIsSynthesizing] = useState(false);
-
-  useEffect(() => {
-    const hasSeenOnboarding = localStorage.getItem('hasSeenOnboarding');
-    if (!hasSeenOnboarding) {
-      setIsOnboardingOpen(true);
-    }
-  }, []);
 
   const completeOnboarding = () => {
     localStorage.setItem('hasSeenOnboarding', 'true');
@@ -88,7 +86,7 @@ export default function ComicCreator() {
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
+  }, [redo, undo]);
 
   // -- PHYSICAL GRID MATH ENGINE --
   const metrics = useMemo(() => {
@@ -105,7 +103,7 @@ export default function ComicCreator() {
     };
   }, [studioSettings.format]);
 
-  const calculateGridHeight = (panelList: any[]) => {
+  const calculateGridHeight = (panelList: Array<Pick<Panel, 'colSpan' | 'customHeight'>>) => {
     let rows = 0;
     let currentCols = 0;
     let maxHeightInRow = 0;
@@ -184,7 +182,7 @@ export default function ComicCreator() {
       } else {
          // Create a new draft with this image
          const id = Math.random().toString(36).substr(2, 9);
-         const newPanel: any = { 
+         const newPanel: Panel = { 
            id, prompt: 'Imported Asset', status: 'success', image: b64, textElements: [], 
            size: 'medium', colSpan: 6,
            draftX: (Math.random() - 0.5) * 400,
@@ -230,86 +228,86 @@ export default function ComicCreator() {
   };
 
   return (
-    <div className="fixed inset-0 z-[1000] bg-[var(--studio-bg)] text-[var(--studio-text)] font-sans selection:bg-[var(--accent)] selection:text-white overflow-hidden flex flex-col">
+    <div className="fixed inset-0 z-[1000] studio-shell text-[#111] font-sans selection:bg-[var(--accent)] selection:text-white overflow-hidden flex flex-col">
       
       {/* 🟢 TOP NAVIGATION BAR */}
-      <header className="h-20 px-10 flex items-center justify-between border-b border-white/5 bg-black/40 backdrop-blur-3xl z-[400] relative">
-         <div className="absolute inset-0 bg-gradient-to-r from-[var(--accent)]/5 to-transparent pointer-events-none" />
+      <header className="h-20 px-8 md:px-10 flex items-center justify-between border-b border-black/5 bg-[rgba(255,255,255,0.72)] backdrop-blur-2xl z-[400] relative">
+         <div className="absolute inset-0 bg-gradient-to-r from-[var(--accent)]/8 via-transparent to-transparent pointer-events-none" />
          <div className="flex items-center gap-6">
             <div className="flex items-center gap-3">
-               <div className="w-8 h-8 bg-[var(--accent)] rounded-lg flex items-center justify-center font-black italic shadow-[0_10px_30px_rgba(255,77,0,0.4)]">ic</div>
+               <div className="w-9 h-9 bg-[var(--accent)] rounded-xl flex items-center justify-center font-black italic shadow-[0_10px_30px_rgba(255,77,0,0.25)] text-white">ic</div>
                <div className="flex flex-col">
                   <input 
                     value={title} 
                     onChange={(e) => setTitle(e.target.value)}
-                    className="bg-transparent border-none outline-none text-[11px] font-black tracking-[0.3em] uppercase text-[var(--studio-text)] focus:text-[var(--accent)] transition-colors w-48"
+                    className="bg-transparent border-none outline-none text-[11px] font-black tracking-[0.28em] uppercase text-[#111] focus:text-[var(--accent)] transition-colors w-48"
                   />
                   <div className="flex items-center gap-2">
-                     <span className="text-[7px] text-[var(--studio-text-dim)] font-black uppercase tracking-widest leading-none">Foundry_System_v3.7_Pro</span>
+                     <span className="text-[7px] text-black/45 font-black uppercase tracking-widest leading-none">Foundry_System_v3.7_Pro</span>
                      {lastSaved && (
-                        <span className="text-[6px] text-[var(--accent)]/60 font-black uppercase tracking-widest leading-none">• Synced_{lastSaved.toLocaleTimeString()}</span>
+                        <span className="text-[6px] text-[var(--accent)]/70 font-black uppercase tracking-widest leading-none">• Synced_{lastSaved.toLocaleTimeString()}</span>
                      )}
                   </div>
                </div>
             </div>
-            <div className="h-8 w-[1px] bg-white/10 mx-2" />
+            <div className="h-8 w-[1px] bg-black/10 mx-2" />
             <nav className="flex gap-10 items-center">
                <button className="text-[9px] font-black tracking-[0.4em] text-[var(--accent)] border-b-2 border-[var(--accent)] pb-1 uppercase">{t('edit_forge')}</button>
-               <button className="text-[9px] font-black tracking-[0.4em] text-[var(--studio-text-dim)] hover:text-[var(--studio-text)] transition-all uppercase">{t('composition')}</button>
+               <button className="text-[9px] font-black tracking-[0.4em] text-black/35 hover:text-black transition-all uppercase">{t('composition')}</button>
             </nav>
          </div>
 
          <div className="flex items-center gap-5">
-            <div className="flex bg-white/5 p-1 rounded-xl border border-white/10">
+            <div className="flex bg-white/80 p-1 rounded-2xl border border-black/5 shadow-sm">
                <button 
                   onClick={() => setViewMode('edit')}
-                  className={`px-4 py-2 rounded-lg text-[8px] font-black uppercase tracking-widest transition-all ${viewMode === 'edit' ? 'bg-[var(--accent)] text-white shadow-lg' : 'text-white/40 hover:text-white'}`}
+                  className={`px-4 py-2 rounded-xl text-[8px] font-black uppercase tracking-widest transition-all ${viewMode === 'edit' ? 'bg-[var(--accent)] text-white shadow-lg' : 'text-black/45 hover:text-black'}`}
                >
                   Forge_Mode
                </button>
                <button 
                   onClick={() => setViewMode('preview')}
-                  className={`px-4 py-2 rounded-lg text-[8px] font-black uppercase tracking-widest transition-all ${viewMode === 'preview' ? 'bg-white/10 text-white shadow-lg' : 'text-white/40 hover:text-white'}`}
+                  className={`px-4 py-2 rounded-xl text-[8px] font-black uppercase tracking-widest transition-all ${viewMode === 'preview' ? 'bg-black/5 text-black shadow-lg' : 'text-black/45 hover:text-black'}`}
                >
                   Reader_Sim
                </button>
             </div>
-            <div className="h-8 w-[1px] bg-white/10 mx-1" />
+            <div className="h-8 w-[1px] bg-black/10 mx-1" />
             <button 
               onClick={() => saveToCloud()}
               disabled={isSaving}
-              className={`h-10 px-5 border flex items-center gap-3 rounded-xl transition-all ${isSaving ? 'border-[var(--accent)] bg-[var(--accent)]/10 text-[var(--accent)]' : 'border-white/10 bg-white/5 text-white/50 hover:text-white hover:bg-white/10 hover:border-white/20'}`}
+              className={`h-10 px-5 border flex items-center gap-3 rounded-xl transition-all ${isSaving ? 'border-[var(--accent)] bg-[var(--accent)]/10 text-[var(--accent)]' : 'border-black/10 bg-white text-black/55 hover:text-black hover:bg-white hover:border-black/20'}`}
             >
                {isSaving ? <RefreshCw size={12} className="animate-spin" /> : <RefreshCw size={12} />}
                <span className="text-[8px] font-black uppercase tracking-widest">{isSaving ? 'Syncing...' : 'Cloud_Sync'}</span>
             </button>
-            <div className="h-8 w-[1px] bg-white/10 mx-1" />
+            <div className="h-8 w-[1px] bg-black/10 mx-1" />
             <div className="flex flex-col items-end gap-1 px-2">
-               <span className="text-[7px] font-black text-[var(--studio-text-dim)] uppercase tracking-[0.3em]">{t('page_allocation')}</span>
+               <span className="text-[7px] font-black text-black/45 uppercase tracking-[0.3em]">{t('page_allocation')}</span>
                <div className="flex items-center gap-3">
-                  <div className="w-20 h-1 bg-white/5 rounded-full overflow-hidden">
+                  <div className="w-20 h-1 bg-black/5 rounded-full overflow-hidden">
                      <motion.div initial={{ width: 0 }} animate={{ width: `${(totalUsedHeight / metrics.safeHeight) * 100}%` }} className="h-full bg-[var(--accent)] shadow-[0_0_10px_rgba(255,77,0,0.8)]" />
                   </div>
                   <span className="text-[9px] font-black text-[var(--accent)]">{Math.round((totalUsedHeight / metrics.safeHeight) * 100)}%</span>
                </div>
             </div>
-            <button className="h-10 px-8 bg-white text-black text-[10px] font-black uppercase tracking-[0.2em] rounded-xl hover:bg-[var(--accent)] hover:text-white transition-all shadow-2xl">
+            <button className="h-10 px-8 bg-[var(--accent)] text-white text-[10px] font-black uppercase tracking-[0.2em] rounded-xl hover:brightness-105 transition-all shadow-lg">
                {t('release_export')}
             </button>
          </div>
       </header>
 
-      <main className="flex-1 flex overflow-hidden relative">
+      <main className="flex-1 flex overflow-hidden relative bg-[var(--paper-bg)]">
          {/* 🔴 CAST REGISTRY (Obsidian Panel) */}
-         <aside className="w-85 border-r border-white/5 bg-[#080808] flex flex-col z-[300] shadow-[10px_0_40px_rgba(0,0,0,0.2)]">
-            <div className="p-8 flex items-center justify-between border-b border-white/5 bg-black/20">
+         <aside className="w-80 xl:w-85 border-r border-black/5 bg-[rgba(255,255,255,0.72)] backdrop-blur-xl flex flex-col z-[300] shadow-[10px_0_40px_rgba(0,0,0,0.04)]">
+            <div className="p-6 flex items-center justify-between border-b border-black/5 bg-white/60">
                <div className="flex flex-col">
-                  <h2 className="text-[9px] font-black text-[var(--studio-text-dim)] uppercase tracking-[0.5em]">{t('global_assets')}</h2>
+                  <h2 className="text-[9px] font-black text-black/45 uppercase tracking-[0.5em]">{t('global_assets')}</h2>
                   <span className="text-[6px] font-black text-[var(--accent)] uppercase tracking-widest mt-1">{t('registry_sync')}</span>
                </div>
                <button 
                   onClick={() => setIsCharacterForgeOpen(true)}
-                  className="w-8 h-8 rounded-xl bg-white/5 hover:bg-[var(--accent)] hover:text-white flex items-center justify-center transition-all border border-white/10"
+                  className="w-8 h-8 rounded-xl bg-white hover:bg-[var(--accent)] hover:text-white flex items-center justify-center transition-all border border-black/10"
                >
                   <Plus size={14} />
                </button>
@@ -319,33 +317,33 @@ export default function ComicCreator() {
                   <motion.div 
                      key={char.id} 
                      whileHover={{ x: 4 }}
-                     className="group p-3 bg-white/[0.02] border border-white/5 hover:border-[var(--accent)]/30 rounded-xl transition-all cursor-pointer flex items-center gap-4"
+                     className="group p-3 bg-white border border-black/5 hover:border-[var(--accent)]/30 rounded-2xl transition-all cursor-pointer flex items-center gap-4 shadow-[0_10px_30px_rgba(0,0,0,0.03)]"
                   >
-                     <div className="w-10 h-10 rounded-lg overflow-hidden border border-white/10 group-hover:scale-105 transition-transform bg-black">
+                     <div className="w-10 h-10 rounded-xl overflow-hidden border border-black/5 group-hover:scale-105 transition-transform bg-black">
                         <img src={char.imageUrl} className="w-full h-full object-cover grayscale opacity-60 group-hover:opacity-100 group-hover:grayscale-0 transition-all duration-500" alt={char.name} />
                      </div>
                      <div className="flex flex-col flex-1 truncate">
-                        <span className="text-[10px] font-black text-white/80 group-hover:text-white transition-colors truncate">{char.name}</span>
-                        <span className="text-[7px] font-black text-white/20 uppercase tracking-widest truncate">{char.role}</span>
+                        <span className="text-[10px] font-black text-black/80 group-hover:text-black transition-colors truncate">{char.name}</span>
+                        <span className="text-[7px] font-black text-black/30 uppercase tracking-widest truncate">{char.role}</span>
                      </div>
                   </motion.div>
                ))}
             </div>
             {/* TECHNICAL READOUT (PRO DETAIL) */}
-            <div className="p-8 border-t border-white/5 bg-black/20">
+            <div className="p-6 border-t border-black/5 bg-white/60">
                <div className="space-y-4">
                   <div className="flex justify-between items-center">
-                     <span className="text-[7px] font-black text-white/20 uppercase tracking-widest">{t('system_latent')}</span>
-                     <span className="text-[7px] font-black text-green-500 uppercase tracking-widest">Optimized</span>
+                     <span className="text-[7px] font-black text-black/25 uppercase tracking-widest">{t('system_latent')}</span>
+                     <span className="text-[7px] font-black text-green-600 uppercase tracking-widest">Optimized</span>
                   </div>
                   <div className="grid grid-cols-2 gap-2">
-                     <div className="p-3 bg-white/5 rounded-lg border border-white/5 flex flex-col gap-1">
-                        <span className="text-[6px] font-black text-white/20 uppercase">{t('vram_usage')}</span>
-                        <span className="text-[8px] font-black text-white/60">4.2GB / 12GB</span>
+                     <div className="p-3 bg-white rounded-xl border border-black/5 flex flex-col gap-1">
+                        <span className="text-[6px] font-black text-black/20 uppercase">{t('vram_usage')}</span>
+                        <span className="text-[8px] font-black text-black/65">4.2GB / 12GB</span>
                      </div>
-                     <div className="p-3 bg-white/5 rounded-lg border border-white/5 flex flex-col gap-1">
-                        <span className="text-[6px] font-black text-white/20 uppercase">{t('forge_core')}</span>
-                        <span className="text-[8px] font-black text-white/60">Active_v3.7</span>
+                     <div className="p-3 bg-white rounded-xl border border-black/5 flex flex-col gap-1">
+                        <span className="text-[6px] font-black text-black/20 uppercase">{t('forge_core')}</span>
+                        <span className="text-[8px] font-black text-black/65">Active_v3.7</span>
                      </div>
                   </div>
                </div>
@@ -353,10 +351,10 @@ export default function ComicCreator() {
          </aside>
 
          {/* 🟢 MINIMALIST TOOLBAR (TOP CENTER) */}
-         <div className="fixed top-24 left-1/2 -translate-x-1/2 z-[330] flex items-center gap-1 p-1 bg-[var(--studio-panel)]/80 backdrop-blur-3xl border border-[var(--studio-border)] rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.1)]">
+         <div className="fixed top-24 left-1/2 -translate-x-1/2 z-[330] flex items-center gap-1 p-1 bg-white/85 backdrop-blur-2xl border border-black/5 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.08)]">
             <button 
               onClick={() => setCursorMode('move')}
-              className={`w-10 h-10 flex items-center justify-center rounded-xl transition-all ${cursorMode === 'move' ? 'bg-[var(--accent)] text-white shadow-[0_0_15px_rgba(255,77,0,0.3)]' : 'text-[var(--studio-text-dim)] hover:bg-[var(--studio-bg)]'}`}
+              className={`w-10 h-10 flex items-center justify-center rounded-xl transition-all ${cursorMode === 'move' ? 'bg-[var(--accent)] text-white shadow-[0_0_15px_rgba(255,77,0,0.25)]' : 'text-black/40 hover:bg-black/5'}`}
               title="Move (V)"
             >
                <MousePointer2 size={18} />
@@ -364,7 +362,7 @@ export default function ComicCreator() {
             <div className="w-[1px] h-6 bg-[var(--studio-border)] mx-1" />
             <button 
               onClick={() => setCursorMode('hand')}
-              className={`w-10 h-10 flex items-center justify-center rounded-xl transition-all ${cursorMode === 'hand' ? 'bg-[var(--accent)] text-white shadow-[0_0_15px_rgba(255,77,0,0.3)]' : 'text-[var(--studio-text-dim)] hover:bg-[var(--studio-bg)]'}`}
+              className={`w-10 h-10 flex items-center justify-center rounded-xl transition-all ${cursorMode === 'hand' ? 'bg-[var(--accent)] text-white shadow-[0_0_15px_rgba(255,77,0,0.25)]' : 'text-black/40 hover:bg-black/5'}`}
               title="Hand (H)"
             >
                <Hand size={18} />
@@ -373,7 +371,7 @@ export default function ComicCreator() {
             <button 
               onClick={() => undo()}
               disabled={!canUndo}
-              className={`w-10 h-10 flex items-center justify-center rounded-xl transition-all ${canUndo ? 'text-[var(--studio-text)] hover:bg-[var(--studio-bg)]' : 'text-white/5 opacity-20'}`}
+              className={`w-10 h-10 flex items-center justify-center rounded-xl transition-all ${canUndo ? 'text-black/60 hover:bg-black/5' : 'text-black/10 opacity-20'}`}
               title="Undo (Ctrl+Z)"
             >
                <Undo2 size={16} />
@@ -381,7 +379,7 @@ export default function ComicCreator() {
             <button 
               onClick={() => redo()}
               disabled={!canRedo}
-              className={`w-10 h-10 flex items-center justify-center rounded-xl transition-all ${canRedo ? 'text-[var(--studio-text)] hover:bg-[var(--studio-bg)]' : 'text-white/5 opacity-20'}`}
+              className={`w-10 h-10 flex items-center justify-center rounded-xl transition-all ${canRedo ? 'text-black/60 hover:bg-black/5' : 'text-black/10 opacity-20'}`}
               title="Redo (Ctrl+Shift+Z)"
             >
                <Redo2 size={16} />
@@ -395,26 +393,26 @@ export default function ComicCreator() {
             onMouseMove={handleMouseMove}
             onMouseUp={handleMouseUp}
             onMouseLeave={handleMouseUp}
-            className={`flex-1 relative overflow-auto bg-[var(--studio-bg)]/50 scrollbar-none ${
+            className={`flex-1 relative overflow-auto bg-[linear-gradient(180deg,#f7f3ea_0%,#efe8db_100%)] scrollbar-none ${
                cursorMode === 'hand' ? 'cursor-grab active:cursor-grabbing' : 'cursor-default'
             }`}
          >
             {/* The Infinite Drafting Orbit with Depth Gradient */}
-            <div className="min-h-[600vh] w-[600vw] flex items-center justify-center relative p-[300vh] bg-[radial-gradient(circle_at_center,rgba(255,77,0,0.02)_0%,transparent_70%)]">
+            <div className="min-h-[600vh] w-[600vw] flex items-center justify-center relative p-[300vh] bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.65)_0%,transparent_68%)]">
                
                {/* Global Background Grid (Technical Layout) */}
-               <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ 
-                  backgroundImage: `linear-gradient(to right, rgba(0,0,0,0.03) 1px, transparent 1px), linear-gradient(to bottom, rgba(0,0,0,0.03) 1px, transparent 1px)`,
+               <div className="absolute inset-0 opacity-[0.025] pointer-events-none" style={{ 
+                  backgroundImage: `linear-gradient(to right, rgba(0,0,0,0.025) 1px, transparent 1px), linear-gradient(to bottom, rgba(0,0,0,0.025) 1px, transparent 1px)`,
                   backgroundSize: '100px 100px'
                }} />
 
                {/* 🚀 ARTBOARD SEQUENCE (The Active Focus Area) */}
-               <div className="flex gap-[500px] items-start relative z-10">
+               <div className="flex gap-[180px] xl:gap-[240px] items-start relative z-10">
                   {pages.map((page, pIdx) => (
                     <div key={page.id} className="relative group/artboard">
                         <div className="absolute -top-12 left-0 flex items-center gap-3">
-                           <span className="text-[11px] font-black uppercase tracking-[0.4em] text-[var(--studio-text-dim)] group-hover/artboard:text-[var(--accent)] transition-all">Artboard_Page_{pIdx + 1}</span>
-                           <div className="h-[1px] w-64 bg-[var(--studio-border)] group-hover/artboard:bg-[var(--accent)]/20 transition-all" />
+                           <span className="text-[11px] font-black uppercase tracking-[0.35em] text-black/35 group-hover/artboard:text-[var(--accent)] transition-all">Artboard_Page_{pIdx + 1}</span>
+                           <div className="h-[1px] w-56 bg-black/10 group-hover/artboard:bg-[var(--accent)]/20 transition-all" />
                         </div>
 
                        <motion.div animate={{ scale: zoom }} style={{ transformOrigin: 'top center' }}>
@@ -466,7 +464,7 @@ export default function ComicCreator() {
                   <div className="flex flex-col gap-6 items-center">
                      <div 
                        onClick={() => addPage()}
-                       className="w-[450px] h-[650px] border-2 border-dashed border-[var(--studio-border)] rounded-[2.5rem] flex items-center justify-center cursor-pointer hover:border-[var(--accent)]/40 hover:bg-[var(--accent)]/[0.02] transition-all group/newp"
+                       className="w-[390px] h-[560px] border-2 border-dashed border-black/10 rounded-[2.2rem] flex items-center justify-center cursor-pointer hover:border-[var(--accent)]/40 hover:bg-white/40 transition-all group/newp bg-white/20"
                      >
                         <div className="flex flex-col items-center gap-6 opacity-20 group-hover:opacity-100 transition-all">
                            <Plus size={60} className="text-[var(--studio-text)]" />
@@ -479,7 +477,7 @@ export default function ComicCreator() {
                           const newPages = pages.map((pg, i) => i === activePageIndex ? { ...pg, isCover: !pg.isCover } : pg);
                           engine.setPages(newPages);
                        }}
-                       className={`w-full py-5 border rounded-2xl text-[9px] font-black uppercase tracking-widest transition-all ${activePage.isCover ? 'bg-[var(--accent)] border-[var(--accent)] text-white shadow-xl translate-y-[-2px]' : 'bg-[var(--studio-panel)] border-[var(--studio-border)] text-[var(--studio-text-dim)] hover:text-[var(--studio-text)]'}`}
+                       className={`w-full py-5 border rounded-2xl text-[9px] font-black uppercase tracking-widest transition-all ${activePage.isCover ? 'bg-[var(--accent)] border-[var(--accent)] text-white shadow-xl translate-y-[-2px]' : 'bg-white/80 border-black/10 text-black/45 hover:text-black'}`}
                      >
                         {activePage.isCover ? '✓_Cover_Mode_Active' : 'Convert_To_Cover_Art'}
                      </button>
@@ -530,14 +528,14 @@ export default function ComicCreator() {
          </section>
 
          {/* 🔴 MATRIX EDITOR (Top Level Sidebar) */}
-         <aside className="w-96 border-l border-white/5 bg-[#0a0a0a] flex flex-col z-[300] shadow-[-10px_0_40px_rgba(0,0,0,0.2)]">
+         <aside className="w-96 border-l border-black/5 bg-[rgba(255,255,255,0.76)] backdrop-blur-xl flex flex-col z-[300] shadow-[-10px_0_40px_rgba(0,0,0,0.05)]">
             {/* Tab Switcher */}
-            <div className="flex border-b border-white/5 bg-black/40">
-               {['properties', 'layers', 'neural'].map(tab => (
+         <div className="flex border-b border-black/5 bg-white/70">
+               {rightTabs.map(tab => (
                   <button 
                      key={tab}
-                     onClick={() => setActiveRightTab(tab as any)}
-                     className={`flex-1 py-5 text-[9px] font-black uppercase tracking-[0.4em] transition-all ${activeRightTab === tab ? 'text-[var(--accent)] border-b-2 border-[var(--accent)]' : 'text-white/20 hover:text-white'}`}
+                     onClick={() => setActiveRightTab(tab)}
+                     className={`flex-1 py-5 text-[9px] font-black uppercase tracking-[0.4em] transition-all ${activeRightTab === tab ? 'text-[var(--accent)] border-b-2 border-[var(--accent)]' : 'text-black/25 hover:text-black'}`}
                   >
                      {t(tab)}
                   </button>
@@ -545,12 +543,12 @@ export default function ComicCreator() {
             </div>
 
             <div className="flex-1 overflow-y-auto scrollbar-none flex flex-col">
-               <div className="p-8 flex items-center justify-between border-b border-white/5 bg-white/[0.02]">
+               <div className="p-8 flex items-center justify-between border-b border-black/5 bg-white/60">
                   <div className="flex items-center gap-3">
                      <div className="w-2 h-2 rounded-full bg-[var(--accent)] animate-pulse shadow-[0_0_15px_rgba(255,77,0,0.8)]" />
-                     <h3 className="text-[10px] font-black uppercase tracking-[0.6em] text-white/60">{t('matrix_editor')}</h3>
+                     <h3 className="text-[10px] font-black uppercase tracking-[0.6em] text-black/60">{t('matrix_editor')}</h3>
                   </div>
-                  <button onClick={() => engine.setSelectedPanelId(null)} className="text-white/20 hover:text-white transition-colors"><X size={16} /></button>
+                  <button onClick={() => engine.setSelectedPanelId(null)} className="text-black/25 hover:text-black transition-colors"><X size={16} /></button>
                </div>
 
             <div className="p-8 flex-1 flex flex-col space-y-12">
@@ -558,7 +556,7 @@ export default function ComicCreator() {
                   <>
                      <div className="space-y-4">
                         <div className="flex items-center justify-between px-1">
-                           <label className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--studio-text-dim)]">Scene_Description</label>
+                           <label className="text-[10px] font-black uppercase tracking-[0.3em] text-black/45">Scene_Description</label>
                            <Zap size={14} className="text-[var(--accent)]" />
                         </div>
                         <div className="flex flex-wrap gap-2 mb-4">
@@ -572,7 +570,7 @@ export default function ComicCreator() {
                                    if (!isTagged && char.promptBase) newPrompt = `${char.promptBase}, ${newPrompt}`;
                                    updatePanel(selectedPanel.id, { characterIds: newIds, prompt: newPrompt });
                                 }}
-                                className={`p-1.5 rounded-lg border text-[7px] font-black uppercase ${selectedPanel.characterIds?.includes(char.id) ? 'bg-[var(--accent)] text-white' : 'bg-black/20 text-white/40'}`}
+                                className={`p-1.5 rounded-lg border text-[7px] font-black uppercase ${selectedPanel.characterIds?.includes(char.id) ? 'bg-[var(--accent)] text-white border-[var(--accent)]' : 'bg-white text-black/45 border-black/10'}`}
                               >
                                  {char.name}
                               </button>
@@ -581,7 +579,7 @@ export default function ComicCreator() {
                                <textarea 
                             value={selectedPanel.prompt || ''}
                             onChange={(e) => updatePanel(selectedPanel.id, { prompt: e.target.value })}
-                            className="w-full h-56 bg-black/40 border border-white/5 rounded-2xl p-6 text-sm text-[var(--studio-text)] outline-none focus:border-[var(--accent)] transition-all resize-none placeholder:text-white/10 font-medium leading-relaxed"
+                            className="w-full h-56 bg-white border border-black/10 rounded-2xl p-6 text-sm text-[#111] outline-none focus:border-[var(--accent)] transition-all resize-none placeholder:text-black/20 font-medium leading-relaxed shadow-sm"
                             placeholder="Describe the cinematic layout and artistic vision..."
                          />
                          <button 
@@ -603,7 +601,7 @@ export default function ComicCreator() {
                               } catch (err) { console.error(err); }
                               finally { setIsSaving(false); }
                            }}
-                           className="w-full py-3 bg-white/5 border border-white/10 rounded-xl text-[8px] font-black uppercase tracking-[0.3em] text-[var(--accent)] hover:bg-[var(--accent)] hover:text-white transition-all flex items-center justify-center gap-3"
+                           className="w-full py-3 bg-white border border-black/10 rounded-xl text-[8px] font-black uppercase tracking-[0.3em] text-[var(--accent)] hover:bg-[var(--accent)] hover:text-white transition-all flex items-center justify-center gap-3 shadow-sm"
                          >
                             <Sparkles size={12} />
                             Neural_Logic_Suggestion
@@ -613,7 +611,7 @@ export default function ComicCreator() {
 
                      <div className="pt-8 border-t border-[var(--studio-border)] space-y-6">
                         <div className="space-y-4">
-                           <label className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--studio-text-dim)]">Cinematic_Aesthetic</label>
+                           <label className="text-[10px] font-black uppercase tracking-[0.3em] text-black/45">Cinematic_Aesthetic</label>
                            <div className="grid grid-cols-4 gap-2">
                               {[
                                 { id: 'none', label: 'Raw' },
@@ -624,7 +622,7 @@ export default function ComicCreator() {
                                 <button 
                                   key={f.id}
                                   onClick={() => updatePanel(selectedPanel.id, { filter: f.id })}
-                                  className={`py-3 rounded-lg border text-[8px] font-black uppercase tracking-widest transition-all ${selectedPanel.filter === f.id ? 'bg-[var(--accent)] border-[var(--accent)] text-white' : 'bg-[var(--studio-bg)] border-[var(--studio-border)] text-[var(--studio-text-dim)] hover:border-white/20'}`}
+                                  className={`py-3 rounded-lg border text-[8px] font-black uppercase tracking-widest transition-all ${selectedPanel.filter === f.id ? 'bg-[var(--accent)] border-[var(--accent)] text-white' : 'bg-white border-black/10 text-black/40 hover:border-black/20'}`}
                                 >
                                   {f.label}
                                 </button>
@@ -633,7 +631,7 @@ export default function ComicCreator() {
                         </div>
 
                         <div className="space-y-4">
-                            <label className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--studio-text-dim)]">Panel_Geometry_&_Dimension</label>
+                            <label className="text-[10px] font-black uppercase tracking-[0.3em] text-black/45">Panel_Geometry_&_Dimension</label>
                             <div className="grid grid-cols-2 gap-3">
                                {[
                                  { id: 'none', label: 'Standard_Box', clip: 'none' },
@@ -644,7 +642,7 @@ export default function ComicCreator() {
                                  <button 
                                    key={c.id}
                                    onClick={() => updatePanel(selectedPanel.id, { clipPath: c.clip })}
-                                   className={`py-4 px-2 rounded-xl border flex flex-col items-center gap-1.5 transition-all ${selectedPanel.clipPath === c.clip ? 'bg-[var(--accent)]/10 border-[var(--accent)] text-[var(--accent)]' : 'bg-[var(--studio-bg)] border-[var(--studio-border)] text-[var(--studio-text-dim)]'}`}
+                                   className={`py-4 px-2 rounded-xl border flex flex-col items-center gap-1.5 transition-all ${selectedPanel.clipPath === c.clip ? 'bg-[var(--accent)]/10 border-[var(--accent)] text-[var(--accent)]' : 'bg-white border-black/10 text-black/40'}`}
                                  >
                                     <div className="w-8 h-4 border border-current opacity-40 rounded-[2px]" style={{ clipPath: c.clip }} />
                                     <span className="text-[7px] font-black uppercase tracking-widest">{c.label}</span>
@@ -656,7 +654,7 @@ export default function ComicCreator() {
                             <div className="pt-4 grid grid-cols-2 gap-4">
                                <div className="space-y-2">
                                   <div className="flex justify-between items-center px-1">
-                                     <span className="text-[7px] font-black uppercase text-[var(--studio-text-dim)]">Rotation</span>
+                                     <span className="text-[7px] font-black uppercase text-black/40">Rotation</span>
                                      <span className="text-[8px] font-black text-[var(--accent)]">{(selectedPanel.rotation || 0)}°</span>
                                   </div>
                                   <input 
@@ -668,7 +666,7 @@ export default function ComicCreator() {
                                </div>
                                <div className="space-y-2">
                                   <div className="flex justify-between items-center px-1">
-                                     <span className="text-[7px] font-black uppercase text-[var(--studio-text-dim)]">Depth_Layer</span>
+                                     <span className="text-[7px] font-black uppercase text-black/40">Depth_Layer</span>
                                      <span className="text-[8px] font-black text-[var(--accent)]">Lvl_{selectedPanel.zIndex || 10}</span>
                                   </div>
                                   <input 
@@ -681,12 +679,12 @@ export default function ComicCreator() {
                             </div>
 
                             {/* Neural Post-Process (Pro Detailing) */}
-                            <div className="pt-6 border-t border-[var(--studio-border)] space-y-4">
-                               <label className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--studio-text-dim)]">Neural_Image_Post_Process</label>
+                            <div className="pt-6 border-t border-black/5 space-y-4">
+                               <label className="text-[10px] font-black uppercase tracking-[0.3em] text-black/45">Neural_Image_Post_Process</label>
                                <div className="grid grid-cols-2 gap-6">
                                   <div className="space-y-2">
                                      <div className="flex justify-between items-center px-1">
-                                        <span className="text-[7px] font-black uppercase text-[var(--studio-text-dim)]">Brightness</span>
+                                        <span className="text-[7px] font-black uppercase text-black/40">Brightness</span>
                                         <span className="text-[8px] font-black text-[var(--accent)]">{selectedPanel.brightness || 100}%</span>
                                      </div>
                                      <input 
@@ -698,7 +696,7 @@ export default function ComicCreator() {
                                   </div>
                                   <div className="space-y-2">
                                      <div className="flex justify-between items-center px-1">
-                                        <span className="text-[7px] font-black uppercase text-[var(--studio-text-dim)]">Contrast</span>
+                                        <span className="text-[7px] font-black uppercase text-black/40">Contrast</span>
                                         <span className="text-[8px] font-black text-[var(--accent)]">{selectedPanel.contrast || 100}%</span>
                                      </div>
                                      <input 
@@ -712,27 +710,27 @@ export default function ComicCreator() {
                             </div>
 
                             {/* Structural Detailing (Pro Borders) */}
-                            <div className="pt-6 border-t border-[var(--studio-border)] space-y-4">
-                               <label className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--studio-text-dim)]">Structural_Detailing</label>
+                            <div className="pt-6 border-t border-black/5 space-y-4">
+                               <label className="text-[10px] font-black uppercase tracking-[0.3em] text-black/45">Structural_Detailing</label>
                                <div className="grid grid-cols-3 gap-3">
                                   <div className="flex flex-col gap-2">
-                                     <span className="text-[7px] font-black uppercase text-[var(--studio-text-dim)]">Ink_Weight</span>
+                                     <span className="text-[7px] font-black uppercase text-black/40">Ink_Weight</span>
                                      <input 
                                        type="number" value={selectedPanel.borderWidth ?? 2}
                                        onChange={(e) => updatePanel(selectedPanel.id, { borderWidth: parseInt(e.target.value) })}
-                                       className="bg-[var(--studio-bg)] border border-[var(--studio-border)] rounded-lg p-2 text-[10px] font-black text-center" 
+                                       className="bg-white border border-black/10 rounded-lg p-2 text-[10px] font-black text-center" 
                                      />
                                   </div>
                                   <div className="flex flex-col gap-2">
-                                     <span className="text-[7px] font-black uppercase text-[var(--studio-text-dim)]">Corner_Rad</span>
+                                     <span className="text-[7px] font-black uppercase text-black/40">Corner_Rad</span>
                                      <input 
                                        type="number" value={selectedPanel.borderRadius || 0}
                                        onChange={(e) => updatePanel(selectedPanel.id, { borderRadius: parseInt(e.target.value) })}
-                                       className="bg-[var(--studio-bg)] border border-[var(--studio-border)] rounded-lg p-2 text-[10px] font-black text-center" 
+                                       className="bg-white border border-black/10 rounded-lg p-2 text-[10px] font-black text-center" 
                                      />
                                   </div>
                                   <div className="flex flex-col gap-2">
-                                     <span className="text-[7px] font-black uppercase text-[var(--studio-text-dim)]">Ink_Color</span>
+                                     <span className="text-[7px] font-black uppercase text-black/40">Ink_Color</span>
                                      <input 
                                        type="color" value={selectedPanel.borderColor || '#000000'}
                                        onChange={(e) => updatePanel(selectedPanel.id, { borderColor: e.target.value })}
@@ -743,12 +741,12 @@ export default function ComicCreator() {
                             </div>
 
                             {/* Cinematic Camera Framing (Pro Composition) */}
-                            <div className="pt-6 border-t border-[var(--studio-border)] space-y-4">
-                               <label className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--studio-text-dim)]">Cinematic_Camera_Framing</label>
+                            <div className="pt-6 border-t border-black/5 space-y-4">
+                               <label className="text-[10px] font-black uppercase tracking-[0.3em] text-black/45">Cinematic_Camera_Framing</label>
                                <div className="space-y-4">
                                   <div className="space-y-2">
                                      <div className="flex justify-between items-center px-1">
-                                        <span className="text-[7px] font-black uppercase text-[var(--studio-text-dim)]">Optical_Zoom</span>
+                                        <span className="text-[7px] font-black uppercase text-black/40">Optical_Zoom</span>
                                         <span className="text-[8px] font-black text-[var(--accent)]">{((selectedPanel.imageScale || 1) * 100).toFixed(0)}%</span>
                                      </div>
                                      <input 
@@ -760,7 +758,7 @@ export default function ComicCreator() {
                                   </div>
                                   <div className="grid grid-cols-2 gap-4">
                                      <div className="space-y-2">
-                                        <span className="text-[7px] font-black uppercase text-[var(--studio-text-dim)]">Pan_X</span>
+                                        <span className="text-[7px] font-black uppercase text-black/40">Pan_X</span>
                                         <input 
                                           type="range" min="-50" max="50" step="1" 
                                           value={selectedPanel.imageX || 0}
@@ -769,7 +767,7 @@ export default function ComicCreator() {
                                         />
                                      </div>
                                      <div className="space-y-2">
-                                        <span className="text-[7px] font-black uppercase text-[var(--studio-text-dim)]">Pan_Y</span>
+                                        <span className="text-[7px] font-black uppercase text-black/40">Pan_Y</span>
                                         <input 
                                           type="range" min="-50" max="50" step="1" 
                                           value={selectedPanel.imageY || 0}
@@ -783,26 +781,26 @@ export default function ComicCreator() {
                          </div>
 
                         <div className="grid grid-cols-2 gap-4">
-                           <div className="p-5 bg-[var(--studio-bg)] border border-[var(--studio-border)] rounded-2xl flex flex-col gap-1.5">
-                              <span className="text-[8px] font-black text-[var(--studio-text-dim)] uppercase tracking-widest">Dimensions</span>
-                              <span className="text-[11px] font-black text-[var(--studio-text)]">{selectedPanel.colSpan || 6}U Scale</span>
+                           <div className="p-5 bg-white border border-black/10 rounded-2xl flex flex-col gap-1.5 shadow-sm">
+                              <span className="text-[8px] font-black text-black/35 uppercase tracking-widest">Dimensions</span>
+                              <span className="text-[11px] font-black text-[#111]">{selectedPanel.colSpan || 6}U Scale</span>
                            </div>
-                           <div className="p-5 bg-[var(--studio-bg)] border border-[var(--studio-border)] rounded-2xl flex flex-col gap-1.5">
-                              <span className="text-[8px] font-black text-[var(--studio-text-dim)] uppercase tracking-widest">Neural_Status</span>
+                           <div className="p-5 bg-white border border-black/10 rounded-2xl flex flex-col gap-1.5 shadow-sm">
+                              <span className="text-[8px] font-black text-black/35 uppercase tracking-widest">Neural_Status</span>
                               <span className="text-[11px] font-black text-[var(--accent)] uppercase">{selectedPanel.status}</span>
                            </div>
                         </div>
-                        <button onClick={() => updatePanel(selectedPanel.id, { colSpan: 12, customHeight: `${metrics.safeHeight}px`, size: 'mega', clipPath: 'none' })} className="w-full py-4 bg-[var(--studio-bg)] border border-[var(--studio-border)] text-[9px] font-black uppercase tracking-[3px] rounded-xl hover:bg-[var(--studio-text)] hover:text-[var(--studio-bg)] transition-all">Create_Splash_Master</button>
+                        <button onClick={() => updatePanel(selectedPanel.id, { colSpan: 12, customHeight: `${metrics.safeHeight}px`, size: 'mega', clipPath: 'none' })} className="w-full py-4 bg-white border border-black/10 text-[9px] font-black uppercase tracking-[3px] rounded-xl hover:bg-black hover:text-white transition-all shadow-sm">Create_Splash_Master</button>
                      </div>
 
-                        <div className="space-y-4 pt-8 border-t border-[var(--studio-border)]">
-                           <label className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--studio-text-dim)]">Vocalizations</label>
+                        <div className="space-y-4 pt-8 border-t border-black/5">
+                           <label className="text-[10px] font-black uppercase tracking-[0.3em] text-black/45">Vocalizations</label>
                            {selectedPanel.textElements && selectedPanel.textElements.length > 0 ? (
                               <div className="space-y-2">
                                  {selectedPanel.textElements.map(el => (
-                                    <div key={el.id} className="p-3 bg-[var(--studio-bg)] border border-[var(--studio-border)] rounded-xl flex items-center justify-between group/el">
+                                    <div key={el.id} className="p-3 bg-white border border-black/10 rounded-xl flex items-center justify-between group/el shadow-sm">
                                        <div className="flex items-center gap-3">
-                                          <div className="w-6 h-6 bg-[var(--studio-panel)] border border-[var(--studio-border)] rounded-md flex items-center justify-center">
+                                          <div className="w-6 h-6 bg-white border border-black/10 rounded-md flex items-center justify-center">
                                              <Type size={10} className="text-[var(--accent)]" />
                                           </div>
                                           <input 
@@ -811,18 +809,18 @@ export default function ComicCreator() {
                                                const newEls = selectedPanel.textElements.map(te => te.id === el.id ? { ...te, text: e.target.value } : te);
                                                updatePanel(selectedPanel.id, { textElements: newEls });
                                             }}
-                                            className="bg-transparent border-none outline-none text-[10px] font-bold text-[var(--studio-text)] w-32" 
+                                            className="bg-transparent border-none outline-none text-[10px] font-bold text-[#111] w-32" 
                                           />
                                        </div>
                                        <div className="flex items-center gap-1 opacity-0 group-hover/el:opacity-100 transition-opacity">
-                                          {['speech', 'thought', 'shout', 'caption', 'sfx'].map(type => (
+                              {(['speech', 'thought', 'shout', 'caption', 'sfx'] as BubbleType[]).map(type => (
                                              <button 
                                                key={type}
                                                onClick={() => {
-                                                  const newEls = selectedPanel.textElements.map(te => te.id === el.id ? { ...te, type: type as any } : te);
+                                                  const newEls = selectedPanel.textElements.map(te => te.id === el.id ? { ...te, type } : te);
                                                   updatePanel(selectedPanel.id, { textElements: newEls });
                                                }}
-                                               className={`w-6 h-6 rounded flex items-center justify-center text-[7px] font-black uppercase border transition-all ${el.type === type ? 'bg-[var(--accent)] text-white border-[var(--accent)]' : 'bg-white/50 text-black/40 border-black/5 hover:bg-white'}`}
+                                               className={`w-6 h-6 rounded flex items-center justify-center text-[7px] font-black uppercase border transition-all ${el.type === type ? 'bg-[var(--accent)] text-white border-[var(--accent)]' : 'bg-white text-black/40 border-black/10 hover:bg-black/5'}`}
                                                title={type}
                                              >
                                                 {type[0].toUpperCase()}
@@ -842,11 +840,11 @@ export default function ComicCreator() {
                                  ))}
                               </div>
                            ) : (
-                              <p className="text-[8px] font-bold text-[var(--studio-text-dim)] uppercase tracking-widest text-center py-4 border border-dashed border-[var(--studio-border)] rounded-xl italic">No active vocalizations found.</p>
+                              <p className="text-[8px] font-bold text-black/35 uppercase tracking-widest text-center py-4 border border-dashed border-black/10 rounded-xl italic bg-white/60">No active vocalizations found.</p>
                            )}
                            <button 
                              onClick={() => addTextElement(selectedPanel.id, 50, 20)}
-                             className="w-full py-3 border border-dashed border-[var(--studio-border)] hover:border-[var(--accent)]/40 hover:text-[var(--accent)] text-[8px] font-black uppercase tracking-[2px] rounded-xl transition-all"
+                             className="w-full py-3 border border-dashed border-black/10 hover:border-[var(--accent)]/40 hover:text-[var(--accent)] text-[8px] font-black uppercase tracking-[2px] rounded-xl transition-all bg-white"
                            >
                               + New_Linguistic_Probe
                            </button>
@@ -856,7 +854,7 @@ export default function ComicCreator() {
                         <button 
                            onClick={() => generatePanelImage(selectedPanel.id)}
                            disabled={!selectedPanel.prompt || selectedPanel.status === 'loading'}
-                           className="flex-1 py-6 bg-[var(--accent)] text-white text-[11px] font-black uppercase tracking-[4px] rounded-2xl hover:brightness-110 shadow-[0_20px_40px_rgba(255,77,0,0.3)] disabled:opacity-20 transition-all"
+                           className="flex-1 py-6 bg-[var(--accent)] text-white text-[11px] font-black uppercase tracking-[4px] rounded-2xl hover:brightness-110 shadow-[0_20px_40px_rgba(255,77,0,0.2)] disabled:opacity-20 transition-all"
                         >
                            Generate_Panel_Art
                         </button>
@@ -865,7 +863,7 @@ export default function ComicCreator() {
                               currentTargetPanelRef.current = selectedPanel.id;
                               fileInputRef.current?.click();
                            }}
-                           className="w-20 py-6 bg-[var(--studio-bg)] border border-[var(--studio-border)] text-[var(--studio-text-dim)] hover:text-[var(--studio-text)] hover:bg-[var(--studio-panel)] rounded-2xl flex items-center justify-center transition-all"
+                           className="w-20 py-6 bg-white border border-black/10 text-black/45 hover:text-black hover:bg-black/5 rounded-2xl flex items-center justify-center transition-all shadow-sm"
                            title="Upload Original Artwork"
                         >
                            <Monitor size={20} />
@@ -874,8 +872,8 @@ export default function ComicCreator() {
                   </>
                ) : (
                   <div className="flex-1 flex flex-col items-center justify-center text-center p-10 gap-8 opacity-40 mt-20">
-                     <div className="w-20 h-20 border-2 border-dashed border-[var(--studio-border)] rounded-3xl flex items-center justify-center">
-                        <MousePointer2 size={32} className="text-[var(--studio-text)]" />
+                     <div className="w-20 h-20 border-2 border-dashed border-black/10 rounded-3xl flex items-center justify-center bg-white">
+                        <MousePointer2 size={32} className="text-[#111]" />
                      </div>
                      <div className="flex flex-col gap-4">
                            <span className="text-[14px] font-black uppercase tracking-[0.5em] text-[var(--studio-text)]">Studio_Ready</span>
@@ -887,7 +885,7 @@ export default function ComicCreator() {
                      <div className="grid grid-cols-1 w-full gap-3 px-8">
                         <button 
                            onClick={() => setIsCharacterForgeOpen(true)}
-                           className="w-full py-5 bg-white/5 border border-white/10 rounded-2xl flex items-center gap-4 px-6 hover:bg-[var(--accent)] hover:text-white transition-all group"
+                           className="w-full py-5 bg-white border border-black/10 rounded-2xl flex items-center gap-4 px-6 hover:bg-[var(--accent)] hover:text-white transition-all group shadow-sm"
                         >
                            <div className="w-10 h-10 bg-black/20 rounded-xl flex items-center justify-center group-hover:bg-white/20">
                               <User size={18} />
@@ -900,7 +898,7 @@ export default function ComicCreator() {
 
                         <button 
                            onClick={() => addPage()}
-                           className="w-full py-5 bg-white/5 border border-white/10 rounded-2xl flex items-center gap-4 px-6 hover:bg-[var(--accent)] hover:text-white transition-all group"
+                           className="w-full py-5 bg-white border border-black/10 rounded-2xl flex items-center gap-4 px-6 hover:bg-[var(--accent)] hover:text-white transition-all group shadow-sm"
                         >
                            <div className="w-10 h-10 bg-black/20 rounded-xl flex items-center justify-center group-hover:bg-white/20">
                               <Plus size={18} />
@@ -913,7 +911,7 @@ export default function ComicCreator() {
 
                         <button 
                            onClick={() => setIsOnboardingOpen(true)}
-                           className="w-full py-5 bg-white/5 border border-white/10 rounded-2xl flex items-center gap-4 px-6 hover:bg-white hover:text-black transition-all group mt-4"
+                           className="w-full py-5 bg-white border border-black/10 rounded-2xl flex items-center gap-4 px-6 hover:bg-black hover:text-white transition-all group mt-4 shadow-sm"
                         >
                            <div className="w-10 h-10 bg-black/20 rounded-xl flex items-center justify-center group-hover:bg-black/10">
                               <Sparkles size={18} />
@@ -934,14 +932,14 @@ export default function ComicCreator() {
       {/* 🟢 FLOATING INTERFACE CONTROLS */}
       <div className="absolute bottom-10 left-1/2 -translate-x-1/2 z-[500] flex flex-col items-center gap-6">
          {/* Zoom HUD */}
-         <div className="flex items-center bg-[var(--studio-panel)]/90 backdrop-blur-3xl border border-[var(--studio-border)] rounded-full p-2.5 shadow-xl overflow-hidden hover:border-[var(--accent)]/40 transition-all">
-            <button onClick={() => setZoom(Math.max(0.1, zoom - 0.1))} className="w-10 h-10 rounded-xl flex items-center justify-center text-[var(--studio-text-dim)] hover:text-[var(--studio-text)] hover:bg-[var(--studio-bg)] transition-all text-xl font-light">-</button>
+         <div className="flex items-center bg-white/90 backdrop-blur-3xl border border-black/5 rounded-full p-2.5 shadow-xl overflow-hidden hover:border-[var(--accent)]/30 transition-all">
+            <button onClick={() => setZoom(Math.max(0.1, zoom - 0.1))} className="w-10 h-10 rounded-xl flex items-center justify-center text-black/40 hover:text-black hover:bg-black/5 transition-all text-xl font-light">-</button>
             <div className="px-8 flex flex-col items-center min-w-[100px]">
-               <span className="text-[12px] font-black tracking-widest text-[var(--studio-text)]">{(zoom * 100).toFixed(0)}%</span>
-               <span className="text-[7px] font-black text-[var(--studio-text-dim)] uppercase tracking-[0.2em]">Foundry_Scale</span>
+               <span className="text-[12px] font-black tracking-widest text-[#111]">{(zoom * 100).toFixed(0)}%</span>
+               <span className="text-[7px] font-black text-black/35 uppercase tracking-[0.2em]">Foundry_Scale</span>
             </div>
-            <button onClick={() => setZoom(Math.min(2.0, zoom + 0.1))} className="w-10 h-10 rounded-xl flex items-center justify-center text-[var(--studio-text-dim)] hover:text-[var(--studio-text)] hover:bg-[var(--studio-bg)] transition-all text-xl font-light">+</button>
-            <div className="w-[1px] h-8 bg-[var(--studio-border)] mx-3" />
+            <button onClick={() => setZoom(Math.min(2.0, zoom + 0.1))} className="w-10 h-10 rounded-xl flex items-center justify-center text-black/40 hover:text-black hover:bg-black/5 transition-all text-xl font-light">+</button>
+            <div className="w-[1px] h-8 bg-black/10 mx-3" />
             <button 
                onClick={() => {
                   setZoom(0.8);
@@ -951,14 +949,14 @@ export default function ComicCreator() {
                      container.scrollTop = (container.scrollHeight - container.clientHeight) / 2;
                   }
                }}
-               className="px-6 py-2.5 bg-[var(--studio-bg)] hover:bg-black hover:text-white border border-[var(--studio-border)] rounded-xl text-[8px] font-black uppercase tracking-[0.3em] text-[var(--studio-text-dim)] transition-all"
+               className="px-6 py-2.5 bg-white hover:bg-black hover:text-white border border-black/10 rounded-xl text-[8px] font-black uppercase tracking-[0.3em] text-black/45 transition-all"
             >
                Reset_Center
             </button>
          </div>
 
          {/* Core Action Deck */}
-         <div className="flex items-center gap-3 p-3 bg-[var(--studio-panel)]/90 backdrop-blur-3xl border border-[var(--studio-border)] rounded-[2.5rem] shadow-xl">
+         <div className="flex items-center gap-3 p-3 bg-white/90 backdrop-blur-3xl border border-black/5 rounded-[2.5rem] shadow-xl">
             <button 
                disabled={isPageFull}
                onClick={() => addPanel('medium')}
@@ -970,7 +968,7 @@ export default function ComicCreator() {
             </button>
             <button 
                onClick={() => addDraftPanel()}
-               className="h-16 px-10 bg-[var(--studio-panel)] border border-[var(--studio-border)] text-[var(--studio-text-dim)] hover:text-[var(--studio-text)] hover:bg-[var(--studio-bg)] rounded-[1.8rem] flex items-center gap-4 transition-all group/dbtn"
+               className="h-16 px-10 bg-white border border-black/10 text-black/45 hover:text-black hover:bg-black/5 rounded-[1.8rem] flex items-center gap-4 transition-all group/dbtn"
             >
                <Layers size={18} className="group-hover/dbtn:text-[var(--accent)] transition-colors" />
                <span className="text-[11px] font-black uppercase tracking-[3px]">New_Draft_Asset</span>
@@ -980,14 +978,14 @@ export default function ComicCreator() {
                   currentTargetPanelRef.current = null;
                   fileInputRef.current?.click();
                }}
-               className="h-16 w-16 bg-[var(--studio-panel)] border border-[var(--studio-border)] text-[var(--studio-text-dim)] hover:text-[var(--studio-text)] hover:bg-[var(--studio-bg)] rounded-[1.8rem] flex items-center justify-center transition-all group/ibtn"
+               className="h-16 w-16 bg-white border border-black/10 text-black/45 hover:text-black hover:bg-black/5 rounded-[1.8rem] flex items-center justify-center transition-all group/ibtn"
                title="Import External Asset"
             >
                <FilePlus size={20} className="group-hover/ibtn:text-[var(--accent)]" />
             </button>
             <button 
                onClick={() => setIsArchitectOpen(true)}
-               className="h-16 px-10 bg-[var(--studio-bg)] border border-[var(--accent)]/40 text-[var(--accent)] hover:bg-[var(--accent)] hover:text-white rounded-[1.8rem] flex items-center gap-4 transition-all group/lbtn shadow-[0_0_20px_rgba(255,77,0,0.1)]"
+               className="h-16 px-10 bg-white border border-[var(--accent)]/40 text-[var(--accent)] hover:bg-[var(--accent)] hover:text-white rounded-[1.8rem] flex items-center gap-4 transition-all group/lbtn shadow-[0_0_20px_rgba(255,77,0,0.08)]"
             >
                <BrainCircuit size={18} />
                <span className="text-[11px] font-black uppercase tracking-[3px]">Foundry_Logic_Architect</span>

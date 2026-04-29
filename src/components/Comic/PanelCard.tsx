@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Trash2, Copy, MoreVertical, Maximize2, Zap, Layout, Move, Plus } from 'lucide-react';
+import { Trash2, Copy, Layout, Plus } from 'lucide-react';
 import { Panel } from '@/types/comic';
 import { SpeechBubble } from './SpeechBubble';
 import { InkCanvas } from './InkCanvas';
@@ -15,7 +15,7 @@ interface PanelCardProps {
   onDuplicate: () => void;
   onAddAfter: () => void;
   onAddText: (panelId: string, x: number, y: number) => void;
-  onResize: (updates: any) => void;
+  onResize: (updates: Partial<Panel>) => void;
   cursorMode?: 'move' | 'text' | 'hand';
   onMoveLeft: () => void;
   onMoveRight: () => void;
@@ -26,9 +26,11 @@ interface PanelCardProps {
 }
 
 export function PanelCard({
-  panel, index, isSelected, onClick, onDelete, onDuplicate, onAddAfter, onAddText, onResize, onMoveLeft, onMoveRight, colSpan, height, t, isPreview, pageHeight = 1000, cursorMode
+  panel, index, isSelected, onClick, onDelete, onDuplicate, onAddAfter, onAddText, onResize, onMoveLeft: _onMoveLeft, onMoveRight: _onMoveRight, colSpan, height, t: _t, isPreview, pageHeight = 1000, cursorMode
 }: PanelCardProps) {
-  const [isResizing, setIsResizing] = React.useState(false);
+  void _onMoveLeft;
+  void _onMoveRight;
+  void _t;
   const resizeStart = React.useRef({ x: 0, y: 0, w: 0, h: 0, col: 0 });
 
   const finalColSpan = panel.colSpan || colSpan;
@@ -37,7 +39,6 @@ export function PanelCard({
   const handleResizeStart = (e: React.MouseEvent, type: 'h' | 'v' | 'both') => {
     e.stopPropagation();
     e.preventDefault();
-    setIsResizing(true);
     const rect = (e.currentTarget.parentElement as HTMLElement).getBoundingClientRect();
     resizeStart.current = { x: e.clientX, y: e.clientY, w: rect.width, h: rect.height, col: finalColSpan };
 
@@ -60,7 +61,6 @@ export function PanelCard({
     };
 
     const handleMouseUp = () => {
-       setIsResizing(false);
        window.removeEventListener('mousemove', handleMouseMove);
        window.removeEventListener('mouseup', handleMouseUp);
     };
@@ -104,7 +104,7 @@ export function PanelCard({
     >
       <div className={`relative w-full h-full overflow-hidden transition-all duration-700 ${
         isForge 
-          ? `rounded-2xl border-2 ${isSelected ? 'border-[var(--accent)] shadow-[0_20px_50px_rgba(255,77,0,0.1)] bg-white' : 'border-black/5 hover:border-black/10 bg-[var(--studio-bg)]/30'}`
+          ? `rounded-[1.3rem] border-2 ${isSelected ? 'border-[var(--accent)] shadow-[0_20px_40px_rgba(255,77,0,0.08)] bg-white' : 'border-black/10 hover:border-black/20 bg-white/90'}`
           : 'rounded-none border-none bg-white'
       }`}>
         
@@ -136,10 +136,10 @@ export function PanelCard({
                 weight={2}
              />
 
-             {isForge && <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-40 transition-opacity duration-700 group-hover:opacity-20" />}
+             {isForge && <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-transparent to-transparent opacity-35 transition-opacity duration-700 group-hover:opacity-20" />}
           </div>
         ) : (
-          <div className="w-full h-full flex flex-col items-center justify-center gap-4 bg-[var(--studio-bg)]/20 relative">
+          <div className="w-full h-full flex flex-col items-center justify-center gap-4 bg-white relative">
              <Layout className="text-black/5 group-hover:text-[var(--accent)]/20 transition-all duration-700" size={48} />
              {isForge && (
                 <div className="flex flex-col items-center gap-1 opacity-20 group-hover:opacity-100 transition-all">
@@ -159,7 +159,7 @@ export function PanelCard({
 
         {isForge && (
           <div className="absolute bottom-4 left-5 flex items-center gap-3 opacity-0 group-hover:opacity-100 transition-all duration-500 translate-y-2 group-hover:translate-y-0">
-             <div className="px-2 py-1 bg-white/60 backdrop-blur-md border border-black/5 rounded-lg flex items-center gap-2">
+             <div className="px-2 py-1 bg-white/80 backdrop-blur-md border border-black/5 rounded-lg flex items-center gap-2">
                 <span className="text-[8px] font-black text-[var(--accent)] uppercase">{finalColSpan}U</span>
                 <div className="w-[1px] h-2 bg-black/10" />
                 <span className="text-[8px] font-black text-black/40 uppercase tracking-widest">{panel.customHeight || height}</span>
@@ -169,7 +169,7 @@ export function PanelCard({
 
         {isForge && isSelected && (
           <div className="absolute top-4 right-4 flex items-center gap-2 z-[60]">
-             <div className="flex bg-white/80 backdrop-blur-xl border border-black/5 rounded-xl p-1 shadow-xl">
+             <div className="flex bg-white/90 backdrop-blur-xl border border-black/10 rounded-xl p-1 shadow-xl">
                 <button onClick={(e) => { e.stopPropagation(); onDuplicate(); }} className="w-8 h-8 flex items-center justify-center text-black/40 hover:text-black hover:bg-black/5 rounded-lg transition-all" title="Duplicate">
                    <Copy size={14} />
                 </button>

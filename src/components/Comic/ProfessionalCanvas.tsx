@@ -1,7 +1,6 @@
 'use client';
 
 import React from 'react';
-import { motion } from 'framer-motion';
 import { PRINT_STANDARDS } from '@/constants/comic';
 
 interface ProfessionalCanvasProps {
@@ -18,7 +17,7 @@ interface ProfessionalCanvasProps {
 }
 
 export function ProfessionalCanvas({ children, settings, isPreview }: ProfessionalCanvasProps) {
-  const { format, dpi, showGuides, showBleed, showFlow } = settings;
+  const { format, dpi, showGuides, showBleed } = settings;
 
   // Scale for web display
   const scale = 3.5; 
@@ -60,14 +59,14 @@ export function ProfessionalCanvas({ children, settings, isPreview }: Profession
 
       {/* THE PHYSICAL BOARD */}
       <div 
-        className="relative bg-white shadow-[0_40px_120px_rgba(0,0,0,0.1)] transition-all duration-700 ease-out preserve-3d"
+        className="relative bg-[#f8f7f2] shadow-[0_28px_90px_rgba(0,0,0,0.10)] transition-all duration-700 ease-out preserve-3d border border-black/5 rounded-[2rem]"
         style={{ 
           width: boardWidth, 
           height: boardHeight,
         }}
       >
         {/* CLEANER GRID (Less Distracting) */}
-        <div className="absolute -inset-20 bg-white -z-10 rounded-[2.5rem] border border-black/5 flex items-center justify-center overflow-hidden">
+        <div className="absolute -inset-20 bg-[rgba(255,255,255,0.72)] -z-10 rounded-[2.5rem] border border-black/5 flex items-center justify-center overflow-hidden">
            <div className="absolute inset-0" style={{ 
               backgroundImage: `linear-gradient(to right, rgba(0,0,0,0.02) 1px, transparent 1px), linear-gradient(to bottom, rgba(0,0,0,0.02) 1px, transparent 1px)`,
               backgroundSize: '40px 40px'
@@ -75,13 +74,13 @@ export function ProfessionalCanvas({ children, settings, isPreview }: Profession
         </div>
 
         {/* PAPER TEXTURE OVERLAY (Professional Marvel Grain) */}
-        <div className="absolute inset-0 z-0 pointer-events-none opacity-[0.06] mix-blend-multiply" style={{
+        <div className="absolute inset-0 z-0 pointer-events-none opacity-[0.03] mix-blend-multiply" style={{
            backgroundImage: 'url("https://www.transparenttextures.com/patterns/p6.png")',
            backgroundRepeat: 'repeat'
         }} />
         
         {/* SUBTLE DOT GAIN / HALFTONE GLOBAL OVERLAY */}
-        <div className="absolute inset-0 z-0 pointer-events-none opacity-[0.02]" style={{
+        <div className="absolute inset-0 z-0 pointer-events-none opacity-[0.01]" style={{
            backgroundImage: 'radial-gradient(circle, #000 1px, transparent 0)',
            backgroundSize: '4px 4px'
         }} />
@@ -89,7 +88,7 @@ export function ProfessionalCanvas({ children, settings, isPreview }: Profession
         {/* BLEED AREA GUIDE */}
         {showBleed && (
           <div 
-            className="absolute inset-0 border-[1px] border-dashed border-rose-500/50 pointer-events-none z-50 animate-pulse"
+            className="absolute inset-0 border-[1px] border-dashed border-rose-500/30 pointer-events-none z-50 animate-pulse"
             style={{ margin: -bleedPx }}
           />
         )}
@@ -104,15 +103,15 @@ export function ProfessionalCanvas({ children, settings, isPreview }: Profession
                left: x === -1 ? -4 : 'auto', 
                right: x === 1 ? -4 : 'auto'
              }}>
-               <div className={`w-full h-[1px] bg-black/20 absolute ${y === -1 ? 'top-1' : 'bottom-1'}`} />
-               <div className={`h-full w-[1px] bg-black/20 absolute ${x === -1 ? 'left-1' : 'right-1'}`} />
+               <div className={`w-full h-[1px] bg-black/15 absolute ${y === -1 ? 'top-1' : 'bottom-1'}`} />
+               <div className={`h-full w-[1px] bg-black/15 absolute ${x === -1 ? 'left-1' : 'right-1'}`} />
                {/* Technical Circles */}
                <div className={`absolute w-3 h-3 rounded-full border border-black/10 ${y === -1 ? 'top-2' : 'bottom-2'} ${x === -1 ? 'left-2' : 'right-2'}`} />
              </div>
            )))}
            
            {/* Color Bars (Pro detail) */}
-           <div className="absolute top-1/2 -right-8 -translate-y-1/2 flex flex-col gap-1 opacity-20 group-hover/canvas:opacity-60 transition-opacity">
+           <div className="absolute top-1/2 -right-8 -translate-y-1/2 flex flex-col gap-1 opacity-15 group-hover/canvas:opacity-50 transition-opacity">
               {['#00ffff', '#ff00ff', '#ffff00', '#000000'].map(c => (
                  <div key={c} className="w-4 h-4" style={{ backgroundColor: c }} />
               ))}
@@ -122,7 +121,7 @@ export function ProfessionalCanvas({ children, settings, isPreview }: Profession
         {/* SAFE AREA GUIDE */}
         {showGuides && (
           <div 
-            className="absolute pointer-events-none z-40 border border-blue-500/20"
+            className="absolute pointer-events-none z-40 border border-blue-500/18"
             style={{ 
               top: safePx, 
               left: safePx, 
@@ -130,7 +129,7 @@ export function ProfessionalCanvas({ children, settings, isPreview }: Profession
               bottom: safePx 
             }}
           >
-             <div className="absolute top-1 left-2 text-[8px] text-blue-500/40 uppercase font-bold tracking-widest bg-blue-500/5 px-2 py-0.5 rounded">Safe_Zone_Active</div>
+             <div className="absolute top-1 left-2 text-[8px] text-blue-500/45 uppercase font-bold tracking-widest bg-blue-500/5 px-2 py-0.5 rounded">Safe_Zone_Active</div>
              {/* Technical crosshair in center of safe zone */}
              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-4 h-4 text-blue-500/10">
                 <div className="absolute top-1/2 inset-x-0 h-[1px] bg-blue-500/20" />
@@ -140,20 +139,20 @@ export function ProfessionalCanvas({ children, settings, isPreview }: Profession
         )}
 
         {/* CONTENT AREA */}
-        <div className="relative w-full h-full overflow-hidden z-10 bg-black">
+        <div className="relative w-full h-full overflow-hidden z-10 bg-[#f8f7f2]">
           {children}
           
           {/* CINEMATIC VIGNETTE OVERLAY */}
-          <div className="absolute inset-0 pointer-events-none z-20 shadow-[inset_0_0_150px_rgba(0,0,0,0.5)]" />
+          <div className="absolute inset-0 pointer-events-none z-20 shadow-[inset_0_0_120px_rgba(0,0,0,0.18)]" />
           
           {/* PROFESSIONAL OVERLAYS (Grain, Dust, Ink Splatters) */}
-          <div className="absolute inset-0 pointer-events-none z-25 opacity-[0.07] mix-blend-overlay" style={{ backgroundImage: `url('https://www.transparenttextures.com/patterns/felt.png')` }} />
-          <div className="absolute inset-0 pointer-events-none z-25 opacity-[0.03] mix-blend-color-burn" style={{ backgroundImage: `url('https://www.transparenttextures.com/patterns/stardust.png')` }} />
-          <div className="absolute inset-0 pointer-events-none z-25 opacity-[0.05] mix-blend-multiply" style={{ backgroundImage: `url('https://www.transparenttextures.com/patterns/natural-paper.png')` }} />
+          <div className="absolute inset-0 pointer-events-none z-25 opacity-[0.04] mix-blend-overlay" style={{ backgroundImage: `url('https://www.transparenttextures.com/patterns/felt.png')` }} />
+          <div className="absolute inset-0 pointer-events-none z-25 opacity-[0.02] mix-blend-color-burn" style={{ backgroundImage: `url('https://www.transparenttextures.com/patterns/stardust.png')` }} />
+          <div className="absolute inset-0 pointer-events-none z-25 opacity-[0.03] mix-blend-multiply" style={{ backgroundImage: `url('https://www.transparenttextures.com/patterns/natural-paper.png')` }} />
           
           {/* CINEMA BARS */}
-          <div className="absolute top-0 inset-x-0 h-4 bg-black/40 backdrop-blur-sm z-30 pointer-events-none" />
-          <div className="absolute bottom-0 inset-x-0 h-4 bg-black/40 backdrop-blur-sm z-30 pointer-events-none" />
+          <div className="absolute top-0 inset-x-0 h-4 bg-white/35 backdrop-blur-sm z-30 pointer-events-none" />
+          <div className="absolute bottom-0 inset-x-0 h-4 bg-white/35 backdrop-blur-sm z-30 pointer-events-none" />
         </div>
 
         {/* READING FLOW GUIDE (Cinematic Action Path) */}
@@ -179,11 +178,11 @@ export function ProfessionalCanvas({ children, settings, isPreview }: Profession
 
         {/* TECHNICAL METADATA OVERLAY (Hidden in Preview) */}
         {!isPreview && (
-          <div className="absolute -bottom-20 left-0 flex justify-between w-full p-4 border-t border-black/5 bg-white/80 backdrop-blur-md rounded-b-3xl">
+          <div className="absolute -bottom-20 left-0 flex justify-between w-full p-4 border-t border-black/5 bg-white/85 backdrop-blur-md rounded-b-3xl">
              <div className="flex gap-8">
                 <div className="flex flex-col gap-1">
                    <span className="text-[7px] text-black/20 font-black uppercase tracking-[0.2em]">Technical_Format</span>
-                   <span className="text-[10px] text-[var(--accent)] font-black italic">{format.label} // {format.width}x{format.height}MM</span>
+                   <span className="text-[10px] text-[var(--accent)] font-black italic">{format.label}{' // '}{format.width}x{format.height}MM</span>
                 </div>
                 <div className="flex flex-col border-l border-black/5 pl-8 gap-1">
                    <span className="text-[7px] text-black/20 font-black uppercase tracking-[0.2em]">Foundry_Res</span>

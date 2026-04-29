@@ -22,6 +22,13 @@
   --mystic-cyan: #73f7ff;
   --mystic-gold: #ffd66b;
   --mystic-ember: #ff4d00;
+  --paper-bg: #f5f1e8;
+  --paper-panel: #fbfaf6;
+  --paper-panel-strong: #ffffff;
+  --paper-border: rgba(0, 0, 0, 0.08);
+  --paper-border-strong: rgba(0, 0, 0, 0.14);
+  --paper-muted: rgba(0, 0, 0, 0.52);
+  --paper-soft: rgba(0, 0, 0, 0.03);
 
   /* Studio Light Theme Tokens */
   --studio-bg: #fcfaf2;
@@ -29,6 +36,45 @@
   --studio-text: #000000;
   --studio-text-dim: rgba(0,0,0,0.4);
   --studio-border: rgba(0,0,0,0.08);
+}
+
+body.studio-light {
+  background:
+    radial-gradient(circle at top, rgba(255, 196, 113, 0.18), transparent 30%),
+    linear-gradient(180deg, #fbf8ef 0%, #f4efe5 100%);
+  color: #111111;
+}
+
+.studio-shell {
+  background:
+    radial-gradient(circle at center top, rgba(255, 255, 255, 0.72), transparent 40%),
+    linear-gradient(180deg, #f8f5ee 0%, #efe8db 100%);
+}
+
+.studio-card {
+  background: var(--paper-panel);
+  border: 1px solid var(--paper-border);
+  box-shadow: 0 18px 45px rgba(0, 0, 0, 0.06);
+}
+
+.studio-card-strong {
+  background: var(--paper-panel-strong);
+  border: 1px solid var(--paper-border-strong);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.08);
+}
+
+.studio-section-title {
+  font-size: 9px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.35em;
+  color: rgba(0, 0, 0, 0.42);
+}
+
+.studio-chip {
+  background: rgba(0, 0, 0, 0.04);
+  border: 1px solid rgba(0, 0, 0, 0.07);
+  color: rgba(0, 0, 0, 0.72);
 }
 
 body {
