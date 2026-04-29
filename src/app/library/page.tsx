@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
+import React, { Suspense, useState, useEffect, useRef, useCallback, useSyncExternalStore } from 'react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   BookOpen, Search, X, ChevronLeft, ChevronRight, 
@@ -26,6 +26,15 @@ import {
   resolveMangaDexLocalizedText,
   readStoredMangaLanguage,
 } from '@/lib/manga-language';
+import {
+  appendMangaDexFilters,
+  buildMangaDexCoverUrl,
+  MANGADEX_LONG_STRIP_TAG_ID,
+  pickMangaDexCoverFileName,
+} from '@/lib/mangadex';
+import {
+  buildBooruSearchUrl,
+} from '@/lib/booru';
 
 interface Comic {
   id: string;
@@ -65,6 +74,8 @@ type Category = {
   nsfw?: boolean;
   ratings?: string[];
   originalLanguages?: string[];
+  includedTagIds?: string[];
+  excludedTagIds?: string[];
 };
 
 type LoadResult = {
@@ -74,9 +85,9 @@ type LoadResult = {
 
 const CATEGORIES: Category[] = [
   { label: 'Marvel Universe', source: 'marvel' },
-  { label: 'Manga Hub', source: 'mangadex' },
-  { label: 'Webtoons', query: 'webtoon', source: 'mangadex' },
-  { label: 'Manhwa', source: 'mangadex', originalLanguages: ['ko'] },
+  { label: 'Manga Hub', source: 'mangadex', originalLanguages: ['ja'] },
+  { label: 'Webtoons', source: 'mangadex', includedTagIds: [MANGADEX_LONG_STRIP_TAG_ID] },
+  { label: 'Manhwa', source: 'mangadex', originalLanguages: ['ko'], excludedTagIds: [MANGADEX_LONG_STRIP_TAG_ID] },
   { label: 'Doujinshi', query: 'all', nsfw: true, source: 'nhentai' },
   { label: 'New Doujinshi', query: 'language:english', nsfw: true, source: 'nhentai' },
   { label: 'Hentai', source: 'mangadex', nsfw: true, ratings: ['pornographic'] },
@@ -89,6 +100,11 @@ const CATEGORIES: Category[] = [
 const LIMIT = 36;
 const MARVEL_COVER_PREFETCH_COUNT = 12;
 const MARVEL_COVER_FETCH_RETRIES = 2;
+
+const createCategoryQueryMap = () =>
+  Object.fromEntries(CATEGORIES.map((category) => [category.label, category.query ?? ''])) as Record<string, string>;
+
+const getCategoryByLabel = (label: string | null) => CATEGORIES.find((category) => category.label === label);
 
 const formatMarvelDate = (value?: string) => {
   if (!value) return 'Unknown';
@@ -113,21 +129,18 @@ const fetchMangaDexProxy = (path: string) =>
     cache: 'no-store',
   });
 
-const proxyImageUrl = (url: string) =>
-  `/api/proxy/image?url=${encodeURIComponent(url)}`;
-
 const resolveMangaDexCoverUrl = async (mangaId: string, coverFileName?: string | null) => {
   if (coverFileName) {
-    return proxyImageUrl(`https://uploads.mangadex.org/covers/${mangaId}/${coverFileName}.512.jpg`);
+    return buildMangaDexCoverUrl(mangaId, coverFileName);
   }
 
   const res = await fetchMangaDexProxy(`manga/${mangaId}?includes[]=cover_art`);
   if (!res.ok) return '/logo.png';
 
   const data = await res.json();
-  const cover = data?.data?.relationships?.find((r: any) => r.type === 'cover_art')?.attributes?.fileName;
+  const cover = pickMangaDexCoverFileName(data?.data?.relationships);
   return cover
-    ? proxyImageUrl(`https://uploads.mangadex.org/covers/${mangaId}/${cover}.512.jpg`)
+    ? buildMangaDexCoverUrl(mangaId, cover)
     : '/logo.png';
 };
 
@@ -138,20 +151,47 @@ const fetchBooruProxy = (source: BooruSource, kind: 'search' | 'post', params: R
   });
 };
 
-export default function ComicLibrary() {
+const fetchDanbooruDirect = (kind: 'search' | 'post', params: Record<string, string>) => {
+  if (kind === 'search') {
+    const url = buildBooruSearchUrl('danbooru', {
+      limit: Number.parseInt(params.limit || '36', 10),
+      page: Number.parseInt(params.page || '0', 10),
+      query: params.query || '',
+    });
+
+    return fetch(url, {
+      cache: 'no-store',
+      mode: 'cors',
+    });
+  }
+
+  return fetch(`https://danbooru.donmai.us/posts/${encodeURIComponent(params.id || '')}.json`, {
+    cache: 'no-store',
+    mode: 'cors',
+  });
+};
+
+function ComicLibrary() {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const initialCategory = getCategoryByLabel(searchParams.get('tab'))?.label ?? 'Marvel Universe';
+  const initialCategoryQueries = createCategoryQueryMap();
+  initialCategoryQueries[initialCategory] = searchParams.get('q') ?? initialCategoryQueries[initialCategory] ?? '';
+
   const [comics, setComics] = useState<Comic[]>([]);
   const [selectedComic, setSelectedComic] = useState<Comic | null>(null);
   const [pages, setPages] = useState<string[]>([]);
   const [currentPage, setCurrentPage] = useState(0);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [categoryQueries, setCategoryQueries] = useState<Record<string, string>>(() => initialCategoryQueries);
   const [loading, setLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [reading, setReading] = useState(false);
   const [viewMode, setViewMode] = useState<'single' | 'webtoon' | 'spread'>('single');
-  const [isAgeVerified, setIsAgeVerified] = useState(() => readAgeVerification());
-  const [nsfwEnabled, setNsfwEnabled] = useState(() => readAgeVerification());
+  const [isAgeVerified, setIsAgeVerified] = useState(false);
+  const [nsfwEnabled, setNsfwEnabled] = useState(false);
   const [showAgeGate, setShowAgeGate] = useState(false);
-  const [activeCategory, setActiveCategory] = useState('Marvel Universe');
+  const [activeCategory, setActiveCategory] = useState(initialCategory);
   const [offset, setOffset] = useState(0);
   const [hasMore, setHasMore] = useState(true);
   const [zoom, setZoom] = useState(1);
@@ -161,23 +201,45 @@ export default function ComicLibrary() {
     return savedLang && translations[savedLang] ? savedLang : 'en';
   });
   const [mangaLanguage, setMangaLanguage] = useState<MangaLanguage>(readStoredMangaLanguage);
+  const isMounted = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false,
+  );
   const t_lib = (translations[lang] as any).library;
   const requestIdRef = useRef(0);
   const skipNextOffsetFetchRef = useRef(false);
-  
-  const router = useRouter();
   const readerRef = useRef<HTMLDivElement>(null);
   const observer = useRef<IntersectionObserver | null>(null);
+  const searchQuery = categoryQueries[activeCategory] ?? '';
 
   useEffect(() => {
-    if (isAgeVerified) {
-      persistAgeVerification();
-    }
-  }, [isAgeVerified]);
+    const verified = readAgeVerification();
+    const timer = window.setTimeout(() => {
+      setIsAgeVerified(verified);
+      setNsfwEnabled(verified);
+    }, 0);
+    if (verified) persistAgeVerification();
+    return () => window.clearTimeout(timer);
+  }, []);
 
   useEffect(() => {
     persistStoredMangaLanguage(mangaLanguage);
   }, [mangaLanguage]);
+
+  const updateLibraryUrl = useCallback((tab: string, query: string, mode: 'push' | 'replace') => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set('tab', tab);
+    if (query.trim()) params.set('q', query.trim());
+    else params.delete('q');
+
+    const nextUrl = params.toString() ? `${pathname}?${params.toString()}` : pathname;
+    if (mode === 'push') {
+      router.push(nextUrl, { scroll: false });
+    } else {
+      router.replace(nextUrl, { scroll: false });
+    }
+  }, [pathname, router, searchParams]);
 
   const handleAgeVerify = () => {
     persistAgeVerification();
@@ -185,6 +247,47 @@ export default function ComicLibrary() {
     setNsfwEnabled(true);
     setShowAgeGate(false);
   };
+
+  const handleCategoryChange = useCallback((category: Category) => {
+    if (category.nsfw && !isAgeVerified) {
+      setShowAgeGate(true);
+      return;
+    }
+
+    const nextQuery = categoryQueries[category.label] ?? category.query ?? '';
+    requestIdRef.current += 1;
+    setSelectedComic(null);
+    setActiveCategory(category.label);
+    setOffset(0);
+    setHasMore(true);
+    setComics([]);
+    updateLibraryUrl(category.label, nextQuery, 'push');
+  }, [categoryQueries, isAgeVerified, updateLibraryUrl]);
+
+  const handleSearchQueryChange = useCallback((value: string) => {
+    requestIdRef.current += 1;
+    setOffset(0);
+    setHasMore(true);
+    setComics([]);
+    setCategoryQueries((prev) => ({
+      ...prev,
+      [activeCategory]: value,
+    }));
+    updateLibraryUrl(activeCategory, value, 'replace');
+  }, [activeCategory, updateLibraryUrl]);
+
+  const handleNsfwToggle = useCallback(() => {
+    if (!isAgeVerified) {
+      setShowAgeGate(true);
+      return;
+    }
+
+    requestIdRef.current += 1;
+    setOffset(0);
+    setHasMore(true);
+    setComics([]);
+    setNsfwEnabled((value) => !value);
+  }, [isAgeVerified]);
 
   const lastComicRef = useCallback((node: HTMLDivElement) => {
     if (loading || loadingMore) return;
@@ -203,6 +306,8 @@ export default function ComicLibrary() {
     currentOffset: number,
     ratingsOverride?: string[],
     originalLanguages?: string[],
+    includedTagIds?: string[],
+    excludedTagIds?: string[],
     translatedLanguage?: MangaLanguage
   ): Promise<LoadResult> => {
     try {
@@ -212,9 +317,13 @@ export default function ComicLibrary() {
       params.set('offset', String(currentOffset * LIMIT));
       params.append('includes[]', 'cover_art');
       const translatedLanguages = getMangaDexTranslatedLanguages(translatedLanguage || DEFAULT_MANGA_LANGUAGE);
-      translatedLanguages?.forEach((language) => params.append('availableTranslatedLanguage[]', language));
-      ratings.forEach((rating) => params.append('contentRating[]', rating));
-      originalLanguages?.forEach((language) => params.append('originalLanguage[]', language));
+      appendMangaDexFilters(params, {
+        contentRatings: ratings,
+        includedTagIds,
+        excludedTagIds,
+        originalLanguages,
+        translatedLanguages,
+      });
       // Added order by relevance if query exists, else followedCount
       if (query.trim().length >= 2) {
         params.set('title', query.trim());
@@ -233,14 +342,16 @@ export default function ComicLibrary() {
         : items.length === LIMIT;
 
       const mappedItems = await Promise.all(items.map(async (item: any) => {
-        const coverFileName = item.relationships?.find((r: any) => r.type === 'cover_art')?.attributes?.fileName;
+        const coverFileName = pickMangaDexCoverFileName(item.relationships);
         const title = resolveMangaDexLocalizedText(item.attributes.title, translatedLanguage || DEFAULT_MANGA_LANGUAGE);
         const description = resolveMangaDexLocalizedText(item.attributes.description, translatedLanguage || DEFAULT_MANGA_LANGUAGE);
         return {
           id: item.id,
           title: title || Object.values(item.attributes.title || {})[0] || 'Untitled',
           description: description || 'No description available.',
-          coverUrl: await resolveMangaDexCoverUrl(item.id, coverFileName),
+          coverUrl: coverFileName
+            ? buildMangaDexCoverUrl(item.id, coverFileName)
+            : await resolveMangaDexCoverUrl(item.id, coverFileName),
           source: 'mangadex',
           rating: item.attributes.contentRating
         };
@@ -287,7 +398,7 @@ export default function ComicLibrary() {
   // Fetch from nhentai
   const fetchNHentai = useCallback(async (query: string, page: number): Promise<LoadResult> => {
     try {
-      let path = (query === 'all' || !query) 
+      const path = (query === 'all' || !query) 
         ? `galleries?page=${page + 1}` 
         : `search?query=${encodeURIComponent(query)}&page=${page + 1}`;
         
@@ -323,11 +434,17 @@ export default function ComicLibrary() {
   ): Promise<LoadResult> => {
     try {
       const normalizedQuery = query.trim() || getBooruDefaultQuery(source);
-      const res = await fetchBooruProxy(source, 'search', {
-        limit: LIMIT.toString(),
-        page: String(page + 1),
-        query: normalizedQuery,
-      });
+      const res = source === 'danbooru'
+        ? await fetchDanbooruDirect('search', {
+            limit: LIMIT.toString(),
+            page: String(page),
+            query: normalizedQuery,
+          })
+        : await fetchBooruProxy(source, 'search', {
+            limit: LIMIT.toString(),
+            page: String(page),
+            query: normalizedQuery,
+          });
 
       if (!res.ok) return { items: [], hasMore: false };
 
@@ -354,6 +471,7 @@ export default function ComicLibrary() {
   const fetchMarvelIssues = useCallback(async (query: string, currentOffset: number): Promise<LoadResult> => {
     try {
       const normalizedQuery = query.trim();
+      const shouldPrefetchCovers = normalizedQuery.length < 2;
       const params = new URLSearchParams();
       if (normalizedQuery.length >= 2) {
         params.set('q', normalizedQuery);
@@ -385,40 +503,42 @@ export default function ComicLibrary() {
           pageCount: item.pageCount,
         }));
 
-      const preferredMarvelItems = await Promise.all(
-        mappedItems.map(async (comic, index) => {
-          if (index >= MARVEL_COVER_PREFETCH_COUNT || comic.coverUrl) return comic;
+      const preferredMarvelItems = shouldPrefetchCovers
+        ? await Promise.all(
+            mappedItems.map(async (comic, index) => {
+              if (index >= MARVEL_COVER_PREFETCH_COUNT || comic.coverUrl) return comic;
 
-          for (let attempt = 0; attempt <= MARVEL_COVER_FETCH_RETRIES; attempt += 1) {
-            try {
-              const detailRes = await fetch(`/api/marvel/issues/${comic.id}`);
-              if (!detailRes.ok) {
-                if (attempt < MARVEL_COVER_FETCH_RETRIES) {
-                  await wait(400 * (attempt + 1));
-                  continue;
+              for (let attempt = 0; attempt <= MARVEL_COVER_FETCH_RETRIES; attempt += 1) {
+                try {
+                  const detailRes = await fetch(`/api/marvel/issues/${comic.id}`);
+                  if (!detailRes.ok) {
+                    if (attempt < MARVEL_COVER_FETCH_RETRIES) {
+                      await wait(400 * (attempt + 1));
+                      continue;
+                    }
+                    return comic;
+                  }
+
+                  const detail = await detailRes.json();
+                  const coverUrl = normalizeMarvelCover(detail?.cover);
+                  if (coverUrl) {
+                    return { ...comic, coverUrl };
+                  }
+
+                  return comic;
+                } catch {
+                  if (attempt < MARVEL_COVER_FETCH_RETRIES) {
+                    await wait(400 * (attempt + 1));
+                    continue;
+                  }
+                  return comic;
                 }
-                return comic;
-              }
-
-              const detail = await detailRes.json();
-              const coverUrl = normalizeMarvelCover(detail?.cover);
-              if (coverUrl) {
-                return { ...comic, coverUrl };
               }
 
               return comic;
-            } catch {
-              if (attempt < MARVEL_COVER_FETCH_RETRIES) {
-                await wait(400 * (attempt + 1));
-                continue;
-              }
-              return comic;
-            }
-          }
-
-          return comic;
-        })
-      );
+            })
+          )
+        : mappedItems;
 
       return {
         items: preferredMarvelItems,
@@ -473,7 +593,7 @@ export default function ComicLibrary() {
             : [];
 
           const [mdResults, arcResults, nhResults, ...booruResults] = await Promise.all([
-            fetchMangaDex(query, pageIndex, defaultRatings, undefined, mangaLanguage),
+            fetchMangaDex(query, pageIndex, defaultRatings, undefined, undefined, undefined, mangaLanguage),
             fetchArchive(query, pageIndex),
             nhentaiSearch,
             ...booruSearches,
@@ -495,7 +615,15 @@ export default function ComicLibrary() {
         const catQuery = cat?.query || '';
         
         if (source === 'mangadex') {
-          result = await fetchMangaDex(catQuery, pageIndex, cat?.ratings || defaultRatings, cat?.originalLanguages, mangaLanguage);
+          result = await fetchMangaDex(
+            catQuery,
+            pageIndex,
+            cat?.ratings || defaultRatings,
+            cat?.originalLanguages,
+            cat?.includedTagIds,
+            cat?.excludedTagIds,
+            mangaLanguage
+          );
         } else if (source === 'nhentai') {
           if (!canAccessAdultContent) {
             setShowAgeGate(true);
@@ -542,29 +670,23 @@ export default function ComicLibrary() {
         setLoadingMore(false);
       }
     }
-  }, [activeCategory, fetchArchive, fetchBooru, fetchMangaDex, fetchMarvelIssues, fetchNHentai, isAgeVerified, mangaLanguage, nsfwEnabled, searchQuery]);
+  }, [activeCategory, fetchArchive, fetchBooru, fetchMangaDex, fetchMarvelIssues, fetchNHentai, isAgeVerified, mangaLanguage, searchQuery]);
 
   useEffect(() => {
-    // Filters intentionally refetch the library; this is the synchronization point.
-    /* eslint-disable react-hooks/set-state-in-effect */
-    requestIdRef.current += 1;
-    setOffset(0);
-    setHasMore(true);
-    setComics([]);
-    loadData(0, false);
-    /* eslint-enable react-hooks/set-state-in-effect */
+    const timeout = window.setTimeout(() => {
+      loadData(0, false);
+    }, 350);
+
+    return () => window.clearTimeout(timeout);
   }, [activeCategory, searchQuery, nsfwEnabled, loadData]);
 
   useEffect(() => {
     // Infinite scroll advances the page index and fetches the next batch.
-    /* eslint-disable react-hooks/set-state-in-effect */
     if (skipNextOffsetFetchRef.current) {
       skipNextOffsetFetchRef.current = false;
-      /* eslint-enable react-hooks/set-state-in-effect */
       return;
     }
     if (offset > 0) loadData(offset, true);
-    /* eslint-enable react-hooks/set-state-in-effect */
   }, [offset, loadData]);
 
   const fetchPages = async (comic: Comic) => {
@@ -744,11 +866,11 @@ export default function ComicLibrary() {
                   <Shuffle size={20} />
                 </button>
                 <div className="relative flex-1 md:w-96">
-                  <input type="text" placeholder="SEARCH_GLOBAL_ARCHIVES..." className="w-full bg-white/5 border border-white/10 py-5 px-12 text-[11px] font-black uppercase focus:border-[#ff4d00] transition-all outline-none" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
+                  <input type="text" placeholder="SEARCH_GLOBAL_ARCHIVES..." className="w-full bg-white/5 border border-white/10 py-5 px-12 text-[11px] font-black uppercase focus:border-[#ff4d00] transition-all outline-none" value={searchQuery} onChange={e => handleSearchQueryChange(e.target.value)} />
                   <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/20" />
                 </div>
-                <button onClick={() => { if (!isAgeVerified) { setShowAgeGate(true); } else { setNsfwEnabled(!nsfwEnabled); } }} className={`w-16 h-16 flex items-center justify-center border transition-all ${nsfwEnabled ? 'bg-red-600 border-red-600' : 'border-white/10 text-white/20'}`}>
-                  {nsfwEnabled ? <Eye /> : <EyeOff />}
+                <button onClick={handleNsfwToggle} className={`w-16 h-16 flex items-center justify-center border transition-all ${nsfwEnabled ? 'bg-red-600 border-red-600' : 'border-white/10 text-white/20'}`}>
+                  {isMounted && nsfwEnabled ? <Eye /> : <EyeOff />}
                 </button>
               </div>
             </div>
@@ -757,7 +879,7 @@ export default function ComicLibrary() {
               {CATEGORIES.map(cat => (
                 <button 
                   key={cat.label} 
-                  onClick={() => { if (cat.nsfw && !isAgeVerified) { setShowAgeGate(true); return; } setActiveCategory(cat.label); setSearchQuery(''); }} 
+                  onClick={() => handleCategoryChange(cat)} 
                   className={`px-6 py-3 text-[10px] font-black uppercase tracking-widest border transition-all ${activeCategory === cat.label ? 'bg-[#ff4d00] border-[#ff4d00] text-white' : 'border-white/10 text-white/30 hover:border-white/80'}`}
                 >
                   {cat.source === 'archive' && <Flag size={10} className="inline mr-2" />}
@@ -783,7 +905,7 @@ export default function ComicLibrary() {
               {comics.map((comic, index) => (
                 <motion.div 
                   ref={comics.length === index + 1 ? lastComicRef : null}
-                  key={comic.id + index} 
+                  key={`${comic.source}:${comic.id}`} 
                   whileHover={{ y: -20, scale: 1.05 }}
                   onClick={() => {
                     if (isAdultComic(comic) && !isAgeVerified) {
@@ -1021,6 +1143,14 @@ export default function ComicLibrary() {
         }
       `}</style>
     </div>
+  );
+}
+
+export default function LibraryPage() {
+  return (
+    <Suspense fallback={null}>
+      <ComicLibrary />
+    </Suspense>
   );
 }
 

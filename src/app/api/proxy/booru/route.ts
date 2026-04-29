@@ -13,11 +13,18 @@ const BOORU_BASE_URLS: Record<BooruSource, string> = {
   gelbooru: 'https://gelbooru.com',
 };
 
+function parsePageIndex(params: URLSearchParams) {
+  const raw = Number.parseInt(params.get('page') || '0', 10);
+  return Number.isFinite(raw) && raw > 0 ? raw : 0;
+}
+
 function isBooruSource(value: string | null): value is BooruSource {
   return value === 'e621' || value === 'danbooru' || value === 'gelbooru';
 }
 
 function buildUrl(source: BooruSource, kind: 'search' | 'post', params: URLSearchParams) {
+  const pageIndex = parsePageIndex(params);
+
   if (source === 'gelbooru') {
     const url = new URL(`${BOORU_BASE_URLS[source]}/index.php`);
     url.searchParams.set('page', 'dapi');
@@ -27,7 +34,7 @@ function buildUrl(source: BooruSource, kind: 'search' | 'post', params: URLSearc
 
     if (kind === 'search') {
       url.searchParams.set('limit', params.get('limit') || '36');
-      url.searchParams.set('pid', params.get('page') || '0');
+      url.searchParams.set('pid', String(pageIndex));
       url.searchParams.set('tags', normalizeBooruQuery(source, params.get('query') || ''));
     } else {
       url.searchParams.set('id', params.get('id') || '');
@@ -39,12 +46,41 @@ function buildUrl(source: BooruSource, kind: 'search' | 'post', params: URLSearc
   if (kind === 'search') {
     const url = new URL(`${BOORU_BASE_URLS[source]}/posts.json`);
     url.searchParams.set('limit', params.get('limit') || '36');
-    url.searchParams.set('page', params.get('page') || '1');
+    url.searchParams.set('page', String(pageIndex + 1));
     url.searchParams.set('tags', normalizeBooruQuery(source, params.get('query') || ''));
     return url.toString();
   }
 
   return `${BOORU_BASE_URLS[source]}/posts/${params.get('id')}.json`;
+}
+
+async function fetchJson(
+  source: BooruSource,
+  kind: 'search' | 'post',
+  params: URLSearchParams,
+  headers: Record<string, string>,
+) {
+  const targetUrl = buildUrl(source, kind, params);
+  let res: Response;
+  try {
+    res = await fetch(targetUrl, {
+      headers,
+      cache: 'no-store',
+    });
+  } catch (error) {
+    if (source !== 'gelbooru' || kind !== 'search') {
+      throw error;
+    }
+    res = new Response(null, { status: 502, statusText: 'Gelbooru upstream unavailable' });
+  }
+
+  if (res.ok) {
+    const body = await res.text();
+    return { body, status: res.status, contentType: res.headers.get('content-type') || 'application/json' };
+  }
+
+  const body = await res.text();
+  return { body, status: res.status, contentType: res.headers.get('content-type') || 'application/json' };
 }
 
 export async function GET(req: NextRequest) {
@@ -71,24 +107,35 @@ export async function GET(req: NextRequest) {
   };
 
   try {
-    const targetUrl = buildUrl(sourceParam, kind, searchParams);
-    const res = await fetch(targetUrl, {
-      headers,
-      cache: 'no-store',
-    });
+    const { body, status, contentType } = await fetchJson(sourceParam, kind, searchParams, headers);
 
-    const contentType = res.headers.get('content-type') || 'application/json';
-    const body = await res.text();
+    if (sourceParam === 'gelbooru' && kind === 'search' && status >= 400) {
+      return NextResponse.json([], {
+        status: 200,
+        headers: {
+          'Cache-Control': 'no-store',
+        },
+      });
+    }
 
     return new NextResponse(body, {
-      status: res.status,
+      status,
       headers: {
         'Content-Type': contentType,
         'Cache-Control': 'no-store',
       },
     });
   } catch (error: unknown) {
+    if (sourceParam === 'gelbooru' && kind === 'search') {
+      return NextResponse.json([], {
+        status: 200,
+        headers: {
+          'Cache-Control': 'no-store',
+        },
+      });
+    }
+
     const message = error instanceof Error ? error.message : 'Unknown proxy error';
-    return NextResponse.json({ error: message }, { status: 500 });
+    return NextResponse.json({ error: message }, { status: 502 });
   }
 }

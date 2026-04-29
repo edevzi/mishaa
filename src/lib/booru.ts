@@ -125,6 +125,31 @@ export function getBooruDefaultQuery(source: BooruSource) {
   return 'rating:e';
 }
 
+export function buildBooruSearchUrl(source: BooruSource, params: {
+  limit: number;
+  page: number;
+  query: string;
+}) {
+  const normalizedQuery = normalizeBooruQuery(source, params.query);
+  if (source === 'danbooru') {
+    const url = new URL('https://danbooru.donmai.us/posts.json');
+    url.searchParams.set('limit', String(params.limit));
+    url.searchParams.set('page', String(params.page + 1));
+    url.searchParams.set('tags', normalizedQuery);
+    return url.toString();
+  }
+
+  return '';
+}
+
+export function buildBooruPostUrl(source: BooruSource, id: string) {
+  if (source === 'danbooru') {
+    return `https://danbooru.donmai.us/posts/${encodeURIComponent(id)}.json`;
+  }
+
+  return '';
+}
+
 export function mapBooruPost(source: BooruSource, post: any): BooruPostSummary {
   const tags = extractTags(source, post);
   const rating = extractRating(source, post);

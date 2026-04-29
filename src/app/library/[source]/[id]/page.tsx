@@ -18,16 +18,22 @@ import { isAdultComic, persistAgeVerification, readAgeVerification } from '@/lib
 import {
   BooruSource,
   booruDisplayLabel,
+  buildBooruPostUrl,
+  buildBooruSearchUrl,
   mapBooruDetail,
 } from '@/lib/booru';
 import { translations, Lang } from '@/lib/translations';
-import { 
+import {
   DEFAULT_MANGA_LANGUAGE,
   getMangaDexTranslatedLanguages,
   resolveMangaDexLocalizedText,
   readStoredMangaLanguage,
   MangaLanguage,
 } from '@/lib/manga-language';
+import {
+  buildMangaDexCoverUrl,
+  pickMangaDexCoverFileName,
+} from '@/lib/mangadex';
 
 interface Chapter {
   id: string;
@@ -116,6 +122,26 @@ const fetchBooruProxy = (source: BooruSource, kind: 'search' | 'post', params: R
   });
 };
 
+const fetchDanbooruDirect = (kind: 'search' | 'post', params: Record<string, string>) => {
+  if (kind === 'search') {
+    const url = buildBooruSearchUrl('danbooru', {
+      limit: Number.parseInt(params.limit || '36', 10),
+      page: Number.parseInt(params.page || '0', 10),
+      query: params.query || '',
+    });
+
+    return fetch(url, {
+      cache: 'no-store',
+      mode: 'cors',
+    });
+  }
+
+  return fetch(buildBooruPostUrl('danbooru', params.id || ''), {
+    cache: 'no-store',
+    mode: 'cors',
+  });
+};
+
 export default function ComicDetailsPage() {
   const params = useParams();
   const router = useRouter();
@@ -190,10 +216,6 @@ export default function ComicDetailsPage() {
     }, 4000);
   }, [reading]);
 
-  useEffect(() => {
-    fetchComicDetails();
-  }, [id, source, isAgeVerified]);
-
   // Handle Scroll for progress and indicators
   useEffect(() => {
     const handleScroll = () => {
@@ -223,7 +245,7 @@ export default function ComicDetailsPage() {
     return () => canvas?.removeEventListener('scroll', handleScroll);
   }, [reading, viewMode, uiVisible]);
 
-  const fetchComicDetails = async () => {
+  async function fetchComicDetails() {
     setLoading(true);
     try {
       if (source === 'nhentai' && !isAgeVerified) {
@@ -270,7 +292,7 @@ export default function ComicDetailsPage() {
         const data = await res.json();
         const manga = data.data;
         
-        const coverFileName = manga.relationships.find((r: any) => r.type === 'cover_art')?.attributes?.fileName;
+        const coverFileName = pickMangaDexCoverFileName(manga.relationships);
         const author = manga.relationships.find((r: any) => r.type === 'author')?.attributes?.name;
         const aniListId = manga.attributes.links?.al;
         const title = resolveMangaDexLocalizedText(manga.attributes.title, mangaLanguage);
@@ -279,13 +301,11 @@ export default function ComicDetailsPage() {
           resolveMangaDexLocalizedText(t.attributes.name, mangaLanguage)
         ).filter(Boolean);
 
-        let details: ComicDetails = {
+        const details: ComicDetails = {
           id: manga.id,
           title: title || Object.values(manga.attributes.title || {})[0] as string,
           description: description || "No description available.",
-          coverUrl: coverFileName
-            ? proxyImageUrl(`https://uploads.mangadex.org/covers/${manga.id}/${coverFileName}.512.jpg`)
-            : '/logo.png',
+          coverUrl: coverFileName ? buildMangaDexCoverUrl(manga.id, coverFileName) : '/logo.png',
           rating: manga.attributes.contentRating,
           genres: genres.length > 0 ? genres : manga.attributes.tags.map((t: any) => t.attributes.name.en),
           status: manga.attributes.status,
@@ -373,7 +393,9 @@ export default function ComicDetailsPage() {
           return;
         }
 
-        const res = await fetchBooruProxy(source, 'post', { id: String(id) });
+        const res = source === 'danbooru'
+          ? await fetchDanbooruDirect('post', { id: String(id) })
+          : await fetchBooruProxy(source, 'post', { id: String(id) });
         if (!res.ok) throw new Error(`Failed to fetch ${source} post`);
         const data = await res.json();
         const post = mapBooruDetail(source, data);
@@ -473,7 +495,9 @@ export default function ComicDetailsPage() {
         });
         setPages(nhPages);
       } else if (source === 'e621' || source === 'danbooru' || source === 'gelbooru') {
-        const res = await fetchBooruProxy(source, 'post', { id: String(id) });
+        const res = source === 'danbooru'
+          ? await fetchDanbooruDirect('post', { id: String(id) })
+          : await fetchBooruProxy(source, 'post', { id: String(id) });
         if (!res.ok) throw new Error(`Failed to fetch ${source} post`);
         const data = await res.json();
         const post = mapBooruDetail(source, data);
@@ -483,7 +507,7 @@ export default function ComicDetailsPage() {
       } else {
         const res = await fetch(`https://archive.org/metadata/${id}`);
         const data = await res.json();
-        let archivePages = [];
+        const archivePages: string[] = [];
         
         const ch = chapters[idx];
         const isSubFile = ch.id !== id;
@@ -521,7 +545,12 @@ export default function ComicDetailsPage() {
       setReaderLoading(false);
       canvasRef.current?.scrollTo(0,0);
     }
-  };
+  }
+
+  useEffect(() => {
+    fetchComicDetails();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id, source, isAgeVerified]);
 
   const startReading = () => {
     setReading(true);
