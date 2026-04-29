@@ -116,6 +116,21 @@ const fetchMangaDexProxy = (path: string) =>
 const proxyImageUrl = (url: string) =>
   `/api/proxy/image?url=${encodeURIComponent(url)}`;
 
+const resolveMangaDexCoverUrl = async (mangaId: string, coverFileName?: string | null) => {
+  if (coverFileName) {
+    return proxyImageUrl(`https://uploads.mangadex.org/covers/${mangaId}/${coverFileName}.512.jpg`);
+  }
+
+  const res = await fetchMangaDexProxy(`manga/${mangaId}?includes[]=cover_art`);
+  if (!res.ok) return '/logo.png';
+
+  const data = await res.json();
+  const cover = data?.data?.relationships?.find((r: any) => r.type === 'cover_art')?.attributes?.fileName;
+  return cover
+    ? proxyImageUrl(`https://uploads.mangadex.org/covers/${mangaId}/${cover}.512.jpg`)
+    : '/logo.png';
+};
+
 const fetchBooruProxy = (source: BooruSource, kind: 'search' | 'post', params: Record<string, string>) => {
   const searchParams = new URLSearchParams({ source, kind, ...params });
   return fetch(`/api/proxy/booru?${searchParams.toString()}`, {
@@ -217,22 +232,22 @@ export default function ComicLibrary() {
         ? (currentOffset + 1) * LIMIT < total
         : items.length === LIMIT;
 
+      const mappedItems = await Promise.all(items.map(async (item: any) => {
+        const coverFileName = item.relationships?.find((r: any) => r.type === 'cover_art')?.attributes?.fileName;
+        const title = resolveMangaDexLocalizedText(item.attributes.title, translatedLanguage || DEFAULT_MANGA_LANGUAGE);
+        const description = resolveMangaDexLocalizedText(item.attributes.description, translatedLanguage || DEFAULT_MANGA_LANGUAGE);
+        return {
+          id: item.id,
+          title: title || Object.values(item.attributes.title || {})[0] || 'Untitled',
+          description: description || 'No description available.',
+          coverUrl: await resolveMangaDexCoverUrl(item.id, coverFileName),
+          source: 'mangadex',
+          rating: item.attributes.contentRating
+        };
+      }));
+
       return {
-        items: items.map((item: any) => {
-          const coverFileName = item.relationships?.find((r: any) => r.type === 'cover_art')?.attributes?.fileName;
-          const title = resolveMangaDexLocalizedText(item.attributes.title, translatedLanguage || DEFAULT_MANGA_LANGUAGE);
-          const description = resolveMangaDexLocalizedText(item.attributes.description, translatedLanguage || DEFAULT_MANGA_LANGUAGE);
-          return {
-            id: item.id,
-            title: title || Object.values(item.attributes.title || {})[0] || 'Untitled',
-            description: description || 'No description available.',
-            coverUrl: coverFileName
-              ? proxyImageUrl(`https://uploads.mangadex.org/covers/${item.id}/${coverFileName}.512.jpg`)
-              : '/logo.png',
-            source: 'mangadex',
-            rating: item.attributes.contentRating
-          };
-        }),
+        items: mappedItems,
         hasMore,
       };
     } catch (e) { return { items: [], hasMore: false }; }

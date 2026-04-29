@@ -2,20 +2,21 @@ import { NextRequest, NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
 
-const ALLOWED_HOSTS = new Set([
-  'uploads.mangadex.org',
-  'api.mangadex.org',
-  'i.nhentai.net',
-  't3.nhentai.net',
-  'i.nhentai.to',
-  'static1.e621.net',
+const ALLOWED_HOSTS = [
+  'mangadex.org',
+  'mangadex.network',
+  'nhentai.net',
+  'nhentai.to',
   'e621.net',
-  'cdn.donmai.us',
-  'danbooru.donmai.us',
-  'img3.gelbooru.com',
-  'img1.gelbooru.com',
+  'donmai.us',
   'gelbooru.com',
-]);
+];
+
+function isAllowedHost(hostname: string) {
+  return ALLOWED_HOSTS.some(
+    (allowed) => hostname === allowed || hostname.endsWith(`.${allowed}`)
+  );
+}
 
 function getReferer(url: URL) {
   if (url.hostname.includes('mangadex')) return 'https://mangadex.org/';
@@ -41,7 +42,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid url' }, { status: 400 });
   }
 
-  if (!ALLOWED_HOSTS.has(target.hostname)) {
+  if (!isAllowedHost(target.hostname)) {
     return NextResponse.json({ error: 'Host not allowed' }, { status: 400 });
   }
 
