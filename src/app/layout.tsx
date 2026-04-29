@@ -37,6 +37,7 @@ const bangers = Bangers({
 export const metadata: Metadata = {
   title: "iComics Studio | Professional Sequential Production",
   description: "The ultimate synthesis environment for independent comic creators. Powering the next generation of visual narrative with iComics.",
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://icomics.uz"),
   verification: {
     google: "Q3JUtRB_65-cXXd1FocDiCQ-Y4bOA_zmDpzJQfhU9mE",
   },
@@ -61,4 +62,3 @@ export default function RootLayout({
     </html>
   );
 }
-

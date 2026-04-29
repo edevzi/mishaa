@@ -196,7 +196,7 @@ function ComicLibrary() {
   const [offset, setOffset] = useState(0);
   const [hasMore, setHasMore] = useState(true);
   const [zoom, setZoom] = useState(1);
-  const [lang] = useState<Lang>(() => {
+  const [lang, setLang] = useState<Lang>(() => {
     if (typeof window === 'undefined') return 'en';
     const savedLang = readStorageItem('lang') as Lang;
     return savedLang && translations[savedLang] ? savedLang : 'en';
@@ -222,6 +222,23 @@ function ComicLibrary() {
     }, 0);
     if (verified) persistAgeVerification();
     return () => window.clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
+    const savedLang = readStorageItem('lang') as Lang;
+    if (savedLang && translations[savedLang]) {
+      setLang(savedLang);
+    }
+
+    const handleLang = (e: Event) => {
+      const nextLang = (e as CustomEvent<Lang>).detail;
+      if (translations[nextLang]) {
+        setLang(nextLang);
+      }
+    };
+
+    window.addEventListener('langChange', handleLang as EventListener);
+    return () => window.removeEventListener('langChange', handleLang as EventListener);
   }, []);
 
   useEffect(() => {
