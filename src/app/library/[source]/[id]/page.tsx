@@ -15,6 +15,11 @@ import {
 import AgeGateOverlay from '@/components/AgeGateOverlay';
 import RichTextContent from '@/components/RichTextContent';
 import { isAdultComic, persistAgeVerification, readAgeVerification } from '@/lib/age-verification';
+import {
+  BooruSource,
+  booruDisplayLabel,
+  mapBooruDetail,
+} from '@/lib/booru';
 import { translations, Lang } from '@/lib/translations';
 import { 
   DEFAULT_MANGA_LANGUAGE,
@@ -42,7 +47,7 @@ interface ComicDetails {
   status: string;
   year?: string;
   author?: string;
-  source: 'mangadex' | 'archive' | 'nhentai' | 'marvel';
+  source: 'mangadex' | 'archive' | 'nhentai' | 'marvel' | BooruSource;
   aniListId?: string;
 }
 
@@ -101,8 +106,12 @@ const fetchMangaDexProxy = (path: string) =>
     cache: 'no-store',
   });
 
-const proxyMangaDexImage = (url: string) =>
-  `/api/proxy/mangadex/image?url=${encodeURIComponent(url)}`;
+const fetchBooruProxy = (source: BooruSource, kind: 'search' | 'post', params: Record<string, string>) => {
+  const searchParams = new URLSearchParams({ source, kind, ...params });
+  return fetch(`/api/proxy/booru?${searchParams.toString()}`, {
+    cache: 'no-store',
+  });
+};
 
 export default function ComicDetailsPage() {
   const params = useParams();
@@ -272,7 +281,7 @@ export default function ComicDetailsPage() {
           title: title || Object.values(manga.attributes.title || {})[0] as string,
           description: description || "No description available.",
           coverUrl: coverFileName
-            ? proxyMangaDexImage(`https://uploads.mangadex.org/covers/${manga.id}/${coverFileName}.512.jpg`)
+            ? `https://uploads.mangadex.org/covers/${manga.id}/${coverFileName}.512.jpg`
             : '/logo.png',
           rating: manga.attributes.contentRating,
           genres: genres.length > 0 ? genres : manga.attributes.tags.map((t: any) => t.attributes.name.en),
@@ -355,6 +364,33 @@ export default function ComicDetailsPage() {
         if (!isAgeVerified) {
           setShowAgeGate(true);
         }
+      } else if (source === 'e621' || source === 'danbooru' || source === 'gelbooru') {
+        if (!isAgeVerified) {
+          setShowAgeGate(true);
+          return;
+        }
+
+        const res = await fetchBooruProxy(source, 'post', { id: String(id) });
+        if (!res.ok) throw new Error(`Failed to fetch ${source} post`);
+        const data = await res.json();
+        const post = mapBooruDetail(source, data);
+        if (!post) throw new Error(`Failed to parse ${source} post`);
+
+        const postTags = post.tags;
+        setComic({
+          id: post.id,
+          title: post.title || `${booruDisplayLabel(source)} #${post.id}`,
+          description: post.description || postTags.join(', ') || `${booruDisplayLabel(source)} post`,
+          coverUrl: post.coverUrl,
+          rating: post.rating,
+          genres: postTags.length > 0 ? postTags : [booruDisplayLabel(source)],
+          status: 'Completed',
+          year: undefined,
+          author: booruDisplayLabel(source),
+          source,
+        });
+
+        setChapters([{ id: post.id, title: 'Single Post', chapterNum: '1' }]);
       } else {
         const res = await fetch(`https://archive.org/metadata/${id}`);
         const data = await res.json();
@@ -422,9 +458,7 @@ export default function ComicDetailsPage() {
         const res = await fetchMangaDexProxy(`at-home/server/${chapters[idx].id}`);
         const data = await res.json();
         const urls = data.chapter.data.map((n: string) => `${data.baseUrl}/data/${data.chapter.hash}/${n}`);
-        setPages(
-          urls.map((url: string) => proxyMangaDexImage(url))
-        );
+        setPages(urls);
         // Preload first 3 pages
         urls.slice(0, 3).forEach((u: string) => { const img = new Image(); img.src = u; });
       } else if (source === 'nhentai') {
@@ -435,6 +469,14 @@ export default function ComicDetailsPage() {
            return `https://i.nhentai.net/${p.path}`;
         });
         setPages(nhPages);
+      } else if (source === 'e621' || source === 'danbooru' || source === 'gelbooru') {
+        const res = await fetchBooruProxy(source, 'post', { id: String(id) });
+        if (!res.ok) throw new Error(`Failed to fetch ${source} post`);
+        const data = await res.json();
+        const post = mapBooruDetail(source, data);
+        const imageUrl = post?.coverUrl;
+        if (!imageUrl) throw new Error(`No image available for ${source} post`);
+        setPages([imageUrl]);
       } else {
         const res = await fetch(`https://archive.org/metadata/${id}`);
         const data = await res.json();
@@ -889,6 +931,9 @@ export default function ComicDetailsPage() {
               <div className="flex flex-wrap items-center gap-4">
                  <div className="flex items-center gap-2 px-4 py-2 bg-white/5 border border-white/10 rounded-full">
                     <Star size={12} className="text-[#ff4d00]" fill="#ff4d00" /><span className="text-[12px] font-black tracking-tighter">{comic.rating}</span>
+                 </div>
+                 <div className="px-4 py-2 bg-white/5 border border-white/10 text-white/40 text-[10px] font-black uppercase tracking-[0.3em] rounded-full">
+                    {comic.source}
                  </div>
                  <div className="flex items-center gap-2 text-white/40 text-[10px] font-black uppercase tracking-[0.3em]"><Clock size={12} /> {comic.year || 'N/A'}</div>
                  <div className="px-4 py-2 bg-[#ff4d00]/10 border border-[#ff4d00]/30 text-[#ff4d00] text-[10px] font-black uppercase tracking-widest">{comic.status}</div>

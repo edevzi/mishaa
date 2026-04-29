@@ -2,7 +2,15 @@ export const AGE_VERIFICATION_COOKIE = 'age_verified';
 export const AGE_VERIFICATION_STORAGE_KEY = 'age_verified';
 
 export const isAdultRating = (rating?: string | null) => {
-  return rating === 'erotica' || rating === 'pornographic';
+  const normalized = String(rating || '').toLowerCase();
+  return [
+    'erotica',
+    'pornographic',
+    'explicit',
+    'questionable',
+    'e',
+    'q',
+  ].includes(normalized);
 };
 
 export const isAdultComic = (comic: { rating?: string | null; source?: string | null }) => {

@@ -10,6 +10,12 @@ import {
 } from 'lucide-react';
 import AgeGateOverlay from '@/components/AgeGateOverlay';
 import { isAdultComic, persistAgeVerification, readAgeVerification } from '@/lib/age-verification';
+import {
+  BooruSource,
+  booruDisplayLabel,
+  getBooruDefaultQuery,
+  mapBooruSearchResults,
+} from '@/lib/booru';
 import { translations, Lang } from '@/lib/translations';
 import { 
   DEFAULT_MANGA_LANGUAGE,
@@ -27,7 +33,7 @@ interface Comic {
   description: string;
   coverUrl?: string;
   rating: string;
-  source: 'mangadex' | 'archive' | 'nhentai' | 'marvel';
+  source: 'mangadex' | 'archive' | 'nhentai' | 'marvel' | BooruSource;
   issueNumber?: string;
   seriesName?: string;
   onSaleDate?: string;
@@ -75,6 +81,9 @@ const CATEGORIES: Category[] = [
   { label: 'New Doujinshi', query: 'language:english', nsfw: true, source: 'nhentai' },
   { label: 'Hentai', source: 'mangadex', nsfw: true, ratings: ['pornographic'] },
   { label: 'Erotica', source: 'mangadex', nsfw: true, ratings: ['erotica'] },
+  { label: 'e621', source: 'e621', nsfw: true, query: getBooruDefaultQuery('e621') },
+  { label: 'Danbooru', source: 'danbooru', nsfw: true, query: getBooruDefaultQuery('danbooru') },
+  { label: 'Gelbooru', source: 'gelbooru', nsfw: true, query: getBooruDefaultQuery('gelbooru') },
 ];
 
 const LIMIT = 36;
@@ -104,8 +113,12 @@ const fetchMangaDexProxy = (path: string) =>
     cache: 'no-store',
   });
 
-const proxyMangaDexImage = (url: string) =>
-  `/api/proxy/mangadex/image?url=${encodeURIComponent(url)}`;
+const fetchBooruProxy = (source: BooruSource, kind: 'search' | 'post', params: Record<string, string>) => {
+  const searchParams = new URLSearchParams({ source, kind, ...params });
+  return fetch(`/api/proxy/booru?${searchParams.toString()}`, {
+    cache: 'no-store',
+  });
+};
 
 export default function ComicLibrary() {
   const [comics, setComics] = useState<Comic[]>([]);
@@ -211,7 +224,7 @@ export default function ComicLibrary() {
             title: title || Object.values(item.attributes.title || {})[0] || 'Untitled',
             description: description || 'No description available.',
             coverUrl: coverFileName
-              ? proxyMangaDexImage(`https://uploads.mangadex.org/covers/${item.id}/${coverFileName}.512.jpg`)
+              ? `https://uploads.mangadex.org/covers/${item.id}/${coverFileName}.512.jpg`
               : '/logo.png',
             source: 'mangadex',
             rating: item.attributes.contentRating
@@ -281,6 +294,41 @@ export default function ComicLibrary() {
       };
     } catch (e) {
       console.error(e);
+      return { items: [], hasMore: false };
+    }
+  }, []);
+
+  const fetchBooru = useCallback(async (
+    source: BooruSource,
+    query: string,
+    page: number
+  ): Promise<LoadResult> => {
+    try {
+      const normalizedQuery = query.trim() || getBooruDefaultQuery(source);
+      const res = await fetchBooruProxy(source, 'search', {
+        limit: LIMIT.toString(),
+        page: String(page + 1),
+        query: normalizedQuery,
+      });
+
+      if (!res.ok) return { items: [], hasMore: false };
+
+      const data = await res.json();
+      const items = mapBooruSearchResults(source, data).map((item) => ({
+        id: item.id,
+        title: item.title,
+        description: item.description || item.tags.slice(0, 12).join(', ') || `${booruDisplayLabel(source)} post`,
+        coverUrl: item.coverUrl,
+        source,
+        rating: item.rating,
+      }));
+
+      return {
+        items,
+        hasMore: items.length === LIMIT,
+      };
+    } catch (error) {
+      console.error(error);
       return { items: [], hasMore: false };
     }
   }, []);
@@ -385,19 +433,43 @@ export default function ComicLibrary() {
       if (query) {
         if (cat?.source === 'marvel') {
           result = await fetchMarvelIssues(safeMarvelQuery, pageIndex);
+        } else if (cat?.source === 'e621' || cat?.source === 'danbooru' || cat?.source === 'gelbooru') {
+          if (!canAccessAdultContent) {
+            setShowAgeGate(true);
+            if (requestId === requestIdRef.current) {
+              setLoading(false);
+              setLoadingMore(false);
+            }
+            return;
+          }
+          result = await fetchBooru(cat.source, query, pageIndex);
         } else {
           // Global search: search all sources
           const nhentaiSearch = canAccessAdultContent ? fetchNHentai(query, pageIndex) : Promise.resolve<LoadResult>({ items: [], hasMore: false });
-          const [mdResults, arcResults, nhResults] = await Promise.all([
+          const booruSearches = canAccessAdultContent
+            ? [
+                fetchBooru('e621', query, pageIndex),
+                fetchBooru('danbooru', query, pageIndex),
+                fetchBooru('gelbooru', query, pageIndex),
+              ]
+            : [];
+
+          const [mdResults, arcResults, nhResults, ...booruResults] = await Promise.all([
             fetchMangaDex(query, pageIndex, defaultRatings, undefined, mangaLanguage),
             fetchArchive(query, pageIndex),
-            nhentaiSearch
+            nhentaiSearch,
+            ...booruSearches,
           ]);
 
-          const combinedItems = [...mdResults.items, ...arcResults.items, ...nhResults.items].sort((a, b) => a.title.localeCompare(b.title));
+          const combinedItems = [
+            ...mdResults.items,
+            ...arcResults.items,
+            ...nhResults.items,
+            ...booruResults.flatMap((result) => result.items),
+          ].sort((a, b) => a.title.localeCompare(b.title));
           result = {
             items: combinedItems,
-            hasMore: mdResults.hasMore || arcResults.hasMore || nhResults.hasMore,
+            hasMore: mdResults.hasMore || arcResults.hasMore || nhResults.hasMore || booruResults.some((r) => r.hasMore),
           };
         }
       } else {
@@ -416,6 +488,16 @@ export default function ComicLibrary() {
             return;
           }
           result = await fetchNHentai(catQuery, pageIndex);
+        } else if (source === 'e621' || source === 'danbooru' || source === 'gelbooru') {
+          if (!canAccessAdultContent) {
+            setShowAgeGate(true);
+            if (requestId === requestIdRef.current) {
+              setLoading(false);
+              setLoadingMore(false);
+            }
+            return;
+          }
+          result = await fetchBooru(source, catQuery, pageIndex);
         } else if (source === 'marvel') {
           result = await fetchMarvelIssues(safeMarvelQuery, pageIndex);
         } else {
@@ -442,7 +524,7 @@ export default function ComicLibrary() {
         setLoadingMore(false);
       }
     }
-  }, [activeCategory, fetchArchive, fetchMangaDex, fetchMarvelIssues, fetchNHentai, isAgeVerified, mangaLanguage, nsfwEnabled, searchQuery]);
+  }, [activeCategory, fetchArchive, fetchBooru, fetchMangaDex, fetchMarvelIssues, fetchNHentai, isAgeVerified, mangaLanguage, nsfwEnabled, searchQuery]);
 
   useEffect(() => {
     // Filters intentionally refetch the library; this is the synchronization point.
@@ -501,11 +583,7 @@ export default function ComicLibrary() {
         
         if (!srvData.chapter || !srvData.chapter.data) throw new Error("Chapter data is unavailable");
         
-        setPages(
-          srvData.chapter.data.map((n: string) =>
-            proxyMangaDexImage(`${srvData.baseUrl}/data/${srvData.chapter.hash}/${n}`)
-          )
-        );
+        setPages(srvData.chapter.data.map((n: string) => `${srvData.baseUrl}/data/${srvData.chapter.hash}/${n}`));
       } 
       else if (comic.source === 'archive') {
         const url = `https://archive.org/metadata/${comic.id}`;
@@ -666,6 +744,7 @@ export default function ComicLibrary() {
                 >
                   {cat.source === 'archive' && <Flag size={10} className="inline mr-2" />}
                   {cat.source === 'marvel' && <BookOpen size={10} className="inline mr-2" />}
+                  {(cat.source === 'e621' || cat.source === 'danbooru' || cat.source === 'gelbooru') && <Sparkles size={10} className="inline mr-2" />}
                   {cat.label}
                 </button>
               ))}
@@ -729,7 +808,7 @@ export default function ComicLibrary() {
                        {comic.source === 'marvel' ? (
                          <span className="text-[6px] font-black uppercase tracking-[0.35em] text-white/40">{comic.onSaleDate ? formatMarvelDate(comic.onSaleDate) : 'Metadata only'}</span>
                        ) : (
-                         (comic.rating === 'erotica' || comic.rating === 'pornographic') && <span className="px-1.5 py-0.5 bg-red-600 text-white text-[6px] font-black uppercase">18+</span>
+                         isAdultComic(comic) && <span className="px-1.5 py-0.5 bg-red-600 text-white text-[6px] font-black uppercase">18+</span>
                        )}
                     </div>
                   </div>
