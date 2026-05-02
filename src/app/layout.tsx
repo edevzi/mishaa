@@ -35,7 +35,7 @@ const bangers = Bangers({
 });
 
 export const viewport = {
-  themeColor: "#020202",
+  themeColor: "#06070b",
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
@@ -95,9 +95,9 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${syne.variable} ${outfit.variable} ${bricolage.variable} ${jetBrainsMono.variable} ${staatliches.variable} ${bangers.variable} h-full antialiased`}
+      className={`${syne.variable} ${outfit.variable} ${bricolage.variable} ${jetBrainsMono.variable} ${staatliches.variable} ${bangers.variable} h-full antialiased bg-[#06070b]`}
     >
-      <body className="min-h-full flex flex-col bg-transparent">
+      <body className="min-h-full flex flex-col bg-transparent pb-[env(safe-area-inset-bottom)]">
         <SmoothAnimations />
         {children}
       </body>

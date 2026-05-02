@@ -431,6 +431,18 @@ function ComicLibrary() {
       if (query) {
         if (cat?.source === 'marvel') {
           result = await fetchMarvelIssues(safeMarvelQuery, pageIndex);
+        } else if (cat?.source === 'mangadex') {
+          result = await fetchMangaDex(query, pageIndex, cat.ratings || defaultRatings, cat.originalLanguages, cat.includedTagIds, cat.excludedTagIds, mangaLanguage);
+        } else if (cat?.source === 'nhentai') {
+          if (!canAccessAdultContent) {
+            setShowAgeGate(true);
+            if (requestId === requestIdRef.current) {
+              setLoading(false);
+              setLoadingMore(false);
+            }
+            return;
+          }
+          result = await fetchNHentai(query, pageIndex);
         } else if (cat?.source === 'e621' || cat?.source === 'danbooru' || cat?.source === 'gelbooru') {
           if (!canAccessAdultContent) {
             setShowAgeGate(true);

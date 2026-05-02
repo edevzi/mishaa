@@ -8,11 +8,42 @@ const MARVEL_API_BASE = "https://marvel.emreparker.com/v1";
 const LIMIT = 36;
 
 const NHENTAI_HEADERS = {
-  'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+  'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
   'Accept': 'application/json',
   'Accept-Language': 'en-US,en;q=0.9',
   'Referer': 'https://nhentai.net/',
 };
+
+async function fetchNHentaiGallery(id: string) {
+  const url = `https://nhentai.net/api/gallery/${id}`;
+  try {
+    const res = await fetch(url, { 
+      headers: {
+        ...NHENTAI_HEADERS,
+        'Referer': `https://nhentai.net/g/${id}/`
+      },
+      next: { revalidate: 3600 } 
+    });
+    if (res.ok) return await res.json();
+
+    // Fallback to a mirror or proxy if blocked by Cloudflare
+    console.warn(`nHentai direct fetch failed (${res.status}), trying mirror...`);
+    const mirrorUrl = `https://cinemur.com/api/gallery/${id}`;
+    const mirrorRes = await fetch(mirrorUrl, { headers: NHENTAI_HEADERS });
+    if (mirrorRes.ok) return await mirrorRes.json();
+
+    console.warn(`nHentai mirror fetch failed, trying allorigins proxy...`);
+    const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
+    const proxyRes = await fetch(proxyUrl);
+    if (proxyRes.ok) {
+      const data = await proxyRes.json();
+      if (data.contents) return JSON.parse(data.contents);
+    }
+  } catch (e) {
+    console.error("fetchNHentaiGallery error:", e);
+  }
+  return null;
+}
 
 
 export async function getComicDetails(source: string, id: string, mangaLanguage: MangaLanguage = 'en' as MangaLanguage) {
@@ -91,9 +122,8 @@ export async function getComicDetails(source: string, id: string, mangaLanguage:
     }
 
     if (source === 'nhentai') {
-      const res = await fetch(`https://nhentai.net/api/gallery/${id}`, { headers: NHENTAI_HEADERS });
-      if (!res.ok) throw new Error('nHentai fetch failed');
-      const data = await res.json();
+      const data = await fetchNHentaiGallery(id);
+      if (!data) throw new Error('nHentai fetch failed');
       
       return {
         id: data.id.toString(),
@@ -234,8 +264,8 @@ export async function getChapterPages(source: string, id: string, chapterId: str
     }
 
     if (source === 'nhentai') {
-       const res = await fetch(`https://nhentai.net/api/gallery/${id}`, { headers: NHENTAI_HEADERS });
-       const data = await res.json();
+       const data = await fetchNHentaiGallery(id);
+       if (!data) return [];
        return data.images.pages.map((p: any, i: number) => {
           const ext = p.t === 'p' ? 'png' : 'jpg';
           return `/api/proxy/nhentai/image?path=${encodeURIComponent(`galleries/${data.media_id}/${i + 1}.${ext}`)}`;
@@ -353,7 +383,9 @@ export async function searchComics(params: {
     }
 
     if (source === 'archive') {
-       const res = await fetch(`https://archive.org/advancedsearch.php?q=${encodeURIComponent(query || 'collection:comics')}&output=json&rows=${LIMIT}&page=${page + 1}`);
+       const baseQuery = '(collection:comics OR mediatype:comic OR subject:manga OR subject:comics)';
+       const finalQuery = query ? `(${query}) AND ${baseQuery}` : baseQuery;
+       const res = await fetch(`https://archive.org/advancedsearch.php?q=${encodeURIComponent(finalQuery)}&output=json&rows=${LIMIT}&page=${page + 1}`);
        const data = await res.json();
        const docs = data.response.docs || [];
        return {

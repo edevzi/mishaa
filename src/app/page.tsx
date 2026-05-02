@@ -280,7 +280,7 @@ export default function Home() {
                         initial={{ y: 20, opacity: 0 }}
                         animate={{ y: 0, opacity: 1 }}
                         transition={{ delay: 0.4 }}
-                        className="text-display text-4xl md:text-8xl leading-[0.9]"
+                        className="text-display text-3xl sm:text-5xl md:text-8xl leading-[0.9]"
                       >
                         {featuredComic.title}
                       </motion.h1>
@@ -289,7 +289,7 @@ export default function Home() {
                         initial={{ y: 20, opacity: 0 }}
                         animate={{ y: 0, opacity: 1 }}
                         transition={{ delay: 0.5 }}
-                        className="max-w-xl text-lg text-white/60 line-clamp-3"
+                        className="max-w-xl text-base md:text-lg text-white/60 line-clamp-3"
                       >
                         {featuredComic.description}
                       </motion.p>
@@ -298,13 +298,13 @@ export default function Home() {
                         initial={{ y: 20, opacity: 0 }}
                         animate={{ y: 0, opacity: 1 }}
                         transition={{ delay: 0.6 }}
-                        className="flex flex-wrap gap-4 pt-4"
+                        className="flex flex-wrap gap-3 pt-4"
                       >
-                        <Link href={featuredComic.href} className="group flex items-center gap-3 rounded-2xl bg-white px-8 py-4 text-[11px] font-black uppercase tracking-widest text-black transition-all hover:bg-[#ff5a1f] hover:text-white">
+                        <Link href={featuredComic.href} className="group flex items-center gap-3 rounded-2xl bg-white px-6 md:px-8 py-3 md:py-4 text-[10px] md:text-[11px] font-black uppercase tracking-widest text-black transition-all hover:bg-[#ff5a1f] hover:text-white">
                           Start Reading
-                          <Play size={16} fill="currentColor" />
+                          <Play size={16} fill="currentColor" className="w-3.5 h-3.5 md:w-4 md:h-4" />
                         </Link>
-                        <button className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-8 py-4 text-[11px] font-black uppercase tracking-widest text-white backdrop-blur-md transition-all hover:bg-white/10">
+                        <button className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-6 md:px-8 py-3 md:py-4 text-[10px] md:text-[11px] font-black uppercase tracking-widest text-white backdrop-blur-md transition-all hover:bg-white/10">
                           Add to Library
                         </button>
                       </motion.div>
@@ -350,12 +350,12 @@ export default function Home() {
                 <div className="h-px flex-1 bg-white/10" />
               </div>
               
-              <div className="flex items-center gap-2 p-2 bg-white/[0.03] border border-white/5 rounded-[2.5rem] backdrop-blur-3xl overflow-x-auto no-scrollbar">
+              <div className="flex items-center gap-2 p-1.5 bg-white/[0.03] border border-white/5 rounded-[2.5rem] backdrop-blur-3xl overflow-x-auto no-scrollbar">
                  {SHELVES.map((shelf) => (
                    <button
                      key={shelf.key}
                      onClick={() => setActiveTab(shelf.key)}
-                     className={`relative flex items-center gap-4 rounded-full px-8 py-4 transition-all duration-500 whitespace-nowrap ${
+                     className={`relative flex items-center gap-3 md:gap-4 rounded-full px-5 md:px-8 py-3 md:py-4 transition-all duration-500 whitespace-nowrap ${
                        activeTab === shelf.key 
                          ? 'bg-white text-black shadow-2xl scale-[1.02]' 
                          : 'text-white/40 hover:text-white hover:bg-white/5'
@@ -365,8 +365,8 @@ export default function Home() {
                         {shelf.icon}
                      </div>
                      <div className="flex flex-col items-start">
-                        <span className="text-[10px] font-black uppercase tracking-widest">{shelf.title}</span>
-                        <span className={`text-[7px] font-bold uppercase tracking-widest opacity-40 ${activeTab === shelf.key ? 'text-black/60' : 'text-white/40'}`}>
+                        <span className="text-[9px] md:text-[10px] font-black uppercase tracking-widest">{shelf.title}</span>
+                        <span className={`text-[6px] md:text-[7px] font-bold uppercase tracking-widest opacity-40 ${activeTab === shelf.key ? 'text-black/60' : 'text-white/40'}`}>
                           {shelf.subtitle.split(' ').slice(0, 2).join(' ')}
                         </span>
                      </div>
@@ -386,20 +386,20 @@ export default function Home() {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="bg-white/[0.03] border border-white/5 rounded-[2rem] p-5 flex items-center justify-between gap-6 backdrop-blur-2xl">
-                   <div className="flex flex-col pl-2">
-                      <span className="text-[9px] font-black uppercase tracking-widest text-white/40">Translated_In</span>
-                      <span className="text-[7px] font-bold uppercase tracking-[0.3em] text-white/10">Global localization</span>
+                <div className="bg-white/[0.03] border border-white/5 rounded-[2rem] p-4 md:p-5 flex flex-col sm:flex-row items-center justify-between gap-4 md:gap-6 backdrop-blur-2xl">
+                   <div className="flex flex-col items-center sm:items-start pl-0 sm:pl-2">
+                      <span className="text-[9px] font-black uppercase tracking-widest text-white/40 text-center sm:text-left">Translated_In</span>
+                      <span className="text-[7px] font-bold uppercase tracking-[0.3em] text-white/10 hidden sm:block">Global localization</span>
                    </div>
-                   <div className="flex items-center gap-1 p-1 bg-black/40 rounded-xl border border-white/5">
+                   <div className="flex items-center gap-1 p-1 bg-black/40 rounded-xl border border-white/5 overflow-x-auto max-w-full no-scrollbar">
                       {MANGA_LANGUAGE_OPTIONS.filter(o => ['en', 'ru', 'es', 'fr', 'all'].includes(o.value)).map((opt) => (
-                        <button
-                          key={opt.value}
-                          onClick={() => handleLanguageChange(opt.value)}
-                          className={`px-5 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all duration-300 ${mangaLanguage === opt.value ? 'bg-[#ff5a1f] text-white shadow-lg' : 'text-white/30 hover:text-white hover:bg-white/5'}`}
-                        >
-                          {opt.value === 'all' ? 'MIX' : opt.value}
-                        </button>
+                         <button
+                           key={opt.value}
+                           onClick={() => handleLanguageChange(opt.value)}
+                           className={`px-4 md:px-5 py-2 rounded-lg text-[8px] md:text-[9px] font-black uppercase tracking-widest transition-all duration-300 whitespace-nowrap ${mangaLanguage === opt.value ? 'bg-[#ff5a1f] text-white shadow-lg' : 'text-white/30 hover:text-white hover:bg-white/5'}`}
+                         >
+                           {opt.value === 'all' ? 'MIX' : opt.value}
+                         </button>
                       ))}
                    </div>
                 </div>
