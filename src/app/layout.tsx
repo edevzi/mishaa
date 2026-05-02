@@ -83,6 +83,10 @@ export const metadata: Metadata = {
   verification: {
     google: "Q3JUtRB_65-cXXd1FocDiCQ-Y4bOA_zmDpzJQfhU9mE",
   },
+  icons: {
+    icon: "/icon.png",
+    apple: "/icon.png",
+  },
 };
 
 import SmoothAnimations from "@/components/SmoothAnimations";
