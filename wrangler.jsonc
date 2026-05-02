@@ -12,5 +12,6 @@
     "binding": "ASSETS",
     "directory": ".open-next/assets"
   },
-  "main": ".open-next/worker.js"
+  "main": ".open-next/worker.js",
+  "minify": true
 }

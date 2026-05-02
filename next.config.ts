@@ -22,6 +22,16 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  experimental: {
+    optimizePackageImports: [
+      "lucide-react",
+      "framer-motion",
+      "@azure/openai",
+      "@google/generative-ai",
+      "openai",
+      "replicate",
+    ],
+  },
 };
 
 export default nextConfig;

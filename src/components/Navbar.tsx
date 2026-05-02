@@ -82,57 +82,60 @@ export default function Navbar() {
   };
 
   return (
-    <nav className="fixed top-5 left-1/2 z-[1000] w-[min(96vw,88rem)] -translate-x-1/2 max-md:top-3">
-      <div className="glass-panel relative flex items-center justify-between overflow-hidden rounded-3xl px-2 py-2 shadow-[0_30px_90px_rgba(0,0,0,0.6)] backdrop-blur-3xl border-white/20 bg-black/40 max-md:px-2">
+    <nav className="fixed top-6 left-1/2 z-[1000] w-[min(94vw,90rem)] -translate-x-1/2 max-md:top-3">
+      <div className="glass-panel relative flex items-center justify-between overflow-hidden rounded-[2.5rem] px-2 py-2 max-md:px-2">
         <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/30 to-transparent" />
         <div className="absolute left-0 top-0 h-full w-1 bg-gradient-to-b from-[#ff5a1f] via-[#ffd36b] to-[#73f7ff]" />
 
         {/* Branding */}
-        <Link href="/" className="flex items-center gap-3 md:gap-4 pl-4 md:pl-6 group py-2 md:py-3 max-md:pl-2">
-          <div className="relative flex h-11 w-11 items-center justify-center overflow-hidden rounded-2xl border border-white/15 bg-white/95 shadow-[0_10px_24px_rgba(0,0,0,0.28)] transition-colors duration-500 group-hover:bg-[#ff5a1f] md:h-12 md:w-12">
-            <Image src="/logo.png" width={32} height={32} className="h-8 w-8 object-contain md:h-9 md:w-9" alt="iComics" />
+        <Link href="/" className="flex items-center gap-4 pl-4 md:pl-6 group py-2 md:py-3 max-md:pl-2">
+          <div className="relative flex h-11 w-11 items-center justify-center overflow-hidden rounded-2xl border border-white/10 bg-black/40 shadow-2xl transition-all duration-500 group-hover:border-[#ff5a1f]/50 md:h-12 md:w-12">
+            <div className="absolute inset-0 bg-gradient-to-tr from-[#ff5a1f]/20 via-transparent to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
+            <Image src="/icon.png" width={36} height={36} className="h-9 w-9 object-contain z-10 transition-transform duration-500 group-hover:scale-110" alt="iComics" />
           </div>
           <div className="flex flex-col">
-            <span className="text-base md:text-lg font-display leading-none text-white tracking-tight uppercase">iComics</span>
-            <span className="mt-0.5 text-[6px] md:text-[7px] font-black uppercase tracking-[0.4em] text-[#ffd36b]/80">Stream Protocol</span>
+            <span className="text-base md:text-lg font-display font-bold leading-none text-white tracking-tight uppercase">iComics</span>
+            <span className="mt-1 text-[6px] md:text-[7px] font-black uppercase tracking-[0.4em] text-white/30 group-hover:text-[#ffd36b] transition-colors">Digital Studio</span>
           </div>
         </Link>
 
         {/* Desktop Menu */}
-        <div className="hidden lg:flex items-center gap-10 pr-4">
-          {navLinks.map((link) => {
-            const isActive = pathname === link.href;
-            return (
-              <Link
-                key={link.href}
-                href={link.href}
-                className={`relative rounded-full px-3 py-2 text-[10px] font-black uppercase tracking-[0.36em] transition-all ${isActive
-                    ? 'bg-white text-black shadow-[0_10px_24px_rgba(0,0,0,0.28)]'
-                    : 'text-white/70 hover:bg-white/10 hover:text-white'
-                  }`}
-              >
-                {link.name}
-                {isActive && (
-                  <motion.div
-                    layoutId="nav-active"
-                    className="absolute inset-0 rounded-full border border-white/10"
-                  />
-                )}
-              </Link>
-            );
-          })}
+        <div className="hidden lg:flex items-center gap-2 pr-4">
+          <div className="flex items-center gap-1 bg-white/[0.03] border border-white/5 rounded-full p-1 backdrop-blur-md">
+            {navLinks.map((link) => {
+              const isActive = pathname === link.href;
+              return (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className={`relative rounded-full px-5 py-2.5 text-[9px] font-black uppercase tracking-[0.25em] transition-all ${isActive
+                      ? 'bg-white text-black shadow-xl'
+                      : 'text-white/40 hover:text-white hover:bg-white/5'
+                    }`}
+                >
+                  {link.name}
+                  {isActive && (
+                    <motion.div
+                      layoutId="nav-active"
+                      className="absolute inset-0 rounded-full border border-black/5"
+                    />
+                  )}
+                </Link>
+              );
+            })}
+          </div>
 
-          <div className="mx-1 h-4 w-px bg-white/20" />
+          <div className="mx-3 h-4 w-px bg-white/10" />
 
           {/* New Language Switcher */}
-          <div className="soft-chip flex items-center rounded-full p-0.5">
+          <div className="flex items-center gap-1 bg-white/[0.03] border border-white/5 rounded-full p-1 backdrop-blur-md">
             {['EN', 'RU', 'UZ'].map((l) => (
               <button
                 key={l}
                 onClick={() => handleLangChange(l)}
-                className={`rounded-full px-3 py-1.5 text-[8px] font-black transition-all ${lang === l.toLowerCase()
-                    ? 'bg-[#ff5a1f] text-white shadow-[0_8px_18px_rgba(255,90,31,0.35)]'
-                    : 'text-white/60 hover:bg-white/10 hover:text-white'
+                className={`rounded-full px-3.5 py-2 text-[8px] font-black tracking-widest transition-all ${lang === l.toLowerCase()
+                    ? 'bg-[#ff5a1f] text-white shadow-lg'
+                    : 'text-white/30 hover:text-white hover:bg-white/5'
                   }`}
               >
                 {l}
@@ -140,24 +143,28 @@ export default function Navbar() {
             ))}
           </div>
 
-          <div className="mx-1 h-4 w-px bg-white/20" />
+          <div className="mx-3 h-4 w-px bg-white/10" />
 
           {user ? (
             <div className="flex items-center gap-3">
               <div className="relative group">
                 <Link 
                   href="/profile"
-                  className="flex h-11 w-11 items-center justify-center overflow-hidden rounded-2xl border border-white/10 bg-white text-black transition-all hover:ring-4 hover:ring-[#ff5a1f]/30"
+                  className="flex h-11 w-11 items-center justify-center overflow-hidden rounded-2xl border border-white/10 bg-white/[0.05] p-0.5 backdrop-blur-xl transition-all hover:border-[#ff5a1f]/50 hover:shadow-[0_0_20px_rgba(255,90,31,0.2)]"
                 >
-                  {user.avatar ? (
-                    <Image src={user.avatar} alt={user.username} width={44} height={44} className="w-full h-full object-cover" />
-                  ) : (
-                    <UserCircle2 size={18} />
-                  )}
+                  <div className="h-full w-full overflow-hidden rounded-[0.9rem] bg-white">
+                    {user.avatar ? (
+                      <Image src={user.avatar} alt={user.username} width={44} height={44} className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="flex h-full w-full items-center justify-center bg-black text-white">
+                        <UserCircle2 size={18} />
+                      </div>
+                    )}
+                  </div>
                 </Link>
 
                 {/* Dropdown Menu */}
-                <div className="absolute right-0 top-full pt-4 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 transform translate-y-2 group-hover:translate-y-0">
+                <div className="absolute right-0 top-full pt-4 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 transform translate-y-2 group-hover:translate-y-0 z-[1100]">
                   <div className="w-56 bg-[#0a0a0c] border border-white/10 rounded-2xl shadow-2xl p-2 backdrop-blur-xl">
                     <div className="px-4 py-3 border-b border-white/5 mb-2">
                       <p className="text-[10px] font-black uppercase tracking-tight text-white">{user.firstName} {user.lastName}</p>

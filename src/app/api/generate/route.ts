@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
-import fs from "fs";
-import path from "path";
+
 
 export async function POST(req: Request) {
   try {
@@ -58,19 +57,7 @@ export async function POST(req: Request) {
 
     const imageDataWithPrefix = `data:image/png;base64,${base64Data}`;
 
-    try {
-      const buffer = Buffer.from(base64Data, "base64");
-      const fileName = `generated-${Date.now()}.png`;
-      const publicDir = path.join(process.cwd(), "public");
-      if (!fs.existsSync(publicDir)) fs.mkdirSync(publicDir, { recursive: true });
-      const filePath = path.join(publicDir, fileName);
-      fs.writeFileSync(filePath, buffer);
-    } catch (saveError) {
-      console.error("⚠️ Failed to save image:", saveError);
-    }
-
     return NextResponse.json({ image: imageDataWithPrefix, success: true });
-
   } catch (error: any) {
     console.error("💥 Internal Route Error:", error);
     return NextResponse.json({ error: error.message }, { status: 500 });
