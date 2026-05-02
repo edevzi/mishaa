@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
 
-export async function GET(req: Request, { params }: { params: { id: string } }) {
+export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const { id } = params;
+    const { id } = await params;
     const SUPERHERO_API_BASE = `https://superheroapi.com/api/${process.env.SUPERHERO_API_TOKEN || '74ddaf49767100794a5c55160d893e3b'}`;
     const res = await fetch(`${SUPERHERO_API_BASE}/${id}`, { next: { revalidate: 3600 } });
     const data = await res.json();
