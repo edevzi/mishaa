@@ -107,7 +107,7 @@ function AuthPageContent() {
               animate={{ scale: 1, opacity: 1 }}
               className="inline-flex items-center justify-center w-16 h-16 bg-white rounded-2xl shadow-[0_0_40px_rgba(255,255,255,0.2)] mb-2"
             >
-              <img src="/logo.png" className="w-10 h-10 object-contain" alt="iComics" />
+              <span className="text-3xl font-display font-black text-black">iC</span>
             </motion.div>
             <div className="space-y-1">
               <h1 className="text-4xl font-black uppercase tracking-tight text-white leading-none">

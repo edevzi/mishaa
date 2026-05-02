@@ -91,7 +91,7 @@ export default function Navbar() {
         <Link href="/" className="flex items-center gap-4 pl-4 md:pl-6 group py-2 md:py-3 max-md:pl-2">
           <div className="relative flex h-11 w-11 items-center justify-center overflow-hidden rounded-2xl border border-white/10 bg-black/40 shadow-2xl transition-all duration-500 group-hover:border-[#ff5a1f]/50 md:h-12 md:w-12">
             <div className="absolute inset-0 bg-gradient-to-tr from-[#ff5a1f]/20 via-transparent to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
-            <Image src="/icon.png" width={36} height={36} className="h-9 w-9 object-contain z-10 transition-transform duration-500 group-hover:scale-110" alt="iComics" />
+            <span className="text-xl font-display font-black text-white z-10 transition-transform duration-500 group-hover:scale-110">iC</span>
           </div>
           <div className="flex flex-col">
             <span className="text-base md:text-lg font-display font-bold leading-none text-white tracking-tight uppercase">iComics</span>

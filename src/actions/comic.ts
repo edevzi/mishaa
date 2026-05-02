@@ -156,7 +156,19 @@ export async function getChapters(source: string, id: string, mangaLanguage: Man
       translatedLanguages?.forEach(lang => params.append('translatedLanguage[]', lang));
       
       const res = await fetch(`https://api.mangadex.org/manga/${id}/feed?${params.toString()}`);
-      const data = await res.json();
+      let data = await res.json();
+      
+      // Fallback to English if no chapters found in preferred languages
+      if ((!data.data || data.data.length === 0) && mangaLanguage !== 'en') {
+        const fallbackParams = new URLSearchParams({
+          limit: '500',
+          'order[chapter]': 'asc',
+          'translatedLanguage[]': 'en'
+        });
+        const fallbackRes = await fetch(`https://api.mangadex.org/manga/${id}/feed?${fallbackParams.toString()}`);
+        data = await fallbackRes.json();
+      }
+
       return data.data?.map((ch: any) => ({
         id: ch.id,
         title: ch.attributes.title || `Chapter ${ch.attributes.chapter}`,
@@ -197,10 +209,21 @@ export async function getChapterPages(source: string, id: string, chapterId: str
   try {
     if (source === 'mangadex') {
       const res = await fetch(`https://api.mangadex.org/at-home/server/${chapterId}`);
+      if (!res.ok) {
+        console.error(`MangaDex at-home error: ${res.status}`);
+        return [];
+      }
       const data = await res.json();
       const baseUrl = data.baseUrl;
-      const hash = data.chapter.hash;
-      return data.chapter.data.map((n: string) => `/api/proxy/image?url=${encodeURIComponent(`${baseUrl}/data/${hash}/${n}`)}`);
+      const hash = data.chapter?.hash;
+      const fileNames = data.chapter?.data;
+
+      if (!baseUrl || !hash || !fileNames) {
+        console.error("MangaDex at-home response missing data:", data);
+        return [];
+      }
+
+      return fileNames.map((n: string) => `/api/proxy/image?url=${encodeURIComponent(`${baseUrl}/data/${hash}/${n}`)}`);
     }
 
     if (source === 'nhentai') {
@@ -287,12 +310,13 @@ export async function searchComics(params: {
       const translatedLanguages = getMangaDexTranslatedLanguages(mangaLanguage);
       const mdxRatings = ratings || ['safe', 'suggestive'];
       
-      // Use a helper or direct logic here
-      mdxRatings.forEach(r => searchParams.append('contentRating[]', r));
-      if (includedTagIds) includedTagIds.forEach(id => searchParams.append('includedTags[]', id));
-      if (excludedTagIds) excludedTagIds.forEach(id => searchParams.append('excludedTags[]', id));
-      if (originalLanguages) originalLanguages.forEach(l => searchParams.append('originalLanguage[]', l));
-      if (translatedLanguages) translatedLanguages.forEach(l => searchParams.append('translatedLanguage[]', l));
+      appendMangaDexFilters(searchParams, {
+        contentRatings: mdxRatings,
+        includedTagIds,
+        excludedTagIds,
+        originalLanguages,
+        translatedLanguages: translatedLanguages
+      });
 
       if (query.trim().length >= 2) {
         searchParams.set('title', query.trim());

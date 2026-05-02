@@ -221,7 +221,7 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
   const [isAgeVerified, setIsAgeVerified] = useState(false);
   const [showAgeGate, setShowAgeGate] = useState(false);
   const [lang, setLang] = useState<Lang>('en');
-  const [mangaLanguage] = useState<MangaLanguage>(readStoredMangaLanguage);
+  const [mangaLanguage, setMangaLanguage] = useState<MangaLanguage>(readStoredMangaLanguage);
   const t = (translations[lang] as any).library;
   
   const readerRef = useRef<HTMLDivElement>(null);
@@ -274,6 +274,14 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
     return () => window.removeEventListener('langChange', handleLang as EventListener);
   }, []);
 
+  useEffect(() => {
+    const handleMangaLang = (e: any) => {
+      setMangaLanguage(e.detail);
+    };
+    window.addEventListener('langChange', handleMangaLang); // Library page uses 'langChange' for both UI and Manga lang? Let me check
+    return () => window.removeEventListener('langChange', handleMangaLang);
+  }, []);
+
   // UI Auto-hide logic
   const handleUserActivity = useCallback(() => {
     setUiVisible(true);
@@ -313,8 +321,6 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
   }, [reading, viewMode, uiVisible]);
 
   async function fetchComicDetails() {
-    if (initialComic && initialChapters) return;
-    
     setLoading(true);
     try {
       const [comicData, chapterData] = await Promise.all([
@@ -323,11 +329,13 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
       ]);
       
       if (comicData) setComic(comicData as any);
-      if (chapterData) setChapters(chapterData as any);
-      
-      // Marvel background fetches still needed if not pre-fetched
-      if (source === 'marvel' && comicData) {
-         // Marvel-specific details fetch...
+      if (chapterData) {
+        setChapters(chapterData as any);
+        // Reset reader if language changed while reading
+        if (reading) {
+          setCurrentChapterIdx(0);
+          void loadChapterPages(0);
+        }
       }
     } catch (e) {
       console.error(e);
@@ -335,6 +343,10 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchComicDetails();
+  }, [id, source, isAgeVerified, mangaLanguage]);
 
 
   useEffect(() => {

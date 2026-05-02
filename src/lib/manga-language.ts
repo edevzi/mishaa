@@ -37,7 +37,8 @@ export const persistStoredMangaLanguage = (language: MangaLanguage) => {
 
 export const getMangaDexTranslatedLanguages = (language: MangaLanguage) => {
   if (language === 'all') return undefined;
-  return [language];
+  if (language === 'en') return ['en'];
+  return [language, 'en'];
 };
 
 type LocalizedMap = Record<string, string | undefined> | undefined | null;

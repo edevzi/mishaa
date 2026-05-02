@@ -25,7 +25,9 @@ export default function Footer() {
         <div className="flex flex-col lg:flex-row justify-between gap-24 max-md:gap-14">
           <div className="space-y-12 max-md:space-y-8">
             <div className="flex items-center gap-6 max-md:gap-4">
-              <img src="/logo.png" className="w-auto h-16 invert max-md:h-12" alt="iComics" />
+            <div className="flex h-16 w-16 items-center justify-center rounded-2xl border-4 border-white bg-black max-md:h-12 max-md:w-12 max-md:border-2">
+              <span className="text-3xl font-display font-black text-white max-md:text-xl">iC</span>
+            </div>
               <div className="flex flex-col">
                 <h2 className="text-4xl font-display uppercase leading-none max-md:text-3xl">iComics</h2>
                 <span className="text-[10px] font-black uppercase tracking-[0.4em] text-[#ff4d00]">Studio Edition</span>

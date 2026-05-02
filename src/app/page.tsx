@@ -234,7 +234,7 @@ export default function Home() {
       <main className="relative pt-20">
         
         {/* --- DYNAMIC HERO BANNER --- */}
-        <section className="relative h-[60vh] md:h-[85vh] w-full overflow-hidden">
+        <section className="relative min-h-[70vh] md:min-h-[85vh] w-full">
           <AnimatePresence mode="wait">
             {featuredComic && (
               <motion.div 
@@ -243,7 +243,7 @@ export default function Home() {
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.8 }}
-                className="relative h-full w-full"
+                className="relative min-h-[70vh] md:min-h-[85vh] w-full"
               >
                 <Image 
                   src={featuredComic.coverUrl} 
@@ -256,7 +256,7 @@ export default function Home() {
                 <div className="absolute inset-0 bg-gradient-to-t from-[#05060a] via-[#05060a]/40 to-transparent" />
                 <div className="absolute inset-0 bg-gradient-to-r from-[#05060a] via-transparent to-transparent" />
                 
-                <div className="container relative z-10 mx-auto flex h-full items-center px-4 md:px-8">
+                <div className="container relative z-10 mx-auto flex h-full items-center px-4 md:px-8 py-20">
                   <div className="grid w-full gap-12 lg:grid-cols-[1fr_320px]">
                     
                     {/* Text Info */}
@@ -338,7 +338,7 @@ export default function Home() {
         </section>
 
         {/* --- EXPLORE SECTION --- */}
-        <section className="relative z-20 -mt-32 container mx-auto px-4 md:px-8 pb-32">
+        <section className="relative z-20 -mt-16 container mx-auto px-4 md:px-8 pb-32">
           
           {/* --- EXPLORE & DISCOVERY CONTROLS --- */}
           <div className="mb-20 flex flex-col gap-10 max-w-6xl mx-auto">
