@@ -1008,7 +1008,7 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
             onTouchMove={(e) => {
               const diffX = Math.abs(e.touches[0].clientX - clickStartRef.current.x);
               const diffY = Math.abs(e.touches[0].clientY - clickStartRef.current.y);
-              if (diffX > 10 || diffY > 10) {
+              if (diffX > 15 || diffY > 15) {
                 isDraggingRef.current = true;
               }
             }}
@@ -1020,26 +1020,28 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
               if (e.buttons > 0) {
                 const diffX = Math.abs(e.clientX - clickStartRef.current.x);
                 const diffY = Math.abs(e.clientY - clickStartRef.current.y);
-                if (diffX > 10 || diffY > 10) {
+                if (diffX > 15 || diffY > 15) {
                   isDraggingRef.current = true;
                 }
               }
             }}
             onClick={(e) => {
               if (isDraggingRef.current) return;
-              // Only toggle if clicking the background/canvas, not buttons
-              if (e.target === e.currentTarget || (e.target as HTMLElement).closest('#reader-canvas')) {
-                setUiVisible(!uiVisible);
+              const target = e.target as HTMLElement;
+              // Prevent toggling if clicking on the UI elements or buttons
+              if (target.closest('.ui-element') || target.closest('button') || target.closest('input')) {
+                return;
               }
+              setUiVisible(prev => !prev);
             }}
-            className="fixed inset-0 z-[10000] bg-black flex flex-col overflow-hidden select-none"
+            className="fixed inset-0 z-[10000] bg-black flex flex-col overflow-hidden select-none [-webkit-tap-highlight-color:transparent]"
           >
             
             {/* Minimal Top Header */}
             <motion.div 
               animate={{ y: uiVisible ? 0 : "-100%" }} 
               transition={{ type: 'spring', damping: 30, stiffness: 120 }} 
-              className="fixed top-0 left-0 right-0 z-[10020] h-20 bg-gradient-to-b from-black via-black/80 to-transparent px-8 flex items-center justify-between pointer-events-auto max-md:h-24 max-md:px-4 max-md:pt-[env(safe-area-inset-top)]"
+              className="ui-element fixed top-0 left-0 right-0 z-[10020] h-20 bg-gradient-to-b from-black via-black/80 to-transparent px-8 flex items-center justify-between pointer-events-auto max-md:h-24 max-md:px-4 max-md:pt-[env(safe-area-inset-top)]"
             >
                <div className="flex items-center gap-6 max-md:gap-3">
                   <button 
@@ -1090,6 +1092,7 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
               ref={canvasRef} 
               className="flex-1 w-full bg-[#020202] overflow-y-auto custom-scrollbar relative scroll-smooth touch-pan-y" 
               id="reader-canvas"
+              onClick={() => {}}
               onTouchStart={(e) => {
                 if (viewMode === 'flow') return;
                 touchStartRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
@@ -1187,6 +1190,7 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
                           src={pages[currentPage]} 
                           style={{ transform: `scale(${zoom})`, transformOrigin: 'center center', maxWidth: isMobile ? '100%' : '80vw', maxHeight: '90vh', width: 'auto', height: 'auto' }} 
                           className="shadow-[0_0_150px_rgba(0,0,0,0.9)] border border-white/10 rounded-sm object-contain" alt="" 
+                          onClick={() => {}}
                          />
                        </div>
                     ) : viewMode === 'journal' ? (
@@ -1207,6 +1211,7 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
                                     className="object-contain shadow-2xl border border-white/10 rounded-sm" 
                                     alt="cover" 
                                     unoptimized
+                                    onClick={() => {}}
                                   />
                                 </div>
                               </motion.div>
@@ -1224,6 +1229,7 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
                                     className={`object-contain shadow-2xl ${pages[currentPage + 1] ? 'border-r border-white/5 rounded-l-sm' : 'border border-white/10 rounded-sm'}`}
                                     alt={`Page ${currentPage + 1}`}
                                     unoptimized
+                                    onClick={() => {}}
                                   />
                                 </motion.div>
                                 {pages[currentPage + 1] && (
@@ -1239,6 +1245,7 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
                                       className="object-contain shadow-2xl border-l border-white/5 rounded-r-sm"
                                       alt={`Page ${currentPage + 2}`}
                                       unoptimized
+                                      onClick={() => {}}
                                     />
                                   </motion.div>
                                 )}
@@ -1264,6 +1271,7 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
                                 className="w-full h-auto object-contain" 
                                 loading="lazy" 
                                 unoptimized
+                                onClick={() => {}}
                               />
                             </div>
                           ))}
@@ -1283,7 +1291,7 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
             <motion.div 
               animate={{ y: uiVisible ? 0 : "100%" }} 
               transition={{ type: 'spring', damping: 30, stiffness: 120 }} 
-              className="fixed bottom-0 left-0 right-0 z-[10020] bg-[#0a0a0a]/95 border-t border-white/10 px-10 flex flex-col items-center backdrop-blur-2xl max-md:px-5 pb-[calc(1.5rem+env(safe-area-inset-bottom))] pt-6 gap-6 shadow-[0_-20px_50px_rgba(0,0,0,0.5)]"
+              className="ui-element fixed bottom-0 left-0 right-0 z-[10020] bg-[#0a0a0a]/95 border-t border-white/10 px-10 flex flex-col items-center backdrop-blur-2xl max-md:px-5 pb-[calc(1.5rem+env(safe-area-inset-bottom))] pt-6 gap-6 shadow-[0_-20px_50px_rgba(0,0,0,0.5)]"
             >
                 {/* Progress Info & Scrubber */}
                 <div className="w-full max-w-4xl space-y-4">
