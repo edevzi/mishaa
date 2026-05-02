@@ -24,7 +24,6 @@ import {
   MangaLanguage,
   persistStoredMangaLanguage,
   readStoredMangaLanguage,
-  resolveMangaDexLocalizedText
 } from '@/lib/manga-language';
 import {
   MANGADEX_LONG_STRIP_TAG_ID,
@@ -106,20 +105,6 @@ const fetchMangaDexProxy = (path: string) =>
   });
 
 
-async function resolveMangaDexCoverUrl(mangaId: string, coverFileName?: string | null) {
-  if (coverFileName) {
-    return buildMangaDexCoverUrl(mangaId, coverFileName);
-  }
-
-  const res = await fetchMangaDexProxy(`manga/${mangaId}?includes[]=cover_art`);
-  if (!res.ok) return '/logo.png';
-
-  const data = await res.json();
-  const cover = pickMangaDexCoverFileName(data?.data?.relationships);
-  return cover
-    ? buildMangaDexCoverUrl(mangaId, cover)
-    : '/logo.png';
-}
 
 const fetchBooruProxy = (source: BooruSource, kind: 'search' | 'post', params: Record<string, string>) => {
   const searchParams = new URLSearchParams({ source, kind, ...params });
@@ -186,15 +171,13 @@ function ComicLibrary() {
 
   useEffect(() => {
     const savedLang = readStorageItem('lang') as Lang;
-    if (savedLang && translations[savedLang] && savedLang !== lang) {
-      setLang(savedLang);
+    if (savedLang && translations[savedLang]) {
+      setLang(prev => (savedLang !== prev ? savedLang : prev));
     }
 
     const handleLang = (e: Event) => {
       const nextLang = (e as CustomEvent<Lang>).detail;
-      if (translations[nextLang]) {
-        setLang(nextLang);
-      }
+      setLang(prev => (translations[nextLang] && nextLang !== prev ? nextLang : prev));
     };
 
     window.addEventListener('langChange', handleLang as EventListener);
@@ -532,7 +515,10 @@ function ComicLibrary() {
       return;
     }
     if (offset > 0) {
-      void loadData(offset, true);
+      const timer = setTimeout(() => {
+        void loadData(offset, true);
+      }, 0);
+      return () => clearTimeout(timer);
     }
   }, [offset, loadData]);
 

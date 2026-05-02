@@ -11,14 +11,14 @@ export default function Footer() {
 
   useEffect(() => {
     const savedLang = readStorageItem('lang') as Lang;
-    if (savedLang && translations[savedLang] && savedLang !== lang) {
-      setLang(savedLang);
+    if (savedLang && translations[savedLang]) {
+      setLang(prev => (savedLang !== prev ? savedLang : prev));
     }
 
     const handleLang = (e: Event) => setLang((e as CustomEvent<Lang>).detail);
     window.addEventListener('langChange', handleLang as EventListener);
     return () => window.removeEventListener('langChange', handleLang as EventListener);
-  }, [lang]);
+  }, []);
 
   return (
     <footer className="py-24 bg-[#111111] text-white overflow-hidden relative border-t-8 border-black max-md:py-14">

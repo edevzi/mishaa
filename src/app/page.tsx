@@ -182,8 +182,8 @@ export default function Home() {
 
   useEffect(() => {
     const saved = readStoredMangaLanguage();
-    if (saved !== mangaLanguage) setMangaLanguage(saved);
-  }, [mangaLanguage]);
+    setMangaLanguage(prev => (saved !== prev ? saved : prev));
+  }, []);
 
   const fetchShelves = async (lang: MangaLanguage) => {
     setShelfState(prev => {
