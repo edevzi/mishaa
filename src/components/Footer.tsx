@@ -43,7 +43,7 @@ export default function Footer() {
               <p className="text-[10px] font-black uppercase tracking-[0.4em] opacity-40 leading-loose">
                 Independent Comic Synthesis Protocol<br />
                 Developed by iComics Collective 2026<br />
-                icomics.uz | Sequential Production
+                icomics.wiki | Sequential Production
               </p>
             </div>
           </div>
@@ -69,8 +69,8 @@ export default function Footer() {
               <span className="text-[11px] font-black uppercase tracking-[0.4em] text-[#ff4d00]">{t.legal}</span>
               <div className="flex flex-col gap-4 text-[10px] font-black uppercase tracking-widest opacity-60">
                 <Link href="/privacy" className="hover:text-white hover:translate-x-2 transition-all">Privacy Policy</Link>
-                <Link href="/contact" className="hover:text-white hover:translate-x-2 transition-all">Contact: info@comics.uz</Link>
-                <span className="opacity-30">© 2026 icomics.uz</span>
+                <Link href="/contact" className="hover:text-white hover:translate-x-2 transition-all">Contact: info@icomics.wiki</Link>
+                <span className="opacity-30">© 2026 icomics.wiki</span>
               </div>
             </div>
           </div>

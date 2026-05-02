@@ -1,8 +1,11 @@
 export const runtime = "edge";
 import type { Metadata } from 'next';
+import { cache } from 'react';
 import ComicDetailsClient from './ComicDetailsClient';
-import { getComicDetails, getChapters } from '@/actions/comic';
+import { getComicDetails as getComicDetailsAction, getChapters } from '@/actions/comic';
 import { MangaLanguage } from '@/lib/manga-language';
+
+const getComicDetails = cache(getComicDetailsAction);
 
 type RouteParams = {
   source: string;

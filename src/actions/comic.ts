@@ -102,6 +102,8 @@ const NHENTAI_HEADERS = {
 
 async function fetchNHentaiGallery(id: string) {
   const url = `https://nhentai.net/api/gallery/${id}`;
+  
+  // Try direct fetch
   try {
     const res = await fetch(url, { 
       headers: {
@@ -110,24 +112,82 @@ async function fetchNHentaiGallery(id: string) {
       },
       next: { revalidate: 3600 } 
     });
-    if (res.ok) return await res.json();
-
-    // Fallback to a mirror or proxy if blocked by Cloudflare
-    console.warn(`nHentai direct fetch failed (${res.status}), trying mirror...`);
-    const mirrorUrl = `https://cinemur.com/api/gallery/${id}`;
-    const mirrorRes = await fetch(mirrorUrl, { headers: NHENTAI_HEADERS, next: { revalidate: 3600 } });
-    if (mirrorRes.ok) return await mirrorRes.json();
-
-    console.warn(`nHentai mirror fetch failed, trying allorigins proxy...`);
-    const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
-    const proxyRes = await fetch(proxyUrl, { next: { revalidate: 3600 } });
-    if (proxyRes.ok) {
-      const data = await proxyRes.json();
-      if (data.contents) return JSON.parse(data.contents);
+    if (res.ok) {
+      const text = await res.text();
+      try {
+        return JSON.parse(text);
+      } catch {
+        console.warn(`nHentai direct fetch returned non-JSON content for ID ${id}`);
+      }
     }
   } catch (e) {
-    console.error("fetchNHentaiGallery error:", e);
+    console.warn(`nHentai direct fetch error:`, e);
   }
+
+  // Fallback to mirrors
+  const mirrors = [
+    `https://nhentai.xxx/api/gallery/${id}`
+  ];
+
+  for (const mirrorUrl of mirrors) {
+    try {
+      console.log(`Trying nHentai mirror: ${mirrorUrl}`);
+      const mirrorRes = await fetch(mirrorUrl, { 
+        headers: NHENTAI_HEADERS, 
+        next: { revalidate: 3600 },
+        signal: AbortSignal.timeout(5000) // 5s timeout
+      });
+      if (mirrorRes.ok) {
+        const text = await mirrorRes.text();
+        try {
+          return JSON.parse(text);
+        } catch {
+          console.warn(`Mirror ${mirrorUrl} returned non-JSON content`);
+        }
+      }
+    } catch (e) {
+      console.warn(`Mirror ${mirrorUrl} failed or timed out`);
+    }
+  }
+
+  // Fallback to proxies
+  const proxies = [
+    `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`,
+    `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`
+  ];
+
+  for (const proxyUrl of proxies) {
+    try {
+      console.log(`Trying nHentai proxy: ${proxyUrl}`);
+      const proxyRes = await fetch(proxyUrl, { 
+        next: { revalidate: 3600 },
+        signal: AbortSignal.timeout(5000)
+      });
+      
+      if (proxyRes.ok) {
+        const text = await proxyRes.text();
+        let data;
+        try {
+          data = JSON.parse(text);
+        } catch {
+          continue; // Not JSON, skip
+        }
+
+        const content = data.contents || data; 
+        if (content) {
+          try {
+            const finalData = typeof content === 'string' ? JSON.parse(content) : content;
+            if (finalData && (finalData.id || finalData.media_id)) return finalData;
+          } catch {
+            // Not nested JSON, skip
+          }
+        }
+      }
+    } catch (e) {
+      // Quietly fail to next proxy
+    }
+  }
+
   return null;
 }
 
@@ -230,7 +290,7 @@ export async function getComicDetails(source: string, id: string, mangaLanguage:
 
     if (source === 'nhentai') {
       const data = await fetchNHentaiGallery(id) as NHentaiGallery;
-      if (!data) throw new Error('nHentai fetch failed');
+      if (!data) return null;
       
       return {
         id: data.id.toString(),
@@ -245,9 +305,14 @@ export async function getComicDetails(source: string, id: string, mangaLanguage:
       };
     }
 
-    if (['e621', 'danbooru', 'gelbooru'].includes(source)) {
-      // Logic for Boorus... simpler to just call existing proxy for now but we can move it here
-      const res = await fetch(`https://${source}.net/posts/${id}.json`, { next: { revalidate: 3600 } }); // Simplified for example
+    if (['e621', 'danbooru', 'gelbooru', 'rule34'].includes(source)) {
+      let targetUrl = '';
+      if (source === 'e621') targetUrl = `https://e621.net/posts/${id}.json`;
+      else if (source === 'danbooru') targetUrl = `https://danbooru.donmai.us/posts/${id}.json`;
+      else if (source === 'gelbooru') targetUrl = `https://gelbooru.com/index.php?page=dapi&s=post&q=index&id=${id}&json=1`;
+      else if (source === 'rule34') targetUrl = `https://api.rule34.xxx/index.php?page=dapi&s=post&q=index&id=${id}&json=1`;
+
+      const res = await fetch(targetUrl, { next: { revalidate: 3600 } });
       if (!res.ok) throw new Error('Booru fetch failed');
       const data = await res.json();
       const post = mapBooruDetail(source as BooruSource, data);

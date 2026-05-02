@@ -7,6 +7,6 @@ export default function robots(): MetadataRoute.Robots {
       allow: "/",
       disallow: ["/api/", "/auth/", "/profile/", "/studio/"],
     },
-    sitemap: "https://icomics.uz/sitemap.xml",
+    sitemap: "https://icomics.wiki/sitemap.xml",
   };
 }

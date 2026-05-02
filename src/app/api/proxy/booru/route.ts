@@ -12,6 +12,7 @@ const BOORU_BASE_URLS: Record<BooruSource, string> = {
   e621: 'https://e621.net',
   danbooru: 'https://danbooru.donmai.us',
   gelbooru: 'https://gelbooru.com',
+  rule34: 'https://api.rule34.xxx',
 };
 
 function parsePageIndex(params: URLSearchParams) {
@@ -20,13 +21,13 @@ function parsePageIndex(params: URLSearchParams) {
 }
 
 function isBooruSource(value: string | null): value is BooruSource {
-  return value === 'e621' || value === 'danbooru' || value === 'gelbooru';
+  return value === 'e621' || value === 'danbooru' || value === 'gelbooru' || value === 'rule34';
 }
 
 function buildUrl(source: BooruSource, kind: 'search' | 'post', params: URLSearchParams) {
   const pageIndex = parsePageIndex(params);
 
-  if (source === 'gelbooru') {
+  if (source === 'gelbooru' || source === 'rule34') {
     const url = new URL(`${BOORU_BASE_URLS[source]}/index.php`);
     url.searchParams.set('page', 'dapi');
     url.searchParams.set('s', 'post');
@@ -102,7 +103,7 @@ export async function GET(req: NextRequest) {
   }
 
   const headers = {
-    'User-Agent': 'iComics/1.0 (booru proxy; contact support@icomics.uz)',
+    'User-Agent': 'iComics/1.0 (booru proxy; contact support@icomics.wiki)',
     Accept: 'application/json',
     'Accept-Language': 'en-US,en;q=0.9',
   };

@@ -48,17 +48,17 @@ export const metadata: Metadata = {
   },
   description: "The ultimate synthesis environment for independent comic creators. Powering the next generation of visual narrative with AI-driven iComics technology.",
   keywords: ["comics", "AI comics", "comic creation", "manga", "webtoon", "digital art", "iComics", "storytelling", "visual narrative", "AI art"],
-  authors: [{ name: "iComics Team", url: "https://icomics.uz" }],
+  authors: [{ name: "iComics Team", url: "https://icomics.wiki" }],
   creator: "iComics Studio",
   publisher: "iComics Studio",
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://icomics.uz"),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://icomics.wiki"),
   alternates: {
     canonical: "/",
   },
   openGraph: {
     title: "iComics Studio | Professional Sequential Production",
     description: "The ultimate synthesis environment for independent comic creators. Powering the next generation of visual narrative with AI-driven iComics technology.",
-    url: "https://icomics.uz",
+    url: "https://icomics.wiki",
     siteName: "iComics Studio",
     locale: "en_US",
     type: "website",
@@ -90,6 +90,7 @@ export const metadata: Metadata = {
 };
 
 import SmoothAnimations from "@/components/SmoothAnimations";
+import GlobalAgeGate from "@/components/GlobalAgeGate";
 
 export default function RootLayout({
   children,
@@ -103,6 +104,7 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col bg-transparent pb-[env(safe-area-inset-bottom)]">
         <SmoothAnimations />
+        <GlobalAgeGate />
         {children}
       </body>
     </html>

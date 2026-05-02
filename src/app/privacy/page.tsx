@@ -53,7 +53,7 @@ export default function PrivacyPage() {
                    <h2 className="text-3xl font-black uppercase tracking-tight">02. CIPHER PROTECTION</h2>
                 </div>
                 <p className="text-lg opacity-60 leading-relaxed font-medium pl-16">
-                   Every session on icomics.uz is encrypted via industry-level ciphers. Your Identity Forge files are stored in a secured digital bunker and are never shared with external third-party agencies.
+                   Every session on icomics.wiki is encrypted via industry-level ciphers. Your Identity Forge files are stored in a secured digital bunker and are never shared with external third-party agencies.
                 </p>
              </section>
 
@@ -72,7 +72,7 @@ export default function PrivacyPage() {
              <div className="p-12 border border-white/10 rounded-xl border-dashed bg-white  opacity-60 text-center space-y-4">
                 <p className="text-sm font-black uppercase tracking-[0.3em]">Official iComics Privacy Registry v1.0.2</p>
                 <div className="text-[9px] font-medium max-w-lg mx-auto">
-                   By engaging with the synthesis engine at icomics.uz, you agree to these protective protocols. If you have concerns about your digital shadow, contact info@comics.uz.
+                   By engaging with the synthesis engine at icomics.wiki, you agree to these protective protocols. If you have concerns about your digital shadow, contact info@icomics.wiki.
                 </div>
              </div>
           </div>

@@ -49,7 +49,7 @@ export async function GET(req: NextRequest) {
 
   try {
     const headers = new Headers();
-    headers.set('User-Agent', 'iComics/1.0 (image proxy; contact support@icomics.uz)');
+    headers.set('User-Agent', 'iComics/1.0 (image proxy; contact support@icomics.wiki)');
     headers.set('Accept', 'image/*,*/*;q=0.8');
     headers.set('Referer', getReferer(target) || req.url);
 

@@ -104,7 +104,7 @@ export const translations = {
       reason3T: 'High Fidelity',
       reason3D: 'Professional-grade output ready for digital and print distribution.',
       joinTitle: 'Join the Collective',
-      joinSub: 'Start your first issue today on icomics.uz',
+      joinSub: 'Start your first issue today on icomics.wiki',
       activeBtn: 'Active Account Now'
     },
     faq: {
@@ -306,7 +306,7 @@ export const translations = {
       reason3T: 'Высокое Качество',
       reason3D: 'Профессиональный результат для цифровой и печатной дистрибуции.',
       joinTitle: 'Присоединяйтесь к нам',
-      joinSub: 'Создайте свой первый выпуск сегодня на icomics.uz',
+      joinSub: 'Создайте свой первый выпуск сегодня на icomics.wiki',
       activeBtn: 'Активировать Аккаунт'
     },
     faq: {
@@ -508,7 +508,7 @@ export const translations = {
       reason3T: 'Yuqori Aniqlik',
       reason3D: 'Raqamli va bosma tarqatishga tayyor professional darajadagi mahsulot.',
       joinTitle: 'Kollektivga qo‘shiling',
-      joinSub: 'Bugunoq birinchi nashringizni icomics.uz saytida boshlang',
+      joinSub: 'Bugunoq birinchi nashringizni icomics.wiki saytida boshlang',
       activeBtn: 'Hisobni Faollashtirish'
     },
     faq: {

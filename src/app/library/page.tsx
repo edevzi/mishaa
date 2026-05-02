@@ -69,10 +69,16 @@ const CATEGORIES: Category[] = [
   { label: 'Manga Hub', source: 'mangadex', originalLanguages: ['ja'] },
   { label: 'Webtoons', source: 'mangadex', includedTagIds: [MANGADEX_LONG_STRIP_TAG_ID] },
   { label: 'Manhwa', source: 'mangadex', originalLanguages: ['ko'], excludedTagIds: [MANGADEX_LONG_STRIP_TAG_ID] },
+  { label: 'Popular Doujinshi', query: 'all&sort=popular', nsfw: true, source: 'nhentai' },
+  { label: 'Trending Today', query: 'all&sort=popular-today', nsfw: true, source: 'nhentai' },
   { label: 'Doujinshi', query: 'all', nsfw: true, source: 'nhentai' },
   { label: 'New Doujinshi', query: 'language:english', nsfw: true, source: 'nhentai' },
-  { label: 'Hentai', query: 'language:russian', nsfw: true, source: 'nhentai' },
-  { label: 'Erotica', source: 'mangadex', nsfw: true, ratings: ['erotica', 'pornographic'] },
+  { label: 'MILF / Mature', query: 'tag:milf', nsfw: true, source: 'nhentai' },
+  { label: 'Yuri / GL', query: 'tag:yuri', nsfw: true, source: 'nhentai' },
+  { label: 'Parody Comics', query: 'parody', nsfw: true, source: 'nhentai' },
+  { label: 'Adult Manga', source: 'mangadex', nsfw: true, ratings: ['pornographic'] },
+  { label: 'Erotica', source: 'mangadex', nsfw: true, ratings: ['erotica'] },
+  { label: 'Rule34', source: 'rule34', nsfw: true, query: getBooruDefaultQuery('rule34') },
   { label: 'e621', source: 'e621', nsfw: true, query: getBooruDefaultQuery('e621') },
   { label: 'Danbooru', source: 'danbooru', nsfw: true, query: getBooruDefaultQuery('danbooru') },
   { label: 'Gelbooru', source: 'gelbooru', nsfw: true, query: getBooruDefaultQuery('gelbooru') },
@@ -290,13 +296,28 @@ function ComicLibrary() {
   // Fetch from nhentai
   const fetchNHentai = useCallback(async (query: string, page: number): Promise<LoadResult> => {
     try {
-      const path = (query === 'all' || !query) 
-        ? `galleries?page=${page + 1}` 
-        : `search?query=${encodeURIComponent(query)}&page=${page + 1}`;
+      let path = '';
+      if (!query || query === 'all') {
+        path = `galleries?page=${page + 1}`;
+      } else if (query.includes('&sort=')) {
+        const [q, sort] = query.split('&sort=');
+        path = `search?query=${encodeURIComponent(q)}&sort=${sort}&page=${page + 1}`;
+      } else {
+        path = `search?query=${encodeURIComponent(query)}&page=${page + 1}`;
+      }
         
       const res = await fetch(`/api/proxy/nhentai?path=${encodeURIComponent(path)}`);
       if (!res.ok) return { items: [], hasMore: false };
-      const data = await res.json();
+      
+      const text = await res.text();
+      let data;
+      try {
+        data = JSON.parse(text);
+      } catch (e) {
+        console.warn(`nHentai proxy returned non-JSON content for path ${path}`);
+        return { items: [], hasMore: false };
+      }
+
       const results = Array.isArray(data?.result) ? data.result : Array.isArray(data) ? data : [];
       const numPages = Number(data?.num_pages ?? 0);
 

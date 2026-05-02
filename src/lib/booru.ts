@@ -1,4 +1,4 @@
-export type BooruSource = 'e621' | 'danbooru' | 'gelbooru';
+export type BooruSource = 'e621' | 'danbooru' | 'gelbooru' | 'rule34';
 
 export interface BooruPostSummary {
   id: string;
@@ -15,6 +15,7 @@ const BOORU_LABELS: Record<BooruSource, string> = {
   e621: 'e621',
   danbooru: 'Danbooru',
   gelbooru: 'Gelbooru',
+  rule34: 'Rule34',
 };
 
 function normalizeUrl(url?: string | null) {
@@ -35,9 +36,9 @@ function compactTags(tags: string[], fallback: string) {
 function normalizeRatingQuery(source: BooruSource, query: string) {
   if (!query) return query;
 
-  const explicit = source === 'gelbooru' ? 'rating:explicit' : 'rating:e';
-  const questionable = source === 'gelbooru' ? 'rating:questionable' : 'rating:q';
-  const safe = source === 'gelbooru' ? 'rating:safe' : 'rating:s';
+  const explicit = (source === 'gelbooru' || source === 'rule34') ? 'rating:explicit' : 'rating:e';
+  const questionable = (source === 'gelbooru' || source === 'rule34') ? 'rating:questionable' : 'rating:q';
+  const safe = (source === 'gelbooru' || source === 'rule34') ? 'rating:safe' : 'rating:s';
 
   return query
     .replace(/\brating:(?:explicit|e)\b/gi, explicit)
@@ -48,7 +49,7 @@ function normalizeRatingQuery(source: BooruSource, query: string) {
 function extractRating(source: BooruSource, post: any) {
   const raw = String(post?.rating || post?.tag_string_rating || post?.post_rating || '').trim();
   if (!raw) return 'unknown';
-  if (source === 'gelbooru') {
+  if (source === 'gelbooru' || source === 'rule34') {
     if (raw === 'e' || raw.toLowerCase() === 'explicit') return 'explicit';
     if (raw === 'q' || raw.toLowerCase() === 'questionable') return 'questionable';
     if (raw === 's' || raw.toLowerCase() === 'safe') return 'safe';
@@ -105,6 +106,7 @@ function extractExternalUrl(source: BooruSource, post: any) {
 
   if (source === 'e621') return `https://e621.net/posts/${id}`;
   if (source === 'danbooru') return `https://danbooru.donmai.us/posts/${id}`;
+  if (source === 'rule34') return `https://rule34.xxx/index.php?page=post&s=view&id=${id}`;
   return `https://gelbooru.com/index.php?page=post&s=view&id=${id}`;
 }
 
@@ -121,7 +123,7 @@ export function normalizeBooruQuery(source: BooruSource, query: string) {
 }
 
 export function getBooruDefaultQuery(source: BooruSource) {
-  if (source === 'gelbooru') return 'rating:explicit';
+  if (source === 'gelbooru' || source === 'rule34') return 'rating:explicit';
   return 'rating:e';
 }
 

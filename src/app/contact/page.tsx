@@ -51,7 +51,7 @@ export default function ContactPage() {
                     <span className="text-[10px] font-black uppercase tracking-widest text-[#e63946]">{t.email}</span>
                     <div className="flex items-center gap-4">
                        <Mail size={18} />
-                       <a href="mailto:info@comics.uz" className="text-xl font-black hover:underline tracking-tight">info@comics.uz</a>
+                       <a href="mailto:info@icomics.wiki" className="text-xl font-black hover:underline tracking-tight">info@icomics.wiki</a>
                     </div>
                   </div>
                   <div className="space-y-2">
@@ -65,7 +65,7 @@ export default function ContactPage() {
                     <span className="text-[10px] font-black uppercase tracking-widest text-white/40">{t.domain}</span>
                     <div className="flex items-center gap-4">
                        <Globe size={18} />
-                       <span className="text-xl font-black tracking-tight">icomics.uz</span>
+                       <span className="text-xl font-black tracking-tight">icomics.wiki</span>
                     </div>
                   </div>
                </div>
