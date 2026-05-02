@@ -27,8 +27,6 @@ import {
 } from '@/lib/manga-language';
 import {
   MANGADEX_LONG_STRIP_TAG_ID,
-  buildMangaDexCoverUrl,
-  pickMangaDexCoverFileName,
 } from '@/lib/mangadex';
 import { searchComics } from '@/actions/comic';
 import Image from 'next/image';
@@ -99,10 +97,6 @@ const formatMarvelDate = (value?: string) => {
 
 
 
-const fetchMangaDexProxy = (path: string) =>
-  fetch(`/api/proxy/mangadex?path=${encodeURIComponent(path)}`, {
-    cache: 'no-store',
-  });
 
 
 
@@ -126,12 +120,12 @@ function ComicLibrary() {
 
   const [comics, setComics] = useState<Comic[]>([]);
   const [selectedComic, setSelectedComic] = useState<Comic | null>(null);
-  const [pages, setPages] = useState<string[]>([]);
+  const [pages] = useState<string[]>([]);
   const [currentPage, setCurrentPage] = useState(0);
   const [categoryQueries, setCategoryQueries] = useState<Record<string, string>>(() => initialCategoryQueries);
   const [loading, setLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
-  const [reading, setReading] = useState(false);
+  const [reading] = useState(false);
   const [viewMode, setViewMode] = useState<'single' | 'webtoon' | 'spread'>('single');
   const [isAgeVerified, setIsAgeVerified] = useState(false);
   const [nsfwEnabled, setNsfwEnabled] = useState(false);
@@ -170,9 +164,10 @@ function ComicLibrary() {
   }, [mangaLanguage]);
 
   useEffect(() => {
+    let t: NodeJS.Timeout;
     const savedLang = readStorageItem('lang') as Lang;
     if (savedLang && translations[savedLang]) {
-      setLang(prev => (savedLang !== prev ? savedLang : prev));
+      t = setTimeout(() => setLang(prev => (savedLang !== prev ? savedLang : prev)), 0);
     }
 
     const handleLang = (e: Event) => {
@@ -181,7 +176,10 @@ function ComicLibrary() {
     };
 
     window.addEventListener('langChange', handleLang as EventListener);
-    return () => window.removeEventListener('langChange', handleLang as EventListener);
+    return () => {
+      window.removeEventListener('langChange', handleLang as EventListener);
+      clearTimeout(t);
+    };
   }, []);
 
   useEffect(() => {

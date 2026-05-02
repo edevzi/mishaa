@@ -10,14 +10,18 @@ export default function Footer() {
   const t = translations[lang].footer;
 
   useEffect(() => {
+    let t_timeout: NodeJS.Timeout;
     const savedLang = readStorageItem('lang') as Lang;
     if (savedLang && translations[savedLang]) {
-      setLang(prev => (savedLang !== prev ? savedLang : prev));
+      t_timeout = setTimeout(() => setLang(prev => (savedLang !== prev ? savedLang : prev)), 0);
     }
 
     const handleLang = (e: Event) => setLang((e as CustomEvent<Lang>).detail);
     window.addEventListener('langChange', handleLang as EventListener);
-    return () => window.removeEventListener('langChange', handleLang as EventListener);
+    return () => {
+      window.removeEventListener('langChange', handleLang as EventListener);
+      clearTimeout(t_timeout);
+    };
   }, []);
 
   return (

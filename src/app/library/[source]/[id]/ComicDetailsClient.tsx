@@ -112,21 +112,6 @@ interface MarvelCharacter {
   };
 }
 
-interface MarvelCharacterApiItem {
-  id?: number | string;
-  name?: string;
-  title?: string;
-  description?: string;
-  thumbnail?: {
-    path?: string;
-    extension?: string;
-  };
-  image?: {
-    path?: string;
-    extension?: string;
-  };
-}
-
 const formatMarvelDate = (value?: string) => {
   if (!value) return 'Unknown';
   const parsed = new Date(value);
@@ -201,21 +186,23 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
   const readerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLDivElement>(null);
   const lastScrollY = useRef(0);
-  const uiTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const chapterPageCacheRef = useRef<Map<string, string[]>>(new Map());
   const chapterPageRequestRef = useRef<Map<string, Promise<string[]>>>(new Map());
 
-  // Check device type
   useEffect(() => {
+    let t: NodeJS.Timeout;
     const checkMobile = () => setIsMobile(window.innerWidth < 768);
     checkMobile();
     window.addEventListener('resize', checkMobile);
 
     const verified = readAgeVerification();
-    setIsAgeVerified(prev => (verified !== prev ? verified : prev));
+    t = setTimeout(() => setIsAgeVerified(prev => (verified !== prev ? verified : prev)), 0);
     if (verified) persistAgeVerification();
 
-    return () => window.removeEventListener('resize', checkMobile);
+    return () => {
+      window.removeEventListener('resize', checkMobile);
+      clearTimeout(t);
+    };
   }, []);
 
   useEffect(() => {
@@ -225,9 +212,10 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
   }, []);
 
   useEffect(() => {
+    let t: NodeJS.Timeout;
     const savedLang = readStorageItem('lang') as Lang;
     if (savedLang && translations[savedLang]) {
-      setLang(prev => (savedLang !== prev ? savedLang : prev));
+      t = setTimeout(() => setLang(prev => (savedLang !== prev ? savedLang : prev)), 0);
     }
 
     const handleLang = (e: Event) => {
@@ -236,7 +224,10 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
     };
 
     window.addEventListener('langChange', handleLang as EventListener);
-    return () => window.removeEventListener('langChange', handleLang as EventListener);
+    return () => {
+      window.removeEventListener('langChange', handleLang as EventListener);
+      clearTimeout(t);
+    };
   }, []);
 
   useEffect(() => {
@@ -421,21 +412,21 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
     void loadChapterPages(0);
   };
 
-  const nextChapter = () => {
+  const nextChapter = useCallback(() => {
     if (currentChapterIdx < chapters.length - 1) {
       const next = currentChapterIdx + 1;
       setCurrentChapterIdx(next);
       void loadChapterPages(next);
     }
-  };
+  }, [currentChapterIdx, chapters.length, loadChapterPages]);
 
-  const prevChapter = () => {
+  const prevChapter = useCallback(() => {
     if (currentChapterIdx > 0) {
       const prev = currentChapterIdx - 1;
       setCurrentChapterIdx(prev);
       void loadChapterPages(prev);
     }
-  };
+  }, [currentChapterIdx, loadChapterPages]);
 
   const handleNextPage = useCallback(() => {
     const step = (viewMode === 'journal' && !(isSpreadCover && currentPage === 0)) ? 2 : 1;
@@ -1033,20 +1024,16 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
 
                {/* View Mode Controls (Responsive) */}
                <div className="flex items-center bg-white/5 border border-white/10 rounded-2xl p-1 shadow-2xl backdrop-blur-2xl max-md:bg-white/10">
-                  {!isLongStrip && (
                     <button onClick={() => setViewMode('classic')} className={`flex items-center gap-2 px-4 py-2 rounded-xl text-[9px] font-black uppercase transition-all ${viewMode === 'classic' ? 'bg-[#ff4d00] text-white shadow-lg' : 'text-white/30 hover:text-white'}`}>
                       <Monitor size={12} className="hidden sm:block"/>
                       <Smartphone size={12} className="sm:hidden"/>
                       <span className="max-md:hidden">Classic</span>
                     </button>
-                  )}
-                  {!isLongStrip && (
                     <button onClick={() => setViewMode('journal')} className={`flex items-center gap-2 px-4 py-2 rounded-xl text-[9px] font-black uppercase transition-all ${viewMode === 'journal' ? 'bg-[#ff4d00] text-white shadow-lg' : 'text-white/30 hover:text-white'}`}>
                       <Columns size={12} className="hidden sm:block"/>
                       <Smartphone size={12} className="sm:hidden rotate-90"/>
                       <span className="max-md:hidden">Journal</span>
                     </button>
-                  )}
                   <button onClick={() => setViewMode('flow')} className={`flex items-center gap-2 px-4 py-2 rounded-xl text-[9px] font-black uppercase transition-all ${viewMode === 'flow' ? 'bg-[#ff4d00] text-white shadow-lg' : 'text-white/30 hover:text-white'}`}>
                     <Smartphone size={12}/> <span className="max-md:hidden">Flow</span>
                   </button>

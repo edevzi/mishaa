@@ -34,14 +34,18 @@ function AuthPageContent() {
   const t = translations[lang].auth;
 
   useEffect(() => {
+    let t_timeout: NodeJS.Timeout;
     // Load persisted language after mount to avoid hydration mismatch
     const savedLang = readStorageItem('lang') as Lang;
     if (savedLang && translations[savedLang]) {
-      setLang(prev => (savedLang !== prev ? savedLang : prev));
+      t_timeout = setTimeout(() => setLang(prev => (savedLang !== prev ? savedLang : prev)), 0);
     }
     const handleLang = (e: Event) => setLang((e as CustomEvent<Lang>).detail);
     window.addEventListener('langChange', handleLang);
-    return () => window.removeEventListener('langChange', handleLang);
+    return () => {
+      window.removeEventListener('langChange', handleLang);
+      clearTimeout(t_timeout);
+    };
   }, []);
 
   const [firstName, setFirstName] = useState('');
