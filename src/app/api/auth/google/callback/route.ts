@@ -1,4 +1,4 @@
-export const runtime = "edge";
+export const runtime = "nodejs";
 import { cookies } from 'next/headers';
 import { NextResponse, type NextRequest } from 'next/server';
 import {
