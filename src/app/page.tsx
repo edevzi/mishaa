@@ -182,7 +182,8 @@ export default function Home() {
 
   useEffect(() => {
     const saved = readStoredMangaLanguage();
-    setMangaLanguage(prev => (saved !== prev ? saved : prev));
+    const t = setTimeout(() => setMangaLanguage(prev => (saved !== prev ? saved : prev)), 0);
+    return () => clearTimeout(t);
   }, []);
 
   const fetchShelves = async (lang: MangaLanguage) => {
@@ -208,7 +209,10 @@ export default function Home() {
   };
 
   useEffect(() => {
-    void fetchShelves(mangaLanguage);
+    const t = setTimeout(() => {
+      void fetchShelves(mangaLanguage);
+    }, 0);
+    return () => clearTimeout(t);
   }, [mangaLanguage]);
 
   const handleLanguageChange = (newLang: MangaLanguage) => {

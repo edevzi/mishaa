@@ -190,13 +190,12 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
   const chapterPageRequestRef = useRef<Map<string, Promise<string[]>>>(new Map());
 
   useEffect(() => {
-    let t: NodeJS.Timeout;
     const checkMobile = () => setIsMobile(window.innerWidth < 768);
     checkMobile();
     window.addEventListener('resize', checkMobile);
 
     const verified = readAgeVerification();
-    t = setTimeout(() => setIsAgeVerified(prev => (verified !== prev ? verified : prev)), 0);
+    const t = setTimeout(() => setIsAgeVerified(prev => (verified !== prev ? verified : prev)), 0);
     if (verified) persistAgeVerification();
 
     return () => {
