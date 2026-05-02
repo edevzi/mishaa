@@ -189,6 +189,8 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
   const chapterPageCacheRef = useRef<Map<string, string[]>>(new Map());
   const chapterPageRequestRef = useRef<Map<string, Promise<string[]>>>(new Map());
   const touchStartRef = useRef({ x: 0, y: 0 });
+  const clickStartRef = useRef({ x: 0, y: 0 });
+  const isDraggingRef = useRef(false);
 
   useEffect(() => {
     const initialMobile = window.innerWidth < 768;
@@ -413,7 +415,7 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
 
   const startReading = () => {
     setReading(true);
-    setViewMode('classic');
+    setViewMode(isMobile ? 'flow' : 'classic');
     void loadChapterPages(0);
   };
 
@@ -999,7 +1001,32 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
             initial={{ opacity: 0 }} 
             animate={{ opacity: 1 }} 
             exit={{ opacity: 0 }} 
+            onTouchStart={(e) => {
+              isDraggingRef.current = false;
+              clickStartRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+            }}
+            onTouchMove={(e) => {
+              const diffX = Math.abs(e.touches[0].clientX - clickStartRef.current.x);
+              const diffY = Math.abs(e.touches[0].clientY - clickStartRef.current.y);
+              if (diffX > 10 || diffY > 10) {
+                isDraggingRef.current = true;
+              }
+            }}
+            onMouseDown={(e) => {
+              isDraggingRef.current = false;
+              clickStartRef.current = { x: e.clientX, y: e.clientY };
+            }}
+            onMouseMove={(e) => {
+              if (e.buttons > 0) {
+                const diffX = Math.abs(e.clientX - clickStartRef.current.x);
+                const diffY = Math.abs(e.clientY - clickStartRef.current.y);
+                if (diffX > 10 || diffY > 10) {
+                  isDraggingRef.current = true;
+                }
+              }
+            }}
             onClick={(e) => {
+              if (isDraggingRef.current) return;
               // Only toggle if clicking the background/canvas, not buttons
               if (e.target === e.currentTarget || (e.target as HTMLElement).closest('#reader-canvas')) {
                 setUiVisible(!uiVisible);
