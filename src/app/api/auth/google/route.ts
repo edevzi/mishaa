@@ -1,4 +1,4 @@
-export const runtime = "edge";
+export const runtime = "nodejs";
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 import { buildGoogleAuthUrl, GOOGLE_STATE_COOKIE } from '@/lib/google-oauth';
