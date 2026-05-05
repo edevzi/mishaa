@@ -77,6 +77,7 @@ export default function ComicReaderClient({ initialComic, initialChapters, sourc
   // Reader State
   const [pages, setPages] = useState<string[]>([]);
   const [currentPage, setCurrentPage] = useState(0);
+  const [pageReady, setPageReady] = useState(false);
   const [viewMode, setViewMode] = useState<'classic' | 'flow' | 'journal'>('classic');
   const [readerLoading, setReaderLoading] = useState(false);
   const [uiVisible, setUiVisible] = useState(false);
@@ -223,6 +224,7 @@ export default function ComicReaderClient({ initialComic, initialChapters, sourc
     if (!chapter) return;
 
     setCurrentPage(0);
+    setPageReady(false);
     setScrolled(false);
     setScrollProgress(0);
     setReaderLoading(true);
@@ -233,6 +235,7 @@ export default function ComicReaderClient({ initialComic, initialChapters, sourc
       const chapterPages = await ensureChapterPages(chapter);
       await minDelay;
       setPages(chapterPages);
+      setPageReady(false);
       preloadNeighborChapters(idx);
       
       // Update URL when changing chapter
@@ -247,6 +250,41 @@ export default function ComicReaderClient({ initialComic, initialChapters, sourc
       canvasRef.current?.scrollTo(0, 0);
     }
   }, [chapters, ensureChapterPages, preloadNeighborChapters, chapterId, id, source]);
+
+  useEffect(() => {
+    if (viewMode === 'flow' || pages.length === 0) {
+      setPageReady(true);
+      return;
+    }
+
+    const targetIndexes = viewMode === 'journal' && isSpreadCover && currentPage === 0
+      ? [0]
+      : [currentPage, ...(viewMode === 'journal' ? [currentPage + 1] : [])].filter((idx) => idx < pages.length);
+
+    let cancelled = false;
+    setPageReady(false);
+
+    const preload = async () => {
+      await Promise.all(
+        targetIndexes.map((idx) => new Promise<void>((resolve) => {
+          const image = new window.Image();
+          image.onload = () => resolve();
+          image.onerror = () => resolve();
+          image.src = pages[idx];
+        }))
+      );
+
+      if (!cancelled) {
+        setPageReady(true);
+      }
+    };
+
+    void preload();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [pages, currentPage, viewMode, isSpreadCover]);
 
   useEffect(() => {
     if (chapters.length > 0) {
@@ -664,11 +702,29 @@ export default function ComicReaderClient({ initialComic, initialChapters, sourc
               <div className={`mx-auto flex flex-col items-center transition-all duration-500 ${viewMode === 'flow' ? 'w-full pt-0 pb-20' : 'min-h-[calc(100vh-40px)] justify-center py-10 md:py-20'}`}>
                 {viewMode === 'classic' ? (
                    <div className="relative flex items-center justify-center w-full min-h-[80vh]">
-                     <motion.img key={currentPage} initial={{ opacity: 0 }} animate={{ opacity: 1 }} src={pages[currentPage]} style={{ maxWidth: isMobile ? '100%' : '80vw', maxHeight: '90vh' }} className="shadow-2xl border border-white/10 rounded-sm object-contain" alt="" />
+                     {!pageReady ? (
+                       <div className="flex items-center justify-center w-full min-h-[80vh]">
+                         <div className="w-14 h-14 border-2 border-[#ff4d00]/30 border-t-[#ff4d00] rounded-full animate-spin" />
+                       </div>
+                     ) : (
+                       <motion.img
+                         key={`classic-${currentPage}`}
+                         initial={{ opacity: 0 }}
+                         animate={{ opacity: 1 }}
+                         src={pages[currentPage]}
+                         style={{ maxWidth: isMobile ? '100%' : '80vw', maxHeight: '90vh' }}
+                         className="shadow-2xl border border-white/10 rounded-sm object-contain"
+                         alt=""
+                       />
+                     )}
                    </div>
                 ) : viewMode === 'journal' ? (
                    <div className="flex items-center justify-center w-full max-w-[98vw] gap-0 min-h-[85vh]">
-                      {currentPage === 0 && isSpreadCover ? (
+                      {!pageReady ? (
+                        <div className="flex items-center justify-center w-full min-h-[85vh]">
+                          <div className="w-14 h-14 border-2 border-[#ff4d00]/30 border-t-[#ff4d00] rounded-full animate-spin" />
+                        </div>
+                      ) : currentPage === 0 && isSpreadCover ? (
                         <div className="relative max-h-[90vh] w-full aspect-[2/3] flex justify-center">
                           <Image src={pages[0]} fill className="object-contain shadow-2xl border border-white/10" alt="cover" unoptimized />
                         </div>
