@@ -139,12 +139,22 @@ import JsonLd from '@/components/JsonLd';
 
 // ... existing code ...
 
-export default function HomeClient() {
-  const [shelfState, setShelfState] = useState<Record<string, { items: LibraryComic[]; loading: boolean }>>({
-    'manga-hub': { items: [], loading: true },
-    webtoons: { items: [], loading: true },
-    manhwa: { items: [], loading: true },
-    marvel: { items: [], loading: true },
+export default function HomeClient({ initialData }: { initialData?: Record<string, LibraryComic[]> }) {
+  const [shelfState, setShelfState] = useState<Record<string, { items: LibraryComic[]; loading: boolean }>>(() => {
+    if (initialData) {
+      return {
+        'manga-hub': { items: initialData['manga-hub'] || [], loading: false },
+        webtoons: { items: initialData['webtoons'] || [], loading: false },
+        manhwa: { items: initialData['manhwa'] || [], loading: false },
+        marvel: { items: initialData['marvel'] || [], loading: false },
+      };
+    }
+    return {
+      'manga-hub': { items: [], loading: true },
+      webtoons: { items: [], loading: true },
+      manhwa: { items: [], loading: true },
+      marvel: { items: [], loading: true },
+    };
   });
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState<ShelfKey>('manga-hub');
@@ -189,7 +199,12 @@ export default function HomeClient() {
     }
   };
 
+  const isFirstMount = useRef(true);
   useEffect(() => {
+    if (isFirstMount.current && initialData) {
+      isFirstMount.current = false;
+      return;
+    }
     const t = setTimeout(() => {
       void fetchShelves(mangaLanguage);
     }, 0);

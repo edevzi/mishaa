@@ -34,7 +34,12 @@ export const metadata: Metadata = {
 
 import JsonLd from '@/components/JsonLd';
 
-export default function Page() {
+import { getHomeData } from '@/lib/home-data';
+
+export default async function Page({ searchParams }: { searchParams: Promise<{ lang?: string }> }) {
+  const { lang } = await searchParams;
+  const initialData = await getHomeData((lang as any) || 'en');
+
   const organizationSchema = {
     "@context": "https://schema.org",
     "@type": "Organization",
@@ -63,7 +68,7 @@ export default function Page() {
     <>
       <JsonLd data={organizationSchema} />
       <JsonLd data={websiteSchema} />
-      <HomeClient />
+      <HomeClient initialData={initialData} />
     </>
   );
 }
