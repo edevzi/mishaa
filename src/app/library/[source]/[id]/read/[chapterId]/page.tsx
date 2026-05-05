@@ -13,7 +13,7 @@ type MetadataProps = {
   params: Promise<RouteParams>;
 };
 
-const SITE_NAME = 'iComics Studio';
+const SITE_NAME = 'iComics.wiki';
 
 export async function generateMetadata({ params }: MetadataProps): Promise<Metadata> {
   const { source, id, chapterId } = await params;

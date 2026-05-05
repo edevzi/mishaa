@@ -55,7 +55,7 @@ export async function GET(req: NextRequest) {
 
     const res = await fetch(target.toString(), {
       headers,
-      cache: 'no-store',
+      next: { revalidate: 86400 * 30 }, // Cache upstream for 30 days
     });
 
     if (!res.ok) {
@@ -72,7 +72,7 @@ export async function GET(req: NextRequest) {
       status: 200,
       headers: {
         'Content-Type': contentType,
-        'Cache-Control': 'no-store',
+        'Cache-Control': 'public, max-age=31536000, immutable',
       },
     });
   } catch (error: unknown) {

@@ -83,10 +83,35 @@ export const metadata: Metadata = {
   verification: {
     google: "Q3JUtRB_65-cXXd1FocDiCQ-Y4bOA_zmDpzJQfhU9mE",
   },
-  icons: {
-    icon: "/icon.png",
-    apple: "/icon.png",
+  alternates: {
+    canonical: 'https://icomics.wiki',
+    languages: {
+      'en-US': 'https://icomics.wiki/en',
+      'ru-RU': 'https://icomics.wiki/ru',
+      'es-ES': 'https://icomics.wiki/es',
+      'fr-FR': 'https://icomics.wiki/fr',
+    },
   },
+  icons: {
+    icon: [
+      { url: '/logo.png' },
+      { url: '/logo.png', sizes: '32x32', type: 'image/png' },
+      { url: '/logo.png', sizes: '16x16', type: 'image/png' },
+    ],
+    apple: [
+      { url: '/logo.png', sizes: '180x180', type: 'image/png' },
+    ],
+    shortcut: '/logo.png',
+  },
+  other: {
+    "dns-prefetch": [
+      "https://api.mangadex.org",
+      "https://uploads.mangadex.org",
+      "https://marvel.emreparker.com",
+      "https://archive.org",
+      "https://superheroapi.com"
+    ],
+  }
 };
 
 import SmoothAnimations from "@/components/SmoothAnimations";

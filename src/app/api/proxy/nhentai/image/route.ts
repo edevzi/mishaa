@@ -24,52 +24,66 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid nhentai image path' }, { status: 400 });
   }
 
-  try {
-    // nhentai uses t.nhentai.net for thumbnails and i.nhentai.net for full images
-    const isThumbnail = path.includes('/thumb.') || path.includes('/1t.');
-    const host = isThumbnail ? 't.nhentai.net' : 'i.nhentai.net';
-    const targetUrl = `https://${host}/${path}`;
+  // Common nhentai image mirrors
+  const isThumbnail = path.includes('/thumb.') || path.includes('/1t.');
+  const hosts = isThumbnail 
+    ? ['t.nhentai.net', 't2.nhentai.net', 't3.nhentai.net', 't5.nhentai.net']
+    : ['i.nhentai.net', 'i2.nhentai.net', 'i3.nhentai.net', 'i5.nhentai.net', 'i7.nhentai.net'];
 
-    const res = await fetch(targetUrl, {
-      cache: 'no-store',
+  const fetchImage = async (host: string) => {
+    const res = await fetch(`https://${host}/${path}`, {
       headers: {
-        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
         'Referer': 'https://nhentai.net/',
       },
+      signal: AbortSignal.timeout(8000)
     });
+    if (!res.ok) throw new Error(`Host ${host} failed`);
+    return res;
+  };
 
-    if (!res.ok) {
-      // Try fallback to other host if one fails
-      const fallbackHost = !isThumbnail ? 't.nhentai.net' : 'i.nhentai.net';
-      const fallbackRes = await fetch(`https://${fallbackHost}/${path}`, {
-        cache: 'no-store',
-        headers: {
-          'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
-          'Referer': 'https://nhentai.net/',
-        },
-      });
-      
-      if (fallbackRes.ok) {
-        return new NextResponse(fallbackRes.body, {
-          status: 200,
-          headers: {
-            'Content-Type': fallbackRes.headers.get('content-type') || 'image/jpeg',
-            'Cache-Control': 'public, max-age=86400',
-          },
-        });
-      }
-    }
+  const fetchViaWeserv = async () => {
+    // Weserv can fetch from any URL and is very fast
+    const primaryHost = hosts[0];
+    const targetUrl = `https://${primaryHost}/${path}`;
+    const weservUrl = `https://images.weserv.nl/?url=${encodeURIComponent(targetUrl)}&output=webp&q=80`;
+    
+    const res = await fetch(weservUrl, { signal: AbortSignal.timeout(10000) });
+    if (!res.ok) throw new Error("Weserv failed");
+    return res;
+  };
+
+  try {
+    // Try mirrors and Weserv in parallel
+    const res = await Promise.any([
+      ...hosts.slice(0, 2).map(h => fetchImage(h)),
+      fetchViaWeserv()
+    ]);
 
     return new NextResponse(res.body, {
-      status: res.status,
+      status: 200,
       headers: {
         'Content-Type': res.headers.get('content-type') || 'image/jpeg',
-        'Cache-Control': 'public, max-age=86400',
+        'Cache-Control': 'public, max-age=31536000, immutable',
+        'Access-Control-Allow-Origin': '*',
       },
     });
-  } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : 'Unknown nhentai image proxy error';
-    console.error('Nhentai Image Proxy Error:', message, 'Path:', path);
-    return NextResponse.json({ error: message }, { status: 500 });
+  } catch (error: any) {
+    console.error('Nhentai Image Proxy Error:', error.message || error, 'Path:', path);
+    
+    // Final fallback to the primary host if parallel fails
+    try {
+      const primaryRes = await fetch(`https://${hosts[0]}/${path}`, {
+        headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36', 'Referer': 'https://nhentai.net/' }
+      });
+      if (primaryRes.ok) {
+        return new NextResponse(primaryRes.body, {
+          status: 200,
+          headers: { 'Content-Type': primaryRes.headers.get('content-type') || 'image/jpeg', 'Cache-Control': 'public, max-age=86400' }
+        });
+      }
+    } catch {}
+
+    return NextResponse.json({ error: 'Failed to fetch image from any mirror' }, { status: 502 });
   }
 }

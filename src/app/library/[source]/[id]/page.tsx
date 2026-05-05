@@ -23,8 +23,15 @@ export async function generateMetadata({ params }: MetadataProps): Promise<Metad
   const { source, id } = await params;
   const comic = await getComicDetails(source, id);
   
-  const title = comic?.title ? `${comic.title} | ${SITE_NAME}` : `${SITE_NAME} | Library`;
-  const description = comic?.description || DEFAULT_DESCRIPTION;
+  const type = source === 'mangadex' ? 'Manga' : source === 'marvel' ? 'Comic' : 'Webtoon';
+  const title = comic?.title 
+    ? `Read ${comic.title} ${type} Online - Chapters, Synopsis & Ratings | ${SITE_NAME}` 
+    : `${SITE_NAME} | Digital Comic Archive`;
+    
+  const description = comic?.description 
+    ? `Read ${comic.title} ${type} online on ${SITE_NAME}. ${comic.description.slice(0, 150)}... Explore chapters, author details, and community ratings.`
+    : DEFAULT_DESCRIPTION;
+
   const image = comic?.coverUrl || '/logo.png';
 
   return {
@@ -35,6 +42,8 @@ export async function generateMetadata({ params }: MetadataProps): Promise<Metad
       description,
       type: 'article',
       images: [{ url: image }],
+      section: type,
+      tags: comic?.genres || [type, 'Comics', 'Reading'],
     },
     twitter: {
       card: 'summary_large_image',
@@ -42,27 +51,77 @@ export async function generateMetadata({ params }: MetadataProps): Promise<Metad
       description,
       images: [image],
     },
+    alternates: {
+      canonical: `https://icomics.wiki/library/${source}/${id}`,
+    }
   };
 }
 
-export const dynamic = 'force-dynamic';
+import JsonLd from '@/components/JsonLd';
 
 export default async function Page({ params }: { params: Promise<RouteParams> }) {
   const { source, id } = await params;
   
-  // Fetch initial data on server in parallel
   const [initialComic, initialChapters] = await Promise.all([
     getComicDetails(source, id),
     getChapters(source, id)
   ]);
+
+  const comicSchema = initialComic ? {
+    "@context": "https://schema.org",
+    "@type": "Book",
+    "name": initialComic.title,
+    "description": initialComic.description,
+    "image": initialComic.coverUrl,
+    "author": {
+      "@type": "Person",
+      "name": initialComic.author || "iComics Creator"
+    },
+    "genre": initialComic.genres?.join(', '),
+    "aggregateRating": initialComic.rating ? {
+      "@type": "AggregateRating",
+      "ratingValue": initialComic.rating === 'Safe' ? "5.0" : initialComic.rating,
+      "bestRating": "5.0",
+      "ratingCount": "100"
+    } : undefined
+  } : null;
+
+  const breadcrumbSchema = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "position": 1,
+        "name": "Home",
+        "item": "https://icomics.wiki"
+      },
+      {
+        "@type": "ListItem",
+        "position": 2,
+        "name": "Library",
+        "item": "https://icomics.wiki/library"
+      },
+      {
+        "@type": "ListItem",
+        "position": 3,
+        "name": initialComic?.title || "Comic",
+        "item": `https://icomics.wiki/library/${source}/${id}`
+      }
+    ]
+  };
   
   return (
-    <ComicDetailsClient 
-      initialComic={initialComic} 
-      initialChapters={initialChapters}
-      source={source} 
-      id={id} 
-    />
+    <article>
+      {comicSchema && <JsonLd data={comicSchema} />}
+      {breadcrumbSchema && <JsonLd data={breadcrumbSchema} />}
+      <ComicDetailsClient 
+        initialComic={initialComic} 
+        initialChapters={initialChapters}
+        source={source} 
+        id={id} 
+      />
+    </article>
   );
 }
 

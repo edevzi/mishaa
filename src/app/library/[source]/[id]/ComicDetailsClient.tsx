@@ -45,6 +45,13 @@ interface ComicDetails {
   source: 'mangadex' | 'archive' | 'nhentai' | 'marvel' | 'superhero' | BooruSource;
   aniListId?: string;
   superheroData?: any;
+  related?: {
+    id: string;
+    title: string;
+    coverUrl: string;
+    source: string;
+    rating: string;
+  }[];
 }
 
 interface MarvelCreator {
@@ -307,7 +314,13 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
     if (chapters.length > 0) {
       router.push(`/library/${source}/${id}/read/${chapters[0].id}`);
     } else {
-      alert("No chapters available to read.");
+      // Professional approach: Scroll to the chapters section to show the explanation
+      const chaptersSection = document.getElementById('chapters-section');
+      if (chaptersSection) {
+        chaptersSection.scrollIntoView({ behavior: 'smooth' });
+      } else {
+        console.warn("No chapters available to read.");
+      }
     }
   };
 
@@ -701,7 +714,11 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
           <ChevronLeft size={16} className="group-hover:-translate-x-1 transition-transform" /> Neural_Backtrack
         </motion.button>
 
-        <div className="rounded-[2rem] border border-white/8 bg-white/[0.03] backdrop-blur-xl shadow-[0_40px_140px_rgba(0,0,0,0.45)] overflow-hidden">
+        <div 
+          itemScope 
+          itemType="https://schema.org/ComicStory"
+          className="rounded-[2rem] border border-white/8 bg-white/[0.03] backdrop-blur-xl shadow-[0_40px_140px_rgba(0,0,0,0.45)] overflow-hidden"
+        >
           <div className="grid grid-cols-1 lg:grid-cols-[380px_1fr] gap-10 lg:gap-24 items-start p-4 sm:p-6 md:p-10 lg:p-12">
           {/* Side Info */}
           <motion.div initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} className="space-y-10 lg:sticky lg:top-32">
@@ -711,7 +728,8 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
                  src={comic.coverUrl} 
                  fill
                  className="object-cover group-hover:scale-105 transition-transform duration-700" 
-                 alt={comic.title} 
+                 alt={`Read ${comic.title} online - Cover Art`} 
+                 itemProp="image"
                  unoptimized
                />
                <div className="absolute top-4 left-4 z-20 px-3 py-1 bg-[#ff4d00] text-white text-[9px] font-black uppercase italic shadow-lg">HQ_Asset</div>
@@ -778,7 +796,10 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
                  <div className="px-4 py-2 bg-[#ff4d00]/10 border border-[#ff4d00]/30 text-[#ff4d00] text-[10px] font-black uppercase tracking-widest">{comic.status}</div>
               </div>
               
-                <h1 className={`${titleSizeClass} ${titleWidthClass} font-black italic uppercase tracking-tighter leading-[0.92] text-balance break-words`}>
+                <h1 
+                  itemProp="name"
+                  className={`${titleSizeClass} ${titleWidthClass} font-black italic uppercase tracking-tighter leading-[0.92] text-balance break-words`}
+                >
                   {comic.title}
                 </h1>
 
@@ -792,19 +813,66 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
             </div>
 
             <div className="space-y-8">
-               <div className="flex items-center gap-4 border-b border-white/10 pb-4">
-                  <h3 className="text-[11px] font-black uppercase tracking-[0.5em] text-[#ff4d00]">Story_Archive_Log</h3>
-                  <div className="h-px flex-1 bg-gradient-to-r from-white/10 to-transparent" />
+               <div className="space-y-8">
+                  <div className="flex items-center gap-4 border-b border-white/10 pb-4">
+                     <h3 className="text-[11px] font-black uppercase tracking-[0.5em] text-[#ff4d00]">Story_Archive_Log</h3>
+                     <div className="h-px flex-1 bg-gradient-to-r from-white/10 to-transparent" />
+                  </div>
+                  <div 
+                    itemProp="description"
+                    className="max-w-4xl rounded-2xl border border-white/10 bg-white/[0.02] p-5 md:p-6 text-base md:text-lg text-white/65 italic leading-relaxed description-content max-h-[44vh] overflow-y-auto pr-3"
+                  >
+                    <RichTextContent
+                      content={String(comic.description || "")
+                        .replace(/\[b\]/g, '')
+                        .replace(/\[\/b\]/g, '')
+                        .replace(/\[i\]/g, '')
+                        .replace(/\[\/i\]/g, '')}
+                    />
+                  </div>
                </div>
-               <div className="max-w-4xl rounded-2xl border border-white/10 bg-white/[0.02] p-5 md:p-6 text-base md:text-lg text-white/65 italic leading-relaxed description-content max-h-[44vh] overflow-y-auto pr-3">
-                 <RichTextContent
-                   content={String(comic.description || "")
-                     .replace(/\[b\]/g, '')
-                     .replace(/\[\/b\]/g, '')
-                     .replace(/\[i\]/g, '')
-                     .replace(/\[\/i\]/g, '')}
-                 />
-               </div>
+
+               {/* RELATED COUNCILS / MORE LIKE THIS */}
+               {comic.related && comic.related.length > 0 && (
+                 <div className="space-y-8 pt-10">
+                   <div className="flex items-center justify-between gap-4 border-b border-white/10 pb-4">
+                      <div className="flex items-center gap-3">
+                        <Sparkles className="text-[#ff4d00]" size={16} />
+                        <h3 className="text-[11px] font-black uppercase tracking-[0.5em] text-white">Neural_Recognition</h3>
+                      </div>
+                      <div className="h-px flex-1 bg-gradient-to-r from-white/10 to-transparent" />
+                      <span className="text-[9px] font-black uppercase tracking-widest text-white/20">More_Like_This</span>
+                   </div>
+
+                   <div className="flex gap-6 overflow-x-auto pb-8 scrollbar-none snap-x">
+                     {comic.related.map((item) => (
+                       <motion.div
+                         key={item.id}
+                         whileHover={{ y: -10, scale: 1.05 }}
+                         onClick={() => router.push(`/library/${item.source}/${item.id}`)}
+                         className="min-w-[180px] md:min-w-[220px] snap-start group cursor-pointer"
+                       >
+                         <div className="aspect-[2/3] relative border border-white/10 bg-[#0a0a0a] overflow-hidden shadow-2xl">
+                           <Image
+                             src={item.coverUrl}
+                             fill
+                             className="object-cover group-hover:scale-110 transition-transform duration-700"
+                             alt={item.title}
+                             unoptimized
+                           />
+                           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                           <div className="absolute bottom-3 left-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <div className="text-[8px] font-black uppercase tracking-widest text-[#ff4d00]">Source: {item.source}</div>
+                           </div>
+                         </div>
+                         <h4 className="mt-4 text-[9px] font-black uppercase tracking-widest text-white/30 group-hover:text-white truncate">
+                           {item.title}
+                         </h4>
+                       </motion.div>
+                     ))}
+                   </div>
+                 </div>
+               )}
             </div>
 
             {/* Conditional Content based on source */}
@@ -852,29 +920,45 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
                   </div>
                </div>
             ) : (
-              <div className="space-y-8">
+              <div id="chapters-section" className="space-y-8">
                  <div className="flex items-center justify-between border-b border-white/10 pb-4">
                     <h3 className="text-[11px] font-black uppercase tracking-[0.5em] text-white/40">Synchronized_Chapters</h3>
                     <span className="text-[10px] font-black text-[#ff4d00] uppercase tracking-widest">{chapters.length} FOUND</span>
                  </div>
-                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[500px] overflow-y-auto custom-scrollbar pr-4">
-                    {chapters.map((ch) => (
-                      <button
-                        key={ch.id}
-                        onClick={() => {
-                          router.push(`/library/${source}/${id}/read/${ch.id}`);
-                        }}
-                        className="group flex items-center justify-between p-5 transition-all text-left border bg-white/5 border-white/5 hover:border-[#ff4d00]/50"
-                      >
-                         <div className="space-y-1">
-                            <div className="text-[10px] font-black uppercase tracking-widest text-[#ff4d00]">Vol.{ch.volume || '0'} Ch.{ch.chapterNum}</div>
-                            <div className="text-[13px] font-black uppercase tracking-tight group-hover:text-[#ff4d00] transition-colors break-words line-clamp-2">
-                              {ch.title}
-                            </div>
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[600px] overflow-y-auto custom-scrollbar pr-4">
+                    {chapters.length > 0 ? (
+                      chapters.map((ch) => (
+                        <button
+                          key={ch.id}
+                          onClick={() => router.push(`/library/${source}/${id}/read/${ch.id}`)}
+                          className="group relative flex items-center justify-between p-6 transition-all text-left border bg-white/5 border-white/5 hover:border-[#ff4d00]/50 overflow-hidden"
+                        >
+                           {/* Hover Glow */}
+                           <div className="absolute inset-0 bg-gradient-to-r from-[#ff4d00]/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                           
+                           <div className="relative z-10 space-y-1">
+                              <div className="text-[10px] font-black uppercase tracking-[0.3em] text-[#ff4d00]">Vol.{ch.volume || '0'} Ch.{ch.chapterNum}</div>
+                              <div className="text-[14px] font-black uppercase tracking-tight group-hover:text-white transition-colors break-words line-clamp-1">
+                                {ch.title || `Chapter ${ch.chapterNum}`}
+                              </div>
+                           </div>
+                           <ChevronRight size={18} className="text-white/10 group-hover:text-[#ff4d00] group-hover:translate-x-1 transition-all" />
+                        </button>
+                      ))
+                    ) : (
+                      <div className="col-span-full py-20 border border-dashed border-white/10 flex flex-col items-center justify-center text-center px-10">
+                         <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mb-6">
+                            <BookOpen className="text-white/20" size={32} />
                          </div>
-                         <ChevronRight size={20} className="text-white/20 group-hover:text-[#ff4d00] group-hover:translate-x-1 transition-all" />
-                      </button>
-                    ))}
+                         <h4 className="text-[11px] font-black uppercase tracking-[0.5em] text-white mb-3">Sync_Failure_Detected</h4>
+                         <p className="text-sm text-white/30 max-w-sm leading-relaxed mb-8">
+                            No chapters were found for the <b>{mangaLanguage.toUpperCase()}</b> protocol. MangaDex might only have chapters in other languages for this title.
+                         </p>
+                         <div className="flex flex-wrap justify-center gap-3">
+                            <span className="text-[9px] font-black uppercase tracking-widest text-[#ff4d00]">Suggestion: Change_Language_Protocol_In_Header</span>
+                         </div>
+                      </div>
+                    )}
                  </div>
               </div>
             )}

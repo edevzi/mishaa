@@ -93,6 +93,9 @@ const MARVEL_API_BASE = "https://marvel.emreparker.com/v1";
 const getSuperheroApiBase = () => `https://superheroapi.com/api/${process.env.SUPERHERO_API_TOKEN}`;
 const LIMIT = 36;
 
+const nhentaiCache = new Map<string, { data: any, timestamp: number }>();
+const CACHE_TTL = 1000 * 60 * 60; // 1 hour server-side cache
+
 const NHENTAI_HEADERS = {
   'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
   'Accept': 'application/json',
@@ -100,95 +103,110 @@ const NHENTAI_HEADERS = {
   'Referer': 'https://nhentai.net/',
 };
 
-async function fetchNHentaiGallery(id: string) {
-  const url = `https://nhentai.net/api/gallery/${id}`;
+export async function fetchNHentaiRaw(path: string) {
+  // Check server-side cache first
+  const cacheKey = `nhentai_${path}`;
+  const cached = nhentaiCache.get(cacheKey);
+  if (cached && (Date.now() - cached.timestamp < CACHE_TTL)) {
+    console.log(`[nHentai] 🚀 Serving from Server Cache: ${path}`);
+    return cached.data;
+  }
+
+  const isGallery = path.includes('gallery/') && !path.includes('v2/');
+  const id = isGallery ? path.split('/').pop() : null;
+
+  // 1. Parallel Launch: Try API and HTML Parsing across multiple mirrors
+  const apiPaths = path.startsWith('v2/') ? [path, path.replace('v2/', '')] : [path, `v2/${path}`];
+  const mirrors = ['nhentai.net', 'nhentai.xxx', 'nhentai.to'];
   
-  // Try direct fetch
-  try {
-    const res = await fetch(url, { 
-      headers: {
-        ...NHENTAI_HEADERS,
-        'Referer': `https://nhentai.net/g/${id}/`
-      },
-      next: { revalidate: 3600 } 
-    });
-    if (res.ok) {
-      const text = await res.text();
-      try {
-        return JSON.parse(text);
-      } catch {
-        console.warn(`nHentai direct fetch returned non-JSON content for ID ${id}`);
-      }
-    }
-  } catch (e) {
-    console.warn(`nHentai direct fetch error:`, e);
-  }
+  const fetchTasks: Promise<any>[] = [];
 
-  // Fallback to mirrors
-  const mirrors = [
-    `https://nhentai.xxx/api/gallery/${id}`
-  ];
-
-  for (const mirrorUrl of mirrors) {
-    try {
-      console.log(`Trying nHentai mirror: ${mirrorUrl}`);
-      const mirrorRes = await fetch(mirrorUrl, { 
-        headers: NHENTAI_HEADERS, 
-        next: { revalidate: 3600 },
-        signal: AbortSignal.timeout(5000) // 5s timeout
-      });
-      if (mirrorRes.ok) {
-        const text = await mirrorRes.text();
+  // Add API tasks for each mirror
+  for (const mirror of mirrors) {
+    for (const p of apiPaths) {
+      const url = `https://${mirror}/api/${p}`;
+      fetchTasks.push((async () => {
         try {
-          return JSON.parse(text);
-        } catch {
-          console.warn(`Mirror ${mirrorUrl} returned non-JSON content`);
-        }
-      }
-    } catch (e) {
-      console.warn(`Mirror ${mirrorUrl} failed or timed out`);
-    }
-  }
-
-  // Fallback to proxies
-  const proxies = [
-    `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`,
-    `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`
-  ];
-
-  for (const proxyUrl of proxies) {
-    try {
-      console.log(`Trying nHentai proxy: ${proxyUrl}`);
-      const proxyRes = await fetch(proxyUrl, { 
-        next: { revalidate: 3600 },
-        signal: AbortSignal.timeout(5000)
-      });
-      
-      if (proxyRes.ok) {
-        const text = await proxyRes.text();
-        let data;
-        try {
-          data = JSON.parse(text);
-        } catch {
-          continue; // Not JSON, skip
-        }
-
-        const content = data.contents || data; 
-        if (content) {
-          try {
-            const finalData = typeof content === 'string' ? JSON.parse(content) : content;
-            if (finalData && (finalData.id || finalData.media_id)) return finalData;
-          } catch {
-            // Not nested JSON, skip
+          const res = await fetch(url, { headers: NHENTAI_HEADERS, next: { revalidate: 3600 }, signal: AbortSignal.timeout(5000) });
+          if (res.ok) {
+            const data = await res.json();
+            console.log(`[nHentai] ✅ API Success from ${mirror}: ${p}`);
+            return data;
           }
-        }
-      }
-    } catch (e) {
-      // Quietly fail to next proxy
+          throw new Error("Failed");
+        } catch { throw new Error("Error"); }
+      })());
     }
   }
 
-  return null;
+  // Add HTML Parsing tasks if it's a gallery
+  if (isGallery && id) {
+    for (const mirror of mirrors) {
+      const gUrl = `https://${mirror}/g/${id}/`;
+      fetchTasks.push((async () => {
+        try {
+          const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(gUrl)}`;
+          const res = await fetch(proxyUrl, { next: { revalidate: 3600 }, signal: AbortSignal.timeout(10000) });
+          if (!res.ok) throw new Error("HTML Proxy failed");
+          const text = await res.text();
+          const html = text.includes('"contents":') ? JSON.parse(text).contents : text;
+          
+          const match = html.match(/window\._gallery\s*=\s*JSON\.parse\("(.+?)"\);/);
+          if (match && match[1]) {
+            const json = match[1].replace(/\\u0022/g, '"').replace(/\\u0027/g, "'").replace(/\\\\/g, '\\');
+            console.log(`[nHentai] ✅ HTML Parsing Success from ${mirror} for ID ${id}`);
+            return JSON.parse(json);
+          }
+          throw new Error("JSON not found");
+        } catch { throw new Error("Error"); }
+      })());
+    }
+  }
+
+  // Fallback Proxies
+  const fallbackProxies = [
+    `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(`https://nhentai.net/api/${path}`)}`,
+    `https://corsproxy.io/?${encodeURIComponent(`https://nhentai.net/api/${path}`)}`
+  ];
+  for (const p of fallbackProxies) {
+    fetchTasks.push((async () => {
+      try {
+        const res = await fetch(p, { next: { revalidate: 3600 }, signal: AbortSignal.timeout(8000) });
+        if (res.ok) {
+           const text = await res.text();
+           const data = JSON.parse(text);
+           console.log(`[nHentai] ✅ Proxy Success for ${path}`);
+           return data;
+        }
+        throw new Error("Failed");
+      } catch { throw new Error("Error"); }
+    })());
+  }
+
+  try {
+    const result = await Promise.any(fetchTasks);
+    // Save to server-side cache
+    nhentaiCache.set(cacheKey, { data: result, timestamp: Date.now() });
+    return result;
+  } catch (e) {
+    console.error(`[nHentai] 🚨 ALL TASKS FAILED for ${path}`);
+    return null;
+  }
+}
+
+async function searchNHentai(query: string, page: number) {
+  let path = '';
+  const cleanQuery = query.trim() || '';
+  
+  if (!cleanQuery || cleanQuery === 'all') {
+    path = `v2/search?query=%20&page=${page + 1}`; // Space as query to get all
+  } else if (cleanQuery.includes('&sort=')) {
+    const [q, sort] = cleanQuery.split('&sort=');
+    path = `v2/search?query=${encodeURIComponent(q)}&sort=${sort}&page=${page + 1}`;
+  } else {
+    path = `v2/search?query=${encodeURIComponent(cleanQuery)}&page=${page + 1}`;
+  }
+  return fetchNHentaiRaw(path);
 }
 
 
@@ -289,19 +307,31 @@ export async function getComicDetails(source: string, id: string, mangaLanguage:
     }
 
     if (source === 'nhentai') {
-      const data = await fetchNHentaiGallery(id) as NHentaiGallery;
+      const data = await fetchNHentaiRaw(`gallery/${id}`) as NHentaiGallery;
       if (!data) return null;
+
+      // Extract related comics if they exist
+      const related = (data as any).related || [];
       
       return {
         id: data.id.toString(),
         title: data.title?.english || data.title?.japanese || "Untitled",
-        description: data.tags?.map((t: NHentaiTag) => t.name).join(', ') || "",
-        coverUrl: `https://t.nhentai.net/galleries/${data.media_id}/cover.${data.images.cover.t === 'p' ? 'png' : 'jpg'}`,
+        description: data.tags?.map((t: NHentaiTag) => t.name).join(', ') || "No description",
+        coverUrl: `/api/proxy/nhentai/image?path=galleries/${data.media_id}/thumb.${data.images.thumbnail.t === 'p' ? 'png' : data.images.thumbnail.t === 'g' ? 'gif' : 'jpg'}`,
+        bannerUrl: `/api/proxy/nhentai/image?path=galleries/${data.media_id}/1.${data.images.pages[0].t === 'p' ? 'png' : data.images.pages[0].t === 'g' ? 'gif' : 'jpg'}`,
         rating: 'pornographic',
         genres: data.tags?.filter((t: NHentaiTag) => t.type === 'tag').map((t: NHentaiTag) => t.name) || [],
         status: 'Completed',
+        year: data.upload_date ? new Date(data.upload_date * 1000).getFullYear().toString() : undefined,
         author: data.tags?.find((t: NHentaiTag) => t.type === 'artist')?.name || 'Unknown',
-        source: 'nhentai' as const
+        source: 'nhentai' as const,
+        related: related.map((r: any) => ({
+          id: r.id.toString(),
+          title: r.title.english || r.title.japanese || "Untitled",
+          coverUrl: `/api/proxy/nhentai/image?path=galleries/${r.media_id}/thumb.${r.images.thumbnail.t === 'p' ? 'png' : r.images.thumbnail.t === 'g' ? 'gif' : 'jpg'}`,
+          source: 'nhentai' as const,
+          rating: 'pornographic'
+        }))
       };
     }
 
@@ -368,29 +398,34 @@ export async function getChapters(source: string, id: string, mangaLanguage: Man
       });
       translatedLanguages?.forEach(lang => params.append('translatedLanguage[]', lang));
       
-      const res = await fetch(`https://api.mangadex.org/manga/${id}/feed?${params.toString()}`, { next: { revalidate: 3600 } });
+      console.log(`[MangaDex] Fetching chapters for ${id}, lang: ${mangaLanguage}`);
+      const res = await fetch(`https://api.mangadex.org/manga/${id}/feed?${params.toString()}`, { cache: 'no-store' });
       let data = await res.json();
       
       // Fallback to English if no chapters found in preferred languages
       if ((!data.data || data.data.length === 0) && mangaLanguage !== 'en') {
+        console.log(`[MangaDex] No chapters in ${mangaLanguage}, falling back to EN`);
         const fallbackParams = new URLSearchParams({
           limit: '500',
           'order[chapter]': 'asc',
           'translatedLanguage[]': 'en'
         });
-        const fallbackRes = await fetch(`https://api.mangadex.org/manga/${id}/feed?${fallbackParams.toString()}`, { next: { revalidate: 3600 } });
+        const fallbackRes = await fetch(`https://api.mangadex.org/manga/${id}/feed?${fallbackParams.toString()}`, { cache: 'no-store' });
         data = await fallbackRes.json();
       }
 
       // Aggressive fallback to ANY language if still empty
       if ((!data.data || data.data.length === 0)) {
+        console.log(`[MangaDex] Still empty, aggressive fallback to ALL languages`);
         const aggrParams = new URLSearchParams({
           limit: '500',
           'order[chapter]': 'asc',
         });
-        const aggrRes = await fetch(`https://api.mangadex.org/manga/${id}/feed?${aggrParams.toString()}`, { next: { revalidate: 3600 } });
+        const aggrRes = await fetch(`https://api.mangadex.org/manga/${id}/feed?${aggrParams.toString()}`, { cache: 'no-store' });
         data = await aggrRes.json();
       }
+
+      console.log(`[MangaDex] Total chapters found: ${data.data?.length || 0}`);
 
       return data.data?.map((ch: { id: string; attributes: { title?: string; chapter: string; volume?: string; externalUrl?: string } }) => ({
         id: ch.id,
@@ -464,7 +499,7 @@ export async function getChapterPages(source: string, id: string, chapterId: str
     }
 
     if (source === 'nhentai') {
-       const data = await fetchNHentaiGallery(id) as NHentaiGallery;
+       const data = await fetchNHentaiRaw(`gallery/${id}`) as NHentaiGallery;
        if (!data) return [];
        return data.images.pages.map((p: { t: string }, i: number) => {
           const ext = p.t === 'p' ? 'png' : 'jpg';
@@ -616,6 +651,39 @@ export async function searchComics(params: {
          })),
          hasMore: (page + 1) * LIMIT < data.response.numFound
        };
+    }
+
+    if (source === 'nhentai') {
+      const data = await searchNHentai(query, page);
+      if (!data) return { items: [], hasMore: false };
+      const results = Array.isArray(data?.result) ? data.result : Array.isArray(data) ? data : [];
+      
+      if (results.length > 0) {
+        console.log("[nHentai Search Result Sample]:", JSON.stringify(results[0], null, 2).substring(0, 500));
+        
+        // Background Prefetch first 10 items
+        results.slice(0, 10).forEach((item: any) => {
+          const id = (item.id || item.gallery_id || "").toString();
+          if (id && !nhentaiCache.has(`nhentai_gallery/${id}`)) {
+             fetchNHentaiRaw(`gallery/${id}`).catch(() => {});
+          }
+        });
+      }
+
+      const numPages = Number(data?.num_pages ?? 0);
+      return {
+        items: results.map((item: any) => ({
+          id: (item.id || item.gallery_id || "").toString(),
+          title: item.english_title || item.title?.english || item.title?.japanese || "Untitled",
+          description: `${item.num_pages} pages`,
+          coverUrl: (typeof item.thumbnail === 'object' ? item.thumbnail?.path : item.thumbnail)
+            ? `/api/proxy/nhentai/image?path=${encodeURIComponent(typeof item.thumbnail === 'object' ? item.thumbnail?.path : (item.thumbnail || ''))}`
+            : '/logo.png',
+          source: 'nhentai',
+          rating: 'pornographic'
+        })),
+        hasMore: Number.isFinite(numPages) && numPages > 0 ? page + 1 < numPages : results.length > 0,
+      };
     }
 
     return { items: [], hasMore: false };

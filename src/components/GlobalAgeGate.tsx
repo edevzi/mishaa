@@ -14,12 +14,6 @@ export default function GlobalAgeGate() {
   const pathname = usePathname();
 
   useEffect(() => {
-    // Initial check
-    const isVerified = readAgeVerification();
-    if (!isVerified) {
-      setShowGate(true);
-    }
-
     // Check for language
     const savedLang = readStorageItem('lang') as Lang;
     if (savedLang && translations[savedLang]) {
@@ -31,8 +25,20 @@ export default function GlobalAgeGate() {
       if (translations[nextLang]) setLang(nextLang);
     };
 
+    const handleTrigger = () => {
+      const isVerified = readAgeVerification();
+      if (!isVerified) {
+        setShowGate(true);
+      }
+    };
+
     window.addEventListener('langChange', handleLang as EventListener);
-    return () => window.removeEventListener('langChange', handleLang as EventListener);
+    window.addEventListener('triggerAgeGate', handleTrigger);
+    
+    return () => {
+      window.removeEventListener('langChange', handleLang as EventListener);
+      window.removeEventListener('triggerAgeGate', handleTrigger);
+    };
   }, []);
 
   const handleVerify = () => {
