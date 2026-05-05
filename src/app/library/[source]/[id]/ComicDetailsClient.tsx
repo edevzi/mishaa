@@ -4,9 +4,8 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  ChevronLeft, Play, Star, Clock, 
-  Globe, BookOpen, Share2, 
-  Bookmark, ChevronRight, Loader2, Sparkles, X
+  ChevronLeft, Play, Star, Clock, Globe, BookOpen, Share2, 
+  Bookmark, ChevronRight, Loader2, Sparkles, X, MessageCircle, Send, Copy, Check, ExternalLink
 } from 'lucide-react';
 import AgeGateOverlay from '@/components/AgeGateOverlay';
 import RichTextContent from '@/components/RichTextContent';
@@ -22,6 +21,7 @@ import {
 } from '@/lib/manga-language';
 import { getChapters, getComicDetails } from '@/actions/comic';
 import Image from 'next/image';
+import { useDominantColor } from '@/hooks/use-dominant-color';
 
 interface Chapter {
   id: string;
@@ -44,6 +44,9 @@ interface ComicDetails {
   author?: string;
   source: 'mangadex' | 'archive' | 'nhentai' | 'marvel' | 'superhero' | BooruSource;
   aniListId?: string;
+  malId?: string;
+  aniListData?: any;
+  jikanData?: any;
   superheroData?: any;
   related?: {
     id: string;
@@ -131,7 +134,8 @@ const normalizeMarvelImage = (image?: { path?: string; extension?: string }) => 
   if (!image?.path || !image.extension) return '';
   const path = image.path.replace('http://', 'https://');
   const finalPath = path.includes('portrait_') ? path : `${path}/portrait_incredible`;
-  return `${finalPath}.${image.extension}`;
+  const url = `${finalPath}.${image.extension}`;
+  return `/api/proxy/image?url=${encodeURIComponent(url)}`;
 };
 
 const trimText = (value?: string, max = 140) => {
@@ -174,6 +178,9 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
   const [linkCopied, setLinkCopied] = useState(false);
+  const [lastReadChapter, setLastReadChapter] = useState<{ id: string, title: string } | null>(null);
+
+  const dominantColor = useDominantColor(comic?.coverUrl);
 
   useEffect(() => {
     const verified = readAgeVerification();
@@ -253,11 +260,14 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
 
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const bookmarks = JSON.parse(localStorage.getItem('bookmarks') || '[]');
+    const bookmarks = JSON.parse(localStorage.getItem('bookmarks') || '[]');
       const bookmarked = bookmarks.some((b: any) => b.id === id && b.source === source);
       setIsBookmarked(bookmarked);
-    }
+
+      // Check for last read chapter
+      const history = JSON.parse(localStorage.getItem('reading_history') || '{}');
+      const comicHistory = history[`${source}:${id}`];
+      if (comicHistory) setLastReadChapter(comicHistory);
   }, [id, source]);
 
   const toggleBookmark = () => {
@@ -276,9 +286,24 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
     window.dispatchEvent(new Event('bookmarksUpdated'));
   };
 
-  const handleShare = () => {
-    setShowShareModal(true);
+  const shareToTelegram = () => {
+    const url = encodeURIComponent(window.location.href);
+    const text = encodeURIComponent(`Check out ${comic?.title} on iComics.wiki! \n\n${comic?.description.substring(0, 100)}...`);
+    window.open(`https://t.me/share/url?url=${url}&text=${text}`, '_blank');
   };
+
+  const shareToTwitter = () => {
+    const url = encodeURIComponent(window.location.href);
+    const text = encodeURIComponent(`Reading ${comic?.title} on iComics.wiki!`);
+    window.open(`https://twitter.com/intent/tweet?url=${url}&text=${text}`, '_blank');
+  };
+
+  const socialShares = [
+    { name: 'Telegram', url: '#', icon: 'https://cdn.simpleicons.org/telegram/24A1DE' },
+    { name: 'X / Twitter', url: '#', icon: 'https://cdn.simpleicons.org/x/1DA1F2' },
+    { name: 'WhatsApp', url: '#', icon: 'https://cdn.simpleicons.org/whatsapp/25D366' },
+    { name: 'Copy Link', url: '#', icon: 'https://cdn.simpleicons.org/link/FFFFFF' },
+  ];
 
   const copyToClipboard = async () => {
     try {
@@ -289,13 +314,6 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
       console.error('Error copying to clipboard:', err);
     }
   };
-
-  const socialShares = [
-    { name: 'Telegram', icon: 'https://cdn-icons-png.flaticon.com/512/2111/2111646.png', url: `https://t.me/share/url?url=${encodeURIComponent(typeof window !== 'undefined' ? window.location.href : '')}&text=${encodeURIComponent(comic?.title || '')}` },
-    { name: 'Twitter', icon: 'https://cdn-icons-png.flaticon.com/512/733/733579.png', url: `https://twitter.com/intent/tweet?text=${encodeURIComponent(comic?.title || '')}&url=${encodeURIComponent(typeof window !== 'undefined' ? window.location.href : '')}` },
-    { name: 'WhatsApp', icon: 'https://cdn-icons-png.flaticon.com/512/733/733585.png', url: `https://api.whatsapp.com/send?text=${encodeURIComponent((comic?.title || '') + ' ' + (typeof window !== 'undefined' ? window.location.href : ''))}` },
-    { name: 'Facebook', icon: 'https://cdn-icons-png.flaticon.com/512/733/733547.png', url: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(typeof window !== 'undefined' ? window.location.href : '')}` },
-  ];
 
   useEffect(() => {
     if (comic && isAdultComic(comic) && !isAgeVerified && !showAgeGate) {
@@ -676,9 +694,9 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
     : 'max-w-[14ch] 2xl:max-w-[16ch]';
   const pageBackdropStyle = {
     backgroundImage: `
-      radial-gradient(circle at 18% 18%, rgba(255, 77, 0, 0.14), transparent 26%),
+      radial-gradient(circle at 18% 18%, rgba(${dominantColor}, 0.15), transparent 30%),
       radial-gradient(circle at 82% 12%, rgba(255, 255, 255, 0.05), transparent 22%),
-      radial-gradient(circle at 50% 100%, rgba(255, 77, 0, 0.07), transparent 30%),
+      radial-gradient(circle at 50% 100%, rgba(${dominantColor}, 0.08), transparent 40%),
       linear-gradient(180deg, #090909 0%, #050505 45%, #020202 100%)
     `
   };
@@ -699,6 +717,27 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
           />
         )}
       </AnimatePresence>
+      
+      {/* Share Modal */}
+      <AnimatePresence>
+        {showShareModal && (
+          <div className="fixed inset-0 z-[30000] flex items-center justify-center p-4">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowShareModal(false)} className="absolute inset-0 bg-black/80 backdrop-blur-sm" />
+            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} className="relative bg-[#0a0a0a] border border-white/10 w-full max-w-sm p-8 space-y-6">
+              <button onClick={() => setShowShareModal(false)} className="absolute top-4 right-4 text-white/50 hover:text-white"><X size={20} /></button>
+              <h3 className="text-sm font-black uppercase tracking-[0.3em]">Share_Archive</h3>
+              <div className="grid grid-cols-2 gap-3">
+                <button onClick={shareToTelegram} className="p-4 bg-[#24A1DE]/10 border border-[#24A1DE]/30 text-[#24A1DE] flex flex-col items-center justify-center gap-2 hover:bg-[#24A1DE] hover:text-white transition-all"><Send size={24} /><span className="text-[9px] font-black uppercase tracking-widest">Telegram</span></button>
+                <button onClick={shareToTwitter} className="p-4 bg-[#1DA1F2]/10 border border-[#1DA1F2]/30 text-[#1DA1F2] flex flex-col items-center justify-center gap-2 hover:bg-[#1DA1F2] hover:text-white transition-all"><X size={24} /><span className="text-[9px] font-black uppercase tracking-widest">X / Twitter</span></button>
+              </div>
+              <button onClick={copyToClipboard} className="w-full p-4 bg-white/5 border border-white/10 flex items-center justify-center gap-2 hover:bg-white/10 transition-all">
+                {linkCopied ? <Check size={16} className="text-green-500" /> : <Copy size={16} />}
+                <span className="text-[10px] font-black uppercase tracking-widest">{linkCopied ? 'Copied' : 'Copy Link'}</span>
+              </button>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       {/* Clean Backdrop */}
       <div className="fixed inset-0 z-0 overflow-hidden bg-[#020202]" style={pageBackdropStyle}>
@@ -710,7 +749,7 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
       </div>
 
       <main className="relative z-10 pt-24 pb-24 px-4 sm:px-6 md:px-20 max-w-7xl mx-auto">
-        <motion.button initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} onClick={() => router.back()} className="mb-12 flex items-center gap-3 text-[10px] font-black uppercase tracking-widest text-white/40 hover:text-[#ff4d00] transition-all group">
+        <motion.button initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} onClick={() => router.push('/library')} className="mb-12 flex items-center gap-3 text-[10px] font-black uppercase tracking-widest text-white/40 hover:text-[#ff4d00] transition-all group">
           <ChevronLeft size={16} className="group-hover:-translate-x-1 transition-transform" /> Neural_Backtrack
         </motion.button>
 
@@ -754,6 +793,18 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
                    <span className="relative z-10 flex items-center gap-3"><Play fill="currentColor" size={16} /> {t.read}</span>
                  </motion.button>
                )}
+               
+               {lastReadChapter && (
+                 <motion.button 
+                   initial={{ opacity: 0, scale: 0.95 }}
+                   animate={{ opacity: 1, scale: 1 }}
+                   onClick={() => router.push(`/library/${source}/${id}/read/${lastReadChapter.id}`)}
+                   className="w-full py-4 bg-white/5 border border-white/20 text-white flex flex-col items-center justify-center gap-1 font-black uppercase tracking-widest text-[9px] hover:bg-white/10 transition-all overflow-hidden"
+                 >
+                   <span className="text-[#ff4d00]">Continue_Reading</span>
+                   <span className="text-white/40 opacity-70 truncate px-4 w-full text-center">{lastReadChapter.title}</span>
+                 </motion.button>
+               )}
                {comic.source === 'superhero' && (
                  <button onClick={() => router.push('/studio')} className="group relative py-6 bg-[#ff4d00] text-white flex items-center justify-center gap-3 font-black uppercase tracking-widest text-[11px] overflow-hidden transition-all hover:bg-white hover:text-black">
                    <div className="absolute left-0 top-0 bottom-0 w-0 bg-black group-hover:w-full transition-all duration-500 z-0 opacity-10" />
@@ -773,7 +824,7 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
                     {isBookmarked ? 'Bookmarked' : 'Bookmark'}
                   </button>
                   <button 
-                    onClick={handleShare}
+                    onClick={() => setShowShareModal(true)}
                     className="py-4 border border-white/10 flex items-center justify-center gap-2 text-[9px] font-black uppercase tracking-widest hover:bg-white/5 transition-all"
                   >
                     <Share2 size={14} /> Share
@@ -793,6 +844,11 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
                     {comic.source}
                  </div>
                  <div className="flex items-center gap-2 text-white/40 text-[10px] font-black uppercase tracking-[0.3em]"><Clock size={12} /> {comic.year || 'N/A'}</div>
+                 {comic.author && (
+                   <div className="flex items-center gap-2 text-white/40 text-[10px] font-black uppercase tracking-[0.3em]">
+                     <span className="text-[#ff4d00]">Author:</span> {comic.author}
+                   </div>
+                 )}
                  <div className="px-4 py-2 bg-[#ff4d00]/10 border border-[#ff4d00]/30 text-[#ff4d00] text-[10px] font-black uppercase tracking-widest">{comic.status}</div>
               </div>
               
@@ -873,7 +929,90 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
                    </div>
                  </div>
                )}
-            </div>
+
+                {/* Big Data - Characters & Actors Section */}
+                {comic.aniListData?.characters?.edges?.length > 0 && (
+                  <div className="space-y-10 pt-16">
+                    <div className="flex items-center justify-between gap-4 border-b border-white/10 pb-4">
+                      <div className="flex items-center gap-3">
+                        <Sparkles className="text-[#ff4d00]" size={16} />
+                        <h3 className="text-[11px] font-black uppercase tracking-[0.5em] text-white">Protagonists_&_Actors</h3>
+                      </div>
+                      <div className="h-px flex-1 bg-gradient-to-r from-white/10 to-transparent" />
+                    </div>
+                    
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-6">
+                      {comic.aniListData.characters.edges.map((edge: any) => (
+                        <div key={edge.node.id} className="group cursor-default">
+                          <div className="aspect-[3/4] bg-white/5 border border-white/10 overflow-hidden relative">
+                            <Image 
+                              src={edge.node.image?.large || '/logo.png'} 
+                              alt={edge.node.name.full}
+                              fill
+                              className="object-cover group-hover:scale-110 transition-transform duration-500"
+                              unoptimized
+                            />
+                            <div className="absolute top-2 right-2 px-1.5 py-0.5 bg-black/60 backdrop-blur-md text-[6px] font-black uppercase tracking-widest text-white/80 border border-white/10">
+                              {edge.role}
+                            </div>
+                          </div>
+                          <div className="mt-4 space-y-1">
+                            <div className="text-[10px] font-black uppercase tracking-widest text-white group-hover:text-[#ff4d00] transition-colors truncate">
+                              {edge.node.name.userPreferred}
+                            </div>
+                            <div className="text-[8px] font-bold uppercase tracking-[0.2em] text-white/25">
+                              {edge.role === 'MAIN' ? 'Protagonist' : 'Supporting'}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Advanced Metadata Stats */}
+                {(comic.aniListData || comic.jikanData) && (
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4 pt-16">
+                    <div className="bg-white/5 border border-white/10 p-4 md:p-6 space-y-3 min-w-0">
+                      <div className="text-[8px] md:text-[9px] font-black uppercase tracking-widest text-white/20">Global_Rating</div>
+                      <div className="flex items-baseline gap-1.5 flex-wrap">
+                        <div className="text-2xl md:text-4xl lg:text-5xl font-black text-[#ff4d00] italic leading-none">
+                          {Math.round(Number(comic.aniListData?.averageScore || (comic.jikanData?.score ? (comic.jikanData.score * 10) : 85)))}
+                        </div>
+                        <div className="text-xs md:text-sm font-black text-white/20">/100</div>
+                      </div>
+                      <div className="text-[7px] md:text-[8px] font-bold uppercase tracking-widest text-white/40">
+                        Based on {comic.aniListData?.popularity || comic.jikanData?.members || '15k'} users
+                      </div>
+                    </div>
+                    
+                    <div className="bg-white/5 border border-white/10 p-4 md:p-6 space-y-3 min-w-0">
+                      <div className="text-[8px] md:text-[9px] font-black uppercase tracking-widest text-white/20">Popularity_Rank</div>
+                      <div className="flex items-baseline gap-1.5 flex-wrap">
+                        <div className="text-2xl md:text-4xl lg:text-5xl font-black text-white italic leading-none">
+                          #{comic.aniListData?.trending || comic.jikanData?.rank || '42'}
+                        </div>
+                        <div className="text-xs md:text-sm font-black text-white/20">TOP</div>
+                      </div>
+                      <div className="text-[7px] md:text-[8px] font-bold uppercase tracking-widest text-white/40">
+                        Trending globally
+                      </div>
+                    </div>
+
+                    <div className="bg-white/5 border border-white/10 p-4 md:p-6 space-y-3 min-w-0">
+                      <div className="text-[8px] md:text-[9px] font-black uppercase tracking-widest text-white/20">Status_Intel</div>
+                      <div className="flex items-baseline gap-2 overflow-hidden">
+                        <div className="text-lg md:text-xl lg:text-2xl font-black uppercase text-white italic leading-none truncate">
+                          {comic.status}
+                        </div>
+                      </div>
+                      <div className="text-[7px] md:text-[8px] font-bold uppercase tracking-widest text-white/40">
+                        {comic.year ? `Since ${comic.year}` : 'Active timeline'}
+                      </div>
+                    </div>
+                  </div>
+                )}
+             </div>
 
             {/* Conditional Content based on source */}
             {comic.source === 'superhero' && (comic as any).superheroData ? (
@@ -930,19 +1069,34 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
                       chapters.map((ch) => (
                         <button
                           key={ch.id}
-                          onClick={() => router.push(`/library/${source}/${id}/read/${ch.id}`)}
+                          onClick={() => {
+                            if (ch.externalUrl) {
+                              window.open(ch.externalUrl, '_blank');
+                            } else {
+                              router.push(`/library/${source}/${id}/read/${ch.id}`);
+                            }
+                          }}
                           className="group relative flex items-center justify-between p-6 transition-all text-left border bg-white/5 border-white/5 hover:border-[#ff4d00]/50 overflow-hidden"
                         >
                            {/* Hover Glow */}
                            <div className="absolute inset-0 bg-gradient-to-r from-[#ff4d00]/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                            
                            <div className="relative z-10 space-y-1">
-                              <div className="text-[10px] font-black uppercase tracking-[0.3em] text-[#ff4d00]">Vol.{ch.volume || '0'} Ch.{ch.chapterNum}</div>
+                              <div className="flex items-center gap-2">
+                                <div className="text-[10px] font-black uppercase tracking-[0.3em] text-[#ff4d00]">Vol.{ch.volume || '0'} Ch.{ch.chapterNum}</div>
+                                {ch.externalUrl && (
+                                  <div className="px-2 py-0.5 bg-blue-500/10 border border-blue-500/30 text-blue-500 text-[7px] font-black uppercase tracking-widest rounded-sm">External</div>
+                                )}
+                              </div>
                               <div className="text-[14px] font-black uppercase tracking-tight group-hover:text-white transition-colors break-words line-clamp-1">
                                 {ch.title || `Chapter ${ch.chapterNum}`}
                               </div>
                            </div>
-                           <ChevronRight size={18} className="text-white/10 group-hover:text-[#ff4d00] group-hover:translate-x-1 transition-all" />
+                           {ch.externalUrl ? (
+                             <ExternalLink size={18} className="text-white/10 group-hover:text-blue-500 transition-all" />
+                           ) : (
+                             <ChevronRight size={18} className="text-white/10 group-hover:text-[#ff4d00] group-hover:translate-x-1 transition-all" />
+                           )}
                         </button>
                       ))
                     ) : (

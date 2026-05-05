@@ -11,6 +11,9 @@ const ALLOWED_HOSTS = [
   'e621.net',
   'donmai.us',
   'gelbooru.com',
+  'rule34.xxx',
+  'annihil.us',
+  'marvel.com',
 ];
 
 function isAllowedHost(hostname: string) {
@@ -25,6 +28,7 @@ function getReferer(url: URL) {
   if (url.hostname.includes('e621')) return 'https://e621.net/';
   if (url.hostname.includes('danbooru')) return 'https://danbooru.donmai.us/';
   if (url.hostname.includes('gelbooru')) return 'https://gelbooru.com/';
+  if (url.hostname.includes('annihil.us') || url.hostname.includes('marvel')) return 'https://www.marvel.com/';
   return undefined;
 }
 
@@ -49,7 +53,7 @@ export async function GET(req: NextRequest) {
 
   try {
     const headers = new Headers();
-    headers.set('User-Agent', 'iComics/1.0 (image proxy; contact support@icomics.wiki)');
+    headers.set('User-Agent', 'iComics.wiki/1.0 (image proxy; contact support@icomics.wiki)');
     headers.set('Accept', 'image/*,*/*;q=0.8');
     headers.set('Referer', getReferer(target) || req.url);
 

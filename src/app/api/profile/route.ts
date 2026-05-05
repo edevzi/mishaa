@@ -30,10 +30,25 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const user = await prisma.user.findUnique({
-      where: { id: session.id },
-      select: PROFILE_SELECT,
-    });
+    const [user, storiesCount, charactersCount] = await Promise.all([
+      prisma.user.findUnique({
+        where: { id: session.id },
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          username: true,
+          email: true,
+          avatar: true,
+          password: true,
+          authProvider: true,
+          authProviderId: true,
+          createdAt: true,
+        },
+      }),
+      prisma.story.count({ where: { userId: session.id } }),
+      prisma.character.count({ where: { userId: session.id } }),
+    ]);
 
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
@@ -46,6 +61,10 @@ export async function GET() {
       user: {
         ...safeUser,
         hasPassword: Boolean(user.password),
+        _count: {
+          stories: storiesCount,
+          characters: charactersCount,
+        }
       },
     });
   } catch (error: unknown) {

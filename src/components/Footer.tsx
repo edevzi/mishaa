@@ -35,14 +35,14 @@ export default function Footer() {
               <span className="text-3xl font-display font-black text-white max-md:text-xl">iC</span>
             </div>
               <div className="flex flex-col">
-                <h2 className="text-4xl font-display uppercase leading-none max-md:text-3xl">iComics</h2>
+                <h2 className="text-4xl font-display uppercase leading-none max-md:text-3xl">iComics.wiki</h2>
                 <span className="text-[10px] font-black uppercase tracking-[0.4em] text-[#ff4d00]">Studio Edition</span>
               </div>
             </div>
             <div className="max-w-xs space-y-4">
               <p className="text-[10px] font-black uppercase tracking-[0.4em] opacity-40 leading-loose">
                 Independent Comic Synthesis Protocol<br />
-                Developed by iComics Collective 2026<br />
+                Developed by iComics.wiki Collective 2026<br />
                 icomics.wiki | Sequential Production
               </p>
             </div>

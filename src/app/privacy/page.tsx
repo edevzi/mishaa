@@ -65,12 +65,12 @@ export default function PrivacyPage() {
                    <h2 className="text-3xl font-black uppercase tracking-tight">03. PROTOCOL UPDATES</h2>
                 </div>
                 <p className="text-lg opacity-60 leading-relaxed font-medium pl-16">
-                   As the iComics Synthesis Protocol evolves, so do our privacy shields. We will always notify our registered artists via their dispatch coordinates (email) before implementing any major data shifts.
+                   As the iComics.wiki Synthesis Protocol evolves, so do our privacy shields. We will always notify our registered artists via their dispatch coordinates (email) before implementing any major data shifts.
                 </p>
              </section>
 
              <div className="p-12 border border-white/10 rounded-xl border-dashed bg-white  opacity-60 text-center space-y-4">
-                <p className="text-sm font-black uppercase tracking-[0.3em]">Official iComics Privacy Registry v1.0.2</p>
+                <p className="text-sm font-black uppercase tracking-[0.3em]">Official iComics.wiki Privacy Registry v1.0.2</p>
                 <div className="text-[9px] font-medium max-w-lg mx-auto">
                    By engaging with the synthesis engine at icomics.wiki, you agree to these protective protocols. If you have concerns about your digital shadow, contact info@icomics.wiki.
                 </div>

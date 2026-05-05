@@ -2,7 +2,7 @@ import { SignJWT, jwtVerify } from 'jose';
 import { cookies } from 'next/headers';
 
 const SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET || 'icomics-studio-secure-key-2026'
+  process.env.JWT_SECRET || 'icomics.wiki-studio-secure-key-2026'
 );
 
 export interface SessionUser {

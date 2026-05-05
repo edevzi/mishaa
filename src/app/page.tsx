@@ -2,20 +2,20 @@ import type { Metadata } from 'next';
 import HomeClient from '@/components/HomeClient';
 
 export const metadata: Metadata = {
-  title: 'iComics Wiki - Read Manga, Manhwa & Marvel Comics Online',
+  title: 'iComics.wiki Wiki - Read Manga, Manhwa & Marvel Comics Online',
   description: 'Explore a massive library of Manga, Manhwa, and Marvel comics. Read online, discover new series, and use our AI-powered studio to create your own visual narratives.',
   keywords: 'read manga online, manhwa wiki, marvel comics archive, free comic reader, ai comic creator, digital comics library',
   openGraph: {
-    title: 'iComics Wiki - The Ultimate Digital Comic Archive',
+    title: 'iComics.wiki Wiki - The Ultimate Digital Comic Archive',
     description: 'Read thousands of comics online and create your own stories with AI.',
     url: 'https://icomics.wiki',
-    siteName: 'iComics Wiki',
+    siteName: 'iComics.wiki Wiki',
     images: [
       {
         url: '/logo.png',
         width: 1200,
         height: 630,
-        alt: 'iComics Wiki & Studio',
+        alt: 'iComics.wiki Wiki & Studio',
       },
     ],
     locale: 'en_US',
@@ -23,7 +23,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'iComics Wiki - Read & Create Comics',
+    title: 'iComics.wiki Wiki - Read & Create Comics',
     description: 'The ultimate synthesis environment for comic readers and creators.',
     images: ['/logo.png'],
   },
@@ -43,19 +43,19 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ l
   const organizationSchema = {
     "@context": "https://schema.org",
     "@type": "Organization",
-    "name": "iComics Wiki",
+    "name": "iComics.wiki Wiki",
     "url": "https://icomics.wiki",
     "logo": "https://icomics.wiki/logo.png",
     "sameAs": [
-      "https://twitter.com/icomics",
-      "https://github.com/icomics"
+      "https://twitter.com/icomics.wiki",
+      "https://github.com/icomics.wiki"
     ]
   };
 
   const websiteSchema = {
     "@context": "https://schema.org",
     "@type": "WebSite",
-    "name": "iComics Wiki",
+    "name": "iComics.wiki Wiki",
     "url": "https://icomics.wiki",
     "potentialAction": {
       "@type": "SearchAction",

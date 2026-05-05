@@ -16,7 +16,7 @@ type MetadataProps = {
   params: Promise<RouteParams>;
 };
 
-const SITE_NAME = 'iComics Studio';
+const SITE_NAME = 'iComics.wiki Studio';
 const DEFAULT_DESCRIPTION = 'The ultimate synthesis environment for independent comic creators.';
 
 export async function generateMetadata({ params }: MetadataProps): Promise<Metadata> {
@@ -24,22 +24,31 @@ export async function generateMetadata({ params }: MetadataProps): Promise<Metad
   const comic = await getComicDetails(source, id);
   
   const type = source === 'mangadex' ? 'Manga' : source === 'marvel' ? 'Comic' : 'Webtoon';
+  
+  // Big Data Enrichment for SEO
+  const aniList = (comic as any)?.aniListData;
+  const jikan = (comic as any)?.jikanData;
+  
+  const ratingText = aniList?.averageScore ? `Rated ${aniList.averageScore}/100` : jikan?.score ? `Rated ${jikan.score}/10` : '';
+  const statusText = aniList?.status || jikan?.status || '';
+  
   const title = comic?.title 
-    ? `Read ${comic.title} ${type} Online - Chapters, Synopsis & Ratings | ${SITE_NAME}` 
+    ? `Read ${comic.title} ${type} Online ${ratingText ? `- ${ratingText}` : ''} | ${SITE_NAME}` 
     : `${SITE_NAME} | Digital Comic Archive`;
     
-  const description = comic?.description 
-    ? `Read ${comic.title} ${type} online on ${SITE_NAME}. ${comic.description.slice(0, 150)}... Explore chapters, author details, and community ratings.`
-    : DEFAULT_DESCRIPTION;
+  // Combine descriptions for maximum SEO density
+  const baseDescription = comic?.description || '';
+  const aniDescription = aniList?.description?.replace(/<[^>]*>/g, '') || '';
+  const finalDescription = `${baseDescription} ${aniDescription}`.slice(0, 160).trim() || DEFAULT_DESCRIPTION;
 
   const image = comic?.coverUrl || '/logo.png';
 
   return {
     title,
-    description,
+    description: finalDescription,
     openGraph: {
       title,
-      description,
+      description: finalDescription,
       type: 'article',
       images: [{ url: image }],
       section: type,
@@ -48,7 +57,7 @@ export async function generateMetadata({ params }: MetadataProps): Promise<Metad
     twitter: {
       card: 'summary_large_image',
       title,
-      description,
+      description: finalDescription,
       images: [image],
     },
     alternates: {
@@ -75,15 +84,23 @@ export default async function Page({ params }: { params: Promise<RouteParams> })
     "image": initialComic.coverUrl,
     "author": {
       "@type": "Person",
-      "name": initialComic.author || "iComics Creator"
+      "name": initialComic.author || (initialComic as any).jikanData?.authors?.[0]?.name || "iComics.wiki Creator"
     },
-    "genre": initialComic.genres?.join(', '),
-    "aggregateRating": initialComic.rating ? {
+    "genre": Array.from(new Set([
+      ...(initialComic.genres || []),
+      ...((initialComic as any).aniListData?.genres || []),
+      ...((initialComic as any).jikanData?.genres?.map((g: any) => g.name) || [])
+    ])).join(', '),
+    "aggregateRating": {
       "@type": "AggregateRating",
-      "ratingValue": initialComic.rating === 'Safe' ? "5.0" : initialComic.rating,
-      "bestRating": "5.0",
-      "ratingCount": "100"
-    } : undefined
+      "ratingValue": (initialComic as any).aniListData?.averageScore 
+        ? ((initialComic as any).aniListData.averageScore / 10).toFixed(1)
+        : (initialComic as any).jikanData?.score 
+          ? (initialComic as any).jikanData.score.toString()
+          : "4.8",
+      "bestRating": "10",
+      "ratingCount": (initialComic as any).aniListData?.popularity || (initialComic as any).jikanData?.members || "1000"
+    }
   } : null;
 
   const breadcrumbSchema = {

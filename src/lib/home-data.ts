@@ -4,20 +4,21 @@ import {
   buildMangaDexCoverUrl, 
   MANGADEX_LONG_STRIP_TAG_ID 
 } from "@/lib/mangadex";
+import { fetchTrendingAniListManga } from "@/lib/anilist";
 import { 
   getMangaDexTranslatedLanguages, 
   resolveMangaDexLocalizedText, 
   MangaLanguage 
 } from "@/lib/manga-language";
+import { fetchNHentaiRaw } from "@/actions/comic";
 
-const MARVEL_API_BASE = "https://marvel.emreparker.com/v1";
 
 const safeText = (value: unknown, fallback = '') => typeof value === 'string' && value.trim() ? value : fallback;
 
 async function loadMangaDex(params: URLSearchParams, lang: MangaLanguage) {
   try {
     const res = await fetch(`https://api.mangadex.org/manga?${params.toString()}`, {
-      headers: { 'User-Agent': 'iComics/1.0' },
+      headers: { 'User-Agent': 'iComics.wiki/1.0' },
       next: { revalidate: 3600 }
     });
     if (!res.ok) return [];
@@ -30,7 +31,7 @@ async function loadMangaDex(params: URLSearchParams, lang: MangaLanguage) {
         title: resolveMangaDexLocalizedText(item.attributes?.title, lang) || safeText(Object.values(item.attributes?.title || {})[0], 'Untitled'),
         description: resolveMangaDexLocalizedText(item.attributes?.description, lang) || 'Catalog entry',
         coverUrl: coverFileName ? buildMangaDexCoverUrl(item.id, coverFileName) : '/logo.png',
-        source: 'mangadex',
+        source: 'mangadex' as const,
         href: `/library/mangadex/${item.id}`,
         meta: item.attributes?.status?.toUpperCase() || 'MANGA',
         rating: (Math.random() * 2 + 3).toFixed(1),
@@ -39,20 +40,20 @@ async function loadMangaDex(params: URLSearchParams, lang: MangaLanguage) {
   } catch { return []; }
 }
 
-async function loadMarvelShelf() {
+async function loadNHentaiShelf(query: string, limit = 30) {
   try {
-    const res = await fetch(`${MARVEL_API_BASE}/issues?limit=12`, { next: { revalidate: 3600 } });
-    if (!res.ok) return [];
-    const data = await res.json();
-    const items = data.items || [];
-    return items.map((item: any) => ({
-      id: String(item.id),
-      title: item.title,
-      description: item.seriesName,
-      coverUrl: item.cover?.path ? `${item.cover.path}/portrait_incredible.${item.cover.extension}` : '/logo.png',
-      source: 'marvel',
-      href: `/library/marvel/${item.id}`,
-      meta: 'MARVEL',
+    const path = `v2/search?query=${encodeURIComponent(query)}&page=1`;
+    const data = await fetchNHentaiRaw(path);
+    if (!data) return [];
+    const results = Array.isArray(data?.result) ? data.result : Array.isArray(data) ? data : [];
+    return results.slice(0, limit).map((item: any) => ({
+      id: (item.id || item.gallery_id || "").toString(),
+      title: item.english_title || item.title?.english || item.title?.japanese || "Untitled",
+      description: `${item.num_pages} pages`,
+      coverUrl: `/api/proxy/nhentai/image?path=${encodeURIComponent(typeof item.thumbnail === 'object' ? item.thumbnail?.path : (item.thumbnail || ''))}`,
+      source: 'nhentai' as const,
+      href: `/library/nhentai/${item.id || item.gallery_id}`,
+      meta: '18+',
       rating: '5.0',
     }));
   } catch { return []; }
@@ -64,29 +65,50 @@ export async function getHomeData(lang: MangaLanguage = 'en') {
     translatedLanguages: getMangaDexTranslatedLanguages(lang),
   };
 
-  const mangaParams = new URLSearchParams({ limit: '12', offset: '0', 'order[followedCount]': 'desc' });
+  const mangaParams = new URLSearchParams({ limit: '30', offset: '0', 'order[followedCount]': 'desc' });
   mangaParams.append('includes[]', 'cover_art');
   appendMangaDexFilters(mangaParams, { ...filters, originalLanguages: ['ja'] });
 
-  const webtoonsParams = new URLSearchParams({ limit: '12', offset: '0', 'order[followedCount]': 'desc' });
+  const webtoonsParams = new URLSearchParams({ limit: '30', offset: '0', 'order[followedCount]': 'desc' });
   webtoonsParams.append('includes[]', 'cover_art');
   appendMangaDexFilters(webtoonsParams, { ...filters, includedTagIds: [MANGADEX_LONG_STRIP_TAG_ID] });
 
-  const manhwaParams = new URLSearchParams({ limit: '12', offset: '0', 'order[followedCount]': 'desc' });
+  const manhwaParams = new URLSearchParams({ limit: '30', offset: '0', 'order[followedCount]': 'desc' });
   manhwaParams.append('includes[]', 'cover_art');
   appendMangaDexFilters(manhwaParams, { ...filters, originalLanguages: ['ko'], excludedTagIds: [MANGADEX_LONG_STRIP_TAG_ID] });
 
-  const [manga, webtoons, manhwa, marvel] = await Promise.all([
+  const latestParams = new URLSearchParams({ limit: '30', offset: '0', 'order[createdAt]': 'desc' });
+  latestParams.append('includes[]', 'cover_art');
+  appendMangaDexFilters(latestParams, filters);
+
+  const [manga, webtoons, manhwa, doujinshi, milf, ntr, trending, latest] = await Promise.all([
     loadMangaDex(mangaParams, lang),
     loadMangaDex(webtoonsParams, lang),
     loadMangaDex(manhwaParams, lang),
-    loadMarvelShelf()
+    loadNHentaiShelf('', 30),
+    loadNHentaiShelf('milf', 30),
+    loadNHentaiShelf('netorare', 30),
+    fetchTrendingAniListManga(30).then(items => items.map(item => ({
+        id: item.id.toString(),
+        title: item.title.userPreferred || item.title.english || item.title.romaji,
+        description: item.description?.replace(/<[^>]*>?/gm, '').substring(0, 150) || 'Global trending pick',
+        coverUrl: item.coverImage.extraLarge || item.coverImage.large,
+        source: 'mangadex' as const,
+        href: `/library/mangadex/${item.id}`,
+        meta: `TRENDING #${items.indexOf(item) + 1}`,
+        rating: (item.averageScore / 10).toFixed(1) || '8.5'
+    }))).catch(() => []),
+    loadMangaDex(latestParams, lang)
   ]);
 
   return {
+    'trending': trending,
     'manga-hub': manga,
+    'new': latest,
+    'doujinshi': doujinshi,
+    'milf': milf,
+    'ntr': ntr,
     'webtoons': webtoons,
     'manhwa': manhwa,
-    'marvel': marvel
   };
 }

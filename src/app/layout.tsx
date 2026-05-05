@@ -43,30 +43,36 @@ export const viewport = {
 
 export const metadata: Metadata = {
   title: {
-    default: "iComics Studio | AI-Powered Comic Creation",
-    template: "%s | iComics Studio",
+    default: "iComics.wiki Studio | AI-Powered Comic Creation",
+    template: "%s | iComics.wiki Studio",
   },
-  description: "The ultimate synthesis environment for independent comic creators. Powering the next generation of visual narrative with AI-driven iComics technology.",
-  keywords: ["comics", "AI comics", "comic creation", "manga", "webtoon", "digital art", "iComics", "storytelling", "visual narrative", "AI art"],
-  authors: [{ name: "iComics Team", url: "https://icomics.wiki" }],
-  creator: "iComics Studio",
-  publisher: "iComics Studio",
+  description: "The ultimate synthesis environment for independent comic creators. Powering the next generation of visual narrative with AI-driven iComics.wiki technology.",
+  keywords: ["comics", "AI comics", "comic creation", "manga", "webtoon", "digital art", "iComics.wiki", "storytelling", "visual narrative", "AI art"],
+  authors: [{ name: "iComics.wiki Team", url: "https://icomics.wiki" }],
+  creator: "iComics.wiki Studio",
+  publisher: "iComics.wiki Studio",
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://icomics.wiki"),
   alternates: {
-    canonical: "/",
+    canonical: "https://icomics.wiki",
+    languages: {
+      "en-US": "https://icomics.wiki/en",
+      "ru-RU": "https://icomics.wiki/ru",
+      "es-ES": "https://icomics.wiki/es",
+      "fr-FR": "https://icomics.wiki/fr",
+    },
   },
   openGraph: {
-    title: "iComics Studio | Professional Sequential Production",
-    description: "The ultimate synthesis environment for independent comic creators. Powering the next generation of visual narrative with AI-driven iComics technology.",
+    title: "iComics.wiki Studio | Professional Sequential Production",
+    description: "The ultimate synthesis environment for independent comic creators. Powering the next generation of visual narrative with AI-driven iComics.wiki technology.",
     url: "https://icomics.wiki",
-    siteName: "iComics Studio",
+    siteName: "iComics.wiki Studio",
     locale: "en_US",
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "iComics Studio | AI-Powered Comic Creation",
-    description: "The ultimate synthesis environment for independent comic creators. Powering the next generation of visual narrative with AI-driven iComics technology.",
+    title: "iComics.wiki Studio | AI-Powered Comic Creation",
+    description: "The ultimate synthesis environment for independent comic creators. Powering the next generation of visual narrative with AI-driven iComics.wiki technology.",
     creator: "@icomics_studio",
   },
   robots: {
@@ -82,15 +88,6 @@ export const metadata: Metadata = {
   },
   verification: {
     google: "Q3JUtRB_65-cXXd1FocDiCQ-Y4bOA_zmDpzJQfhU9mE",
-  },
-  alternates: {
-    canonical: 'https://icomics.wiki',
-    languages: {
-      'en-US': 'https://icomics.wiki/en',
-      'ru-RU': 'https://icomics.wiki/ru',
-      'es-ES': 'https://icomics.wiki/es',
-      'fr-FR': 'https://icomics.wiki/fr',
-    },
   },
   icons: {
     icon: [

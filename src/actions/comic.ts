@@ -3,6 +3,8 @@
 import { BooruSource, mapBooruDetail } from "@/lib/booru";
 import { buildMangaDexCoverUrl, pickMangaDexCoverFileName, appendMangaDexFilters } from "@/lib/mangadex";
 import { resolveMangaDexLocalizedText, MangaLanguage, getMangaDexTranslatedLanguages, DEFAULT_MANGA_LANGUAGE } from "@/lib/manga-language";
+import { fetchAniListManga } from "@/lib/anilist";
+import { fetchJikanManga } from "@/lib/jikan";
 
 export interface MarvelCreator {
   role: string;
@@ -83,7 +85,9 @@ interface NHentaiGallery {
   media_id: string;
   title: { english?: string; japanese?: string };
   tags?: NHentaiTag[];
+  upload_date?: number;
   images: {
+    thumbnail: { t: string };
     cover: { t: string };
     pages: { t: string }[];
   };
@@ -290,6 +294,21 @@ export async function getComicDetails(source: string, id: string, mangaLanguage:
       const title = resolveMangaDexLocalizedText(manga.attributes.title, mangaLanguage);
       const description = resolveMangaDexLocalizedText(manga.attributes.description, mangaLanguage);
       const genres = manga.attributes.tags.map((t: MangaDexTag) => resolveMangaDexLocalizedText(t.attributes.name, mangaLanguage)).filter(Boolean);
+      const aniListData = manga.attributes.links?.al
+        ? await fetchAniListManga(manga.attributes.links.al)
+        : null;
+      const related = Array.isArray(aniListData?.recommendations?.nodes)
+        ? aniListData.recommendations.nodes
+            .map((n: any) => n.mediaRecommendation)
+            .filter((r: any) => r && r.type === 'MANGA')
+            .map((r: any) => ({
+              id: r.id.toString(),
+              title: r.title.userPreferred || r.title.english || 'Untitled',
+              coverUrl: r.coverImage.large,
+              source: 'mangadex' as const,
+              rating: 'Safe',
+            }))
+        : [];
 
       return {
         id: manga.id,
@@ -302,7 +321,12 @@ export async function getComicDetails(source: string, id: string, mangaLanguage:
         year: manga.attributes.year,
         author: author,
         source: 'mangadex' as const,
-        aniListId: manga.attributes.links?.al
+        aniListId: manga.attributes.links?.al,
+        malId: manga.attributes.links?.mal,
+        // Enrich with Big Data
+        aniListData,
+        jikanData: manga.attributes.links?.mal ? await fetchJikanManga(manga.attributes.links.mal) : null,
+        related,
       };
     }
 
@@ -637,17 +661,27 @@ export async function searchComics(params: {
     }
 
     if (source === 'archive') {
-       const baseQuery = '(collection:comics OR mediatype:comic OR subject:manga OR subject:comics)';
+       // Highly restrictive query for actual comic collections to filter out noise
+       const baseQuery = '(collection:comicbooksarchive OR collection:manga OR collection:comics OR (mediatype:texts AND subject:comics AND subject:manga))';
        const finalQuery = query ? `(${query}) AND ${baseQuery}` : baseQuery;
-       const res = await fetch(`https://archive.org/advancedsearch.php?q=${encodeURIComponent(finalQuery)}&output=json&rows=${LIMIT}&page=${page + 1}`, { next: { revalidate: 900 } });
+       const res = await fetch(`https://archive.org/advancedsearch.php?q=${encodeURIComponent(finalQuery)}&output=json&rows=${LIMIT}&page=${page + 1}`, { next: { revalidate: 3600 } });
        const data = await res.json();
        const docs = data.response.docs || [];
+       
+       // Filter out results that definitely aren't comics (e.g. academic papers about comics)
+       const filteredDocs = docs.filter((item: any) => {
+         const title = (item.title || '').toLowerCase();
+         if (title.includes('thesis') || title.includes('dissertation') || title.includes('journal article')) return false;
+         return true;
+       });
+
        return {
-         items: docs.map((item: { identifier: string; title: string }) => ({
+         items: filteredDocs.map((item: { identifier: string; title: string }) => ({
            id: item.identifier,
            title: item.title,
            coverUrl: `https://archive.org/services/img/${item.identifier}`,
-           source: 'archive'
+           source: 'archive',
+           rating: 'Safe'
          })),
          hasMore: (page + 1) * LIMIT < data.response.numFound
        };
@@ -694,8 +728,9 @@ export async function searchComics(params: {
 }
 
 function normalizeMarvelImage(image?: { path?: string; extension?: string }) {
-  if (!image?.path || !image.extension) return '';
+  if (!image?.path || !image.extension) return '/logo.png';
   const path = image.path.replace('http://', 'https://');
   const finalPath = path.includes('portrait_') ? path : `${path}/portrait_incredible`;
-  return `${finalPath}.${image.extension}`;
+  const url = `${finalPath}.${image.extension}`;
+  return `/api/proxy/image?url=${encodeURIComponent(url)}`;
 }

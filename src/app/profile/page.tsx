@@ -3,6 +3,7 @@
 import { useEffect, useState, type ChangeEvent, type FormEvent } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { motion } from 'framer-motion';
 import Navbar from '@/components/Navbar';
 
 type ProfileUser = {
@@ -99,171 +100,188 @@ export default function ProfilePage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#020202] text-white  overflow-x-hidden">
-      
-      
+    <div className="min-h-screen bg-[#020202] text-white selection:bg-[#ff4d00] selection:text-white">
       <Navbar />
 
-      <main className="container mx-auto px-6 pt-40 pb-24">
-        <div className="grid gap-8 lg:grid-cols-[1.1fr_0.9fr]">
-          <section className=" bg-white p-8 md:p-12 shadow-[0_24px_80px_rgba(0,0,0,0.08)]">
-            <div className="inline-block bg-[#ff4d00] px-4 py-1 border border-white/10 rounded-xl mb-6">
-              <span className="text-white text-[9px] font-black uppercase tracking-widest">Profile Control</span>
+      <main className="container mx-auto px-6 pt-40 pb-32">
+        <div className="max-w-6xl mx-auto grid gap-12 lg:grid-cols-[1fr_380px]">
+          {/* Left Column: Form & Info */}
+          <section className="space-y-12">
+            <div className="space-y-6">
+              <div className="inline-flex items-center gap-2 px-3 py-1 bg-[#ff4d00]/10 border border-[#ff4d00]/20 rounded-full">
+                <span className="w-1.5 h-1.5 bg-[#ff4d00] rounded-full animate-pulse" />
+                <span className="text-[#ff4d00] text-[10px] font-black uppercase tracking-[0.2em]">Secure_Profile_Control</span>
+              </div>
+              <h1 className="text-6xl md:text-8xl font-black italic uppercase tracking-tighter leading-[0.85] text-balance">
+                Digital_ID<br/>
+                <span className="text-[#ff4d00]">Environment</span>
+              </h1>
+              <p className="text-white/40 max-w-xl text-sm font-medium leading-relaxed tracking-wide">
+                Modify your synthesis identity parameters. Cross-platform authentication allows synchronization between multiple access methods.
+              </p>
             </div>
-            <h1 className="text-5xl md:text-7xl font-display uppercase tracking-tighter leading-none mb-4">
-              Your Account
-            </h1>
-            <p className="text-white/60 max-w-2xl text-lg leading-relaxed">
-              Manage your avatar, username, email, and password. If you connect Google and password login to the same email, both sign-in methods can point to one account.
-            </p>
 
             {loading ? (
-              <div className="mt-10 h-64 animate-pulse bg-black/5 border border-white/10 rounded-xl/10" />
+              <div className="space-y-8 animate-pulse">
+                <div className="h-64 bg-white/5 border border-white/10 rounded-3xl" />
+                <div className="h-96 bg-white/5 border border-white/10 rounded-3xl" />
+              </div>
             ) : user ? (
-              <div className="mt-10 grid gap-6 md:grid-cols-[220px_1fr] items-start">
-                <div className="bg-[#111111] text-white p-6 border border-white/10 rounded-xl shadow-[8px_8px_0_#111]">
-                  <div className="aspect-square bg-white overflow-hidden border-2 border-white/10">
-                    <img
-                      src={user.avatar || '/logo.png'}
-                      alt={`${user.firstName} ${user.lastName}`}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                  <div className="mt-4 space-y-2">
-                    <p className="text-[10px] uppercase tracking-[0.4em] text-white/40">User ID</p>
-                    <p className="text-xs break-all font-mono">{user.id}</p>
+              <div className="space-y-12">
+                {/* Identity Card */}
+                <div className="relative group">
+                  <div className="absolute -inset-1 bg-gradient-to-r from-[#ff4d00] to-transparent opacity-20 blur-xl group-hover:opacity-40 transition-opacity" />
+                  <div className="relative grid md:grid-cols-[240px_1fr] bg-white/[0.03] border border-white/10 rounded-3xl overflow-hidden backdrop-blur-xl">
+                    <div className="aspect-square relative bg-[#0a0a0a] border-r border-white/10 overflow-hidden">
+                      <img
+                        src={user.avatar || '/logo.png'}
+                        alt={`${user.firstName} ${user.lastName}`}
+                        className="w-full h-full object-cover grayscale opacity-80 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-700"
+                      />
+                      <div className="absolute bottom-4 left-4 right-4 py-2 px-3 bg-black/60 backdrop-blur-md border border-white/10 text-[8px] font-black uppercase tracking-widest text-center">
+                        Authorized_Subject
+                      </div>
+                    </div>
+                    <div className="p-8 md:p-10 flex flex-col justify-between space-y-6">
+                      <div className="space-y-1">
+                        <p className="text-[10px] font-black uppercase tracking-[0.4em] text-white/30 italic">Nexus_Identifier</p>
+                        <p className="text-xl md:text-2xl font-black tracking-tighter text-white/90 break-all font-mono">{user.id}</p>
+                      </div>
+                      <div className="flex gap-10">
+                        <div>
+                          <p className="text-[9px] font-black uppercase tracking-[0.3em] text-white/20 mb-1">Creation_Epoch</p>
+                          <p className="text-xs font-black text-white/60">{new Date(user.createdAt).toLocaleDateString()}</p>
+                        </div>
+                        <div>
+                          <p className="text-[9px] font-black uppercase tracking-[0.3em] text-white/20 mb-1">Access_Status</p>
+                          <p className="text-xs font-black text-[#ff4d00]">ENCRYPTED</p>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
 
-                <form onSubmit={handleSave} className="space-y-5">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <label className="space-y-2">
-                      <span className="text-[9px] font-black uppercase tracking-[0.4em] text-white/40">First name</span>
+                {/* Settings Form */}
+                <form onSubmit={handleSave} className="space-y-10 p-10 bg-white/[0.02] border border-white/5 rounded-3xl">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div className="space-y-2">
+                      <label className="text-[9px] font-black uppercase tracking-[0.4em] text-white/30 ml-1">First_Name</label>
                       <input
                         value={form.firstName}
                         onChange={handleChange('firstName')}
-                        className="w-full border border-white/10 rounded-xl px-4 py-3 bg-white font-black uppercase"
+                        className="w-full bg-[#0a0a0a] border border-white/10 rounded-2xl px-5 py-4 text-sm font-black uppercase tracking-widest text-white focus:border-[#ff4d00] focus:ring-1 focus:ring-[#ff4d00] transition-all outline-none"
                       />
-                    </label>
-                    <label className="space-y-2">
-                      <span className="text-[9px] font-black uppercase tracking-[0.4em] text-white/40">Last name</span>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-[9px] font-black uppercase tracking-[0.4em] text-white/30 ml-1">Last_Name</label>
                       <input
                         value={form.lastName}
                         onChange={handleChange('lastName')}
-                        className="w-full border border-white/10 rounded-xl px-4 py-3 bg-white font-black uppercase"
+                        className="w-full bg-[#0a0a0a] border border-white/10 rounded-2xl px-5 py-4 text-sm font-black uppercase tracking-widest text-white focus:border-[#ff4d00] focus:ring-1 focus:ring-[#ff4d00] transition-all outline-none"
                       />
-                    </label>
+                    </div>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <label className="space-y-2">
-                      <span className="text-[9px] font-black uppercase tracking-[0.4em] text-white/40">Unique username</span>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div className="space-y-2">
+                      <label className="text-[9px] font-black uppercase tracking-[0.4em] text-white/30 ml-1">Global_Username</label>
                       <input
                         value={form.username}
                         onChange={handleChange('username')}
-                        className="w-full border border-white/10 rounded-xl px-4 py-3 bg-white font-black uppercase"
+                        className="w-full bg-[#0a0a0a] border border-white/10 rounded-2xl px-5 py-4 text-sm font-black uppercase tracking-widest text-white focus:border-[#ff4d00] focus:ring-1 focus:ring-[#ff4d00] transition-all outline-none"
                       />
-                    </label>
-                    <label className="space-y-2">
-                      <span className="text-[9px] font-black uppercase tracking-[0.4em] text-white/40">Email</span>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-[9px] font-black uppercase tracking-[0.4em] text-white/30 ml-1">Contact_Email</label>
                       <input
                         value={form.email}
                         onChange={handleChange('email')}
-                        className="w-full border border-white/10 rounded-xl px-4 py-3 bg-white font-black"
-                        placeholder="optional, but useful for account linking"
+                        className="w-full bg-[#0a0a0a] border border-white/10 rounded-2xl px-5 py-4 text-sm font-black text-white/80 focus:border-[#ff4d00] focus:ring-1 focus:ring-[#ff4d00] transition-all outline-none"
+                        placeholder="Link email for recovery"
                       />
-                    </label>
+                    </div>
                   </div>
 
-                  <label className="space-y-2 block">
-                    <span className="text-[9px] font-black uppercase tracking-[0.4em] text-white/40">
-                      Password {user.hasPassword ? '(change or leave empty)' : '(set one now)'}
-                    </span>
+                  <div className="space-y-2">
+                    <label className="text-[9px] font-black uppercase tracking-[0.4em] text-white/30 ml-1">
+                      Security_Override {user.hasPassword ? '(Update_Key)' : '(Generate_Key)'}
+                    </label>
                     <input
                       type="password"
                       value={form.password}
                       onChange={handleChange('password')}
-                      className="w-full border border-white/10 rounded-xl px-4 py-3 bg-white font-black"
-                      placeholder={user.hasPassword ? '••••••••' : 'Create a password'}
+                      className="w-full bg-[#0a0a0a] border border-white/10 rounded-2xl px-5 py-4 text-sm font-black tracking-[0.5em] text-white focus:border-[#ff4d00] focus:ring-1 focus:ring-[#ff4d00] transition-all outline-none"
+                      placeholder="••••••••"
                     />
-                  </label>
+                  </div>
 
                   {error && (
-                    <div className="px-4 py-3 bg-[#ff4d00]/10 border border-[#ff4d00]/20 text-[#ff4d00] text-[10px] font-black uppercase tracking-widest">
-                      {error}
-                    </div>
+                    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="p-4 bg-[#ff4d00]/10 border border-[#ff4d00]/20 text-[#ff4d00] text-[10px] font-black uppercase tracking-widest text-center">
+                      Error: {error}
+                    </motion.div>
                   )}
 
                   {success && (
-                    <div className="px-4 py-3 bg-[#16a34a]/10 border border-[#16a34a]/20 text-[#16a34a] text-[10px] font-black uppercase tracking-widest">
-                      {success}
-                    </div>
+                    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="p-4 bg-[#16a34a]/10 border border-[#16a34a]/20 text-[#16a34a] text-[10px] font-black uppercase tracking-widest text-center">
+                      Success: {success}
+                    </motion.div>
                   )}
 
                   <button
                     type="submit"
                     disabled={saving}
-                    className="inline-flex items-center gap-3 bg-[#111111] text-white px-6 py-4 font-black uppercase tracking-[0.3em] text-[10px] border border-white/10 rounded-xl shadow-[6px_6px_0_#e63946]"
+                    className="w-full relative group py-5 bg-white text-black font-black uppercase tracking-[0.4em] text-[11px] overflow-hidden transition-all hover:bg-[#ff4d00] hover:text-white disabled:opacity-50"
                   >
-                    {saving ? 'Saving...' : 'Save Profile'}
+                    <span className="relative z-10">{saving ? 'Synchronizing...' : 'Update_Environment_Parameters'}</span>
                   </button>
                 </form>
               </div>
             ) : (
-              <div className="mt-10">
-                <p className="text-red-600 font-black uppercase tracking-widest">Unable to load profile</p>
+              <div className="p-20 border border-white/5 bg-white/[0.01] rounded-3xl flex flex-col items-center justify-center space-y-4">
+                <p className="text-white/20 font-black uppercase tracking-[0.5em] text-xs">Profile_Not_Found</p>
+                <button onClick={() => router.refresh()} className="text-[10px] font-black uppercase tracking-widest text-[#ff4d00]">Retry_Sync</button>
               </div>
             )}
           </section>
 
-          <aside className="space-y-6">
-            <div className="bg-[#111111] text-white p-8 border border-white/10 rounded-xl shadow-[12px_12px_0_#ffca3a]">
-              <p className="text-[9px] uppercase tracking-[0.5em] text-white/40 mb-4">Linked Methods</p>
-              <div className="space-y-4 text-sm">
-                <div className="flex items-center justify-between border-b border-white/10 pb-3">
-                  <span>Google sign-in</span>
-                  <span className={user?.authProviderId ? 'text-[#ffca3a] font-black uppercase' : 'text-white/30 font-black uppercase'}>
-                    {user?.authProviderId ? 'Active' : 'Not linked'}
+          {/* Right Column: Cards & Actions */}
+          <aside className="space-y-8">
+            <div className="bg-[#0a0a0a] p-8 border border-white/10 rounded-3xl space-y-6">
+              <p className="text-[10px] font-black uppercase tracking-[0.5em] text-white/30 italic">Linked_Protocols</p>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between p-4 bg-white/[0.02] border border-white/5 rounded-2xl">
+                  <span className="text-[10px] font-black uppercase text-white/50 tracking-widest">Google_Auth</span>
+                  <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded ${user?.authProviderId ? 'bg-[#ffca3a]/10 text-[#ffca3a] border border-[#ffca3a]/20' : 'bg-white/5 text-white/20'}`}>
+                    {user?.authProviderId ? 'Enabled' : 'Disconnected'}
                   </span>
                 </div>
-                <div className="flex items-center justify-between border-b border-white/10 pb-3">
-                  <span>Password sign-in</span>
-                  <span className={user?.hasPassword ? 'text-[#16a34a] font-black uppercase' : 'text-white/30 font-black uppercase'}>
-                    {user?.hasPassword ? 'Active' : 'Not set'}
+                <div className="flex items-center justify-between p-4 bg-white/[0.02] border border-white/5 rounded-2xl">
+                  <span className="text-[10px] font-black uppercase text-white/50 tracking-widest">Key_Auth</span>
+                  <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded ${user?.hasPassword ? 'bg-[#16a34a]/10 text-[#16a34a] border border-[#16a34a]/20' : 'bg-white/5 text-white/20'}`}>
+                    {user?.hasPassword ? 'Active' : 'Unset'}
                   </span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span>Username</span>
-                  <span className="font-black">{user?.username || '---'}</span>
                 </div>
               </div>
             </div>
 
-            <div className="bg-white p-8 border border-white/10 rounded-xl">
-              <p className="text-[9px] uppercase tracking-[0.5em] text-white/40 mb-4">Stats</p>
+            <div className="bg-white/[0.02] p-8 border border-white/5 rounded-3xl space-y-6">
+              <p className="text-[10px] font-black uppercase tracking-[0.5em] text-white/30 italic">Account_Metrics</p>
               <div className="grid grid-cols-2 gap-4">
-                <div className="p-4 border border-white/10 rounded-xl">
-                  <div className="text-3xl font-display">{user?._count.stories ?? 0}</div>
-                  <div className="text-[10px] uppercase tracking-widest text-white/40">Stories</div>
+                <div className="p-5 bg-black border border-white/10 rounded-2xl flex flex-col items-center justify-center space-y-1">
+                  <div className="text-3xl font-black italic text-[#ff4d00]">{user?._count.stories ?? 0}</div>
+                  <div className="text-[8px] font-black uppercase tracking-[0.2em] text-white/40">Stories</div>
                 </div>
-                <div className="p-4 border border-white/10 rounded-xl">
-                  <div className="text-3xl font-display">{user?._count.characters ?? 0}</div>
-                  <div className="text-[10px] uppercase tracking-widest text-white/40">Characters</div>
+                <div className="p-5 bg-black border border-white/10 rounded-2xl flex flex-col items-center justify-center space-y-1">
+                  <div className="text-3xl font-black italic text-white">{user?._count.characters ?? 0}</div>
+                  <div className="text-[8px] font-black uppercase tracking-[0.2em] text-white/40">Chars</div>
                 </div>
               </div>
             </div>
 
-            <div className="bg-[#f8f1e4] p-8 border border-white/10 rounded-xl">
-              <p className="text-[9px] uppercase tracking-[0.5em] text-white/40 mb-4">Tip</p>
-              <p className="text-sm leading-relaxed text-white/70">
-                If you want the same person to use Google and password login, set the same email here. Google sign-in will then merge to this account on the next login.
-              </p>
-            </div>
-
-            <div className="flex flex-col sm:flex-row gap-4">
-              <Link href="/" className="flex-1 sm:flex-none">
-                <button className="w-full bg-[#111111] text-white px-6 py-4 font-black uppercase tracking-[0.3em] text-[10px] border border-white/10 rounded-xl shadow-[6px_6px_0_#111] hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all">
-                  Back Home
+            <div className="flex flex-col gap-3">
+              <Link href="/">
+                <button className="w-full py-5 bg-white/[0.05] border border-white/10 text-white font-black uppercase tracking-[0.4em] text-[10px] hover:bg-white hover:text-black transition-all">
+                  Back_To_Nexus
                 </button>
               </Link>
               <button 
@@ -271,9 +289,9 @@ export default function ProfilePage() {
                   const res = await fetch('/api/auth/logout', { method: 'POST' });
                   if (res.ok) router.push('/');
                 }}
-                className="flex-1 sm:flex-none bg-white text-red-600 px-6 py-4 font-black uppercase tracking-[0.3em] text-[10px] border border-white/10 rounded-xl shadow-[6px_6px_0_#e63946] hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all"
+                className="w-full py-5 bg-[#ff4d00]/10 border border-[#ff4d00]/20 text-[#ff4d00] font-black uppercase tracking-[0.4em] text-[10px] hover:bg-[#ff4d00] hover:text-white transition-all"
               >
-                Logout_Session
+                Terminate_Session
               </button>
             </div>
           </aside>

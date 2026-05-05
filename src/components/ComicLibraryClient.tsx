@@ -7,7 +7,7 @@ import {
   BookOpen, Search, X, ChevronLeft, ChevronRight, 
   Eye, EyeOff,
   ZoomIn, ZoomOut, Sparkles, Shuffle, Globe, Flag,
-  Maximize2
+  Maximize2, Loader2
 } from 'lucide-react';
 import AgeGateOverlay from '@/components/AgeGateOverlay';
 import { isAdultComic, persistAgeVerification, readAgeVerification } from '@/lib/age-verification';
@@ -64,24 +64,32 @@ type LoadResult = {
 };
 
 const CATEGORIES: Category[] = [
-  { label: 'Marvel Universe', source: 'marvel' },
-  { label: 'Superheroes', source: 'superhero' },
-  { label: 'Manga Hub', source: 'mangadex', originalLanguages: ['ja'] },
-  { label: 'Webtoons', source: 'mangadex', includedTagIds: [MANGADEX_LONG_STRIP_TAG_ID] },
-  { label: 'Manhwa', source: 'mangadex', originalLanguages: ['ko'], excludedTagIds: [MANGADEX_LONG_STRIP_TAG_ID] },
-  { label: 'Popular Doujinshi', query: '', nsfw: true, source: 'nhentai' },
   { label: 'Trending Today', query: '', nsfw: true, source: 'nhentai' },
-  { label: 'Doujinshi', query: '', nsfw: true, source: 'nhentai' },
+  { label: 'Popular Doujinshi', query: '', nsfw: true, source: 'nhentai' },
   { label: 'New Doujinshi', query: 'english', nsfw: true, source: 'nhentai' },
-  { label: 'MILF / Mature', query: '', nsfw: true, source: 'nhentai' },
-  { label: 'Yuri / GL', query: '', nsfw: true, source: 'mangadex', includedTagIds: ['a3c44042-4659-402c-9b1f-74a03197b5c7'] },
-  { label: 'Parody Comics', query: 'parody', nsfw: true, source: 'nhentai' },
+  { label: 'Manga Hub', source: 'mangadex', originalLanguages: ['ja'] },
   { label: 'Adult Manga', source: 'mangadex', nsfw: true, ratings: ['pornographic'] },
   { label: 'Erotica', source: 'mangadex', nsfw: true, ratings: ['erotica'] },
+  { label: 'MILF / Mature', query: 'milf', nsfw: true, source: 'nhentai' },
+  { label: 'NTR / Netorare', query: 'netorare', nsfw: true, source: 'nhentai' },
+  { label: 'Group / Orgy', query: 'group', nsfw: true, source: 'nhentai' },
+  { label: 'Incest / Family', query: 'incest', nsfw: true, source: 'nhentai' },
+  { label: 'Anal / Deep', query: 'anal', nsfw: true, source: 'nhentai' },
+  { label: 'Big Breasts', query: 'big breasts', nsfw: true, source: 'nhentai' },
+  { label: 'Teens / Students', query: 'sole female', nsfw: true, source: 'nhentai' },
+  { label: 'Cheating', query: 'cheating', nsfw: true, source: 'nhentai' },
+  { label: 'Yaoi / BL', query: 'yaoi', nsfw: true, source: 'nhentai' },
+  { label: 'Yuri / GL', query: '', nsfw: true, source: 'mangadex', includedTagIds: ['a3c44042-4659-402c-9b1f-74a03197b5c7'] },
+  { label: 'Parody Comics', query: 'parody', nsfw: true, source: 'nhentai' },
+  { label: 'Futanari', query: 'futanari', nsfw: true, source: 'nhentai' },
+  { label: 'Cosplay', query: 'cosplay', nsfw: true, source: 'nhentai' },
   { label: 'Rule34', source: 'rule34', nsfw: true, query: getBooruDefaultQuery('rule34') },
   { label: 'e621', source: 'e621', nsfw: true, query: getBooruDefaultQuery('e621') },
   { label: 'Danbooru', source: 'danbooru', nsfw: true, query: getBooruDefaultQuery('danbooru') },
   { label: 'Gelbooru', source: 'gelbooru', nsfw: true, query: getBooruDefaultQuery('gelbooru') },
+  { label: 'Webtoons', source: 'mangadex', includedTagIds: [MANGADEX_LONG_STRIP_TAG_ID] },
+  { label: 'Manhwa', source: 'mangadex', originalLanguages: ['ko'], excludedTagIds: [MANGADEX_LONG_STRIP_TAG_ID] },
+  { label: 'Superheroes', source: 'superhero' },
 ];
 
 const LIMIT = 36;
@@ -92,14 +100,10 @@ const createCategoryQueryMap = () =>
 const getCategoryByLabel = (label: string | null) => CATEGORIES.find((category) => category.label === label);
 
 const formatMarvelDate = (value?: string) => {
-  if (!value) return 'Unknown';
-  const parsed = new Date(value);
-  if (Number.isNaN(parsed.getTime())) return value;
-  return parsed.toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-  });
+  if (!value) return 'Metadata only';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return date.getFullYear().toString();
 };
 
 
@@ -119,7 +123,7 @@ export default function ComicLibraryClient() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const initialCategory = getCategoryByLabel(searchParams.get('tab'))?.label ?? 'Marvel Universe';
+  const initialCategory = getCategoryByLabel(searchParams.get('tab'))?.label ?? 'Manga Hub';
   const initialCategoryQueries = createCategoryQueryMap();
   initialCategoryQueries[initialCategory] = searchParams.get('q') ?? initialCategoryQueries[initialCategory] ?? '';
 
@@ -132,14 +136,17 @@ export default function ComicLibraryClient() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [reading] = useState(false);
   const [viewMode, setViewMode] = useState<'single' | 'webtoon' | 'spread'>('single');
-  const [isAgeVerified, setIsAgeVerified] = useState(false);
-  const [nsfwEnabled, setNsfwEnabled] = useState(false);
+  const [isAgeVerified, setIsAgeVerified] = useState(true);
+  const [nsfwEnabled, setNsfwEnabled] = useState(true);
   const [showAgeGate, setShowAgeGate] = useState(false);
   const [activeCategory, setActiveCategory] = useState(initialCategory);
   const [offset, setOffset] = useState(0);
   const [hasMore, setHasMore] = useState(true);
   const [lang, setLang] = useState<Lang>('en');
   const [zoom, setZoom] = useState(1);
+  const [autoCompleteResults, setAutoCompleteResults] = useState<Comic[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [showDropdown, setShowDropdown] = useState(false);
   
   const [mangaLanguage, setMangaLanguage] = useState<MangaLanguage>(readStoredMangaLanguage);
   const isMounted = useSyncExternalStore(
@@ -527,12 +534,39 @@ export default function ComicLibraryClient() {
   }, [activeCategory, fetchArchive, fetchBooru, fetchMangaDex, fetchMarvelIssues, fetchSuperheroes, fetchNHentai, isAgeVerified, mangaLanguage, searchQuery]);
 
   useEffect(() => {
-    const timeout = window.setTimeout(() => {
-      loadData(0, false);
-    }, 350);
-
-    return () => window.clearTimeout(timeout);
+    void loadData(0, false);
   }, [activeCategory, searchQuery, nsfwEnabled, mangaLanguage, loadData]);
+
+  // Autocomplete Effect
+  useEffect(() => {
+    if (searchQuery.length < 3) {
+      setAutoCompleteResults([]);
+      setShowDropdown(false);
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      setIsSearching(true);
+      setShowDropdown(true);
+      try {
+        const cat = CATEGORIES.find(c => c.label === activeCategory);
+        const source = cat?.source || 'mangadex';
+        const res = await searchComics({ 
+          source, 
+          query: searchQuery, 
+          page: 0,
+          mangaLanguage 
+        });
+        setAutoCompleteResults((res.items as any).slice(0, 8));
+      } catch (e) {
+        console.error('Autocomplete error:', e);
+      } finally {
+        setIsSearching(false);
+      }
+    }, 400);
+
+    return () => clearTimeout(timer);
+  }, [searchQuery, activeCategory, mangaLanguage]);
 
   useEffect(() => {
     // Infinite scroll advances the page index and fetches the next batch.
@@ -563,20 +597,7 @@ export default function ComicLibraryClient() {
 
   return (
     <div className="min-h-screen bg-[#020202] text-white">
-      {/* Age Gate */}
-      <AnimatePresence>
-        {showAgeGate && (
-          <AgeGateOverlay
-            title={t_lib.restricted}
-            description={t_lib.ageDesc}
-            confirmLabel={t_lib.verifyBtn}
-            cancelLabel={t_lib.cancelBtn}
-            confirmAction={handleAgeVerify}
-            cancelAction={() => setShowAgeGate(false)}
-            zIndex={10000}
-          />
-        )}
-      </AnimatePresence>
+      {/* Unrestricted Access */}
 
       {!selectedComic && (
         <div className="px-4 py-6 md:p-16">
@@ -625,8 +646,72 @@ export default function ComicLibraryClient() {
                   <Shuffle size={20} />
                 </button>
                 <div className="relative flex-1 md:w-96">
-                  <input type="text" placeholder="SEARCH_GLOBAL_ARCHIVES..." className="w-full bg-white/5 border border-white/10 py-4 pl-12 pr-4 text-[11px] font-black uppercase focus:border-[#ff4d00] transition-all outline-none md:py-5 md:px-12" value={searchQuery} onChange={e => handleSearchQueryChange(e.target.value)} />
+                  <input 
+                    type="text" 
+                    placeholder="SEARCH_GLOBAL_ARCHIVES..." 
+                    className="w-full bg-white/5 border border-white/10 py-4 pl-12 pr-4 text-[11px] font-black uppercase focus:border-[#ff4d00] transition-all outline-none md:py-5 md:px-12" 
+                    value={searchQuery} 
+                    onChange={e => handleSearchQueryChange(e.target.value)}
+                    onFocus={() => searchQuery.length >= 3 && setShowDropdown(true)}
+                  />
                   <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/20" />
+                  
+                  {/* Professional Search Dropdown */}
+                  <AnimatePresence>
+                    {showDropdown && (
+                      <motion.div 
+                        initial={{ opacity: 0, y: 10, scale: 0.98 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: 10, scale: 0.98 }}
+                        className="absolute top-full left-0 right-0 mt-2 z-[6000] bg-[#0d0d0d] border border-white/10 shadow-[0_30px_60px_rgba(0,0,0,0.8)] backdrop-blur-xl overflow-hidden"
+                      >
+                        <div className="p-2 border-b border-white/5 flex items-center justify-between">
+                          <span className="text-[8px] font-black uppercase tracking-[0.4em] text-white/20 px-2">Instant_Results</span>
+                          <button onClick={() => setShowDropdown(false)}><X size={12} className="text-white/20 hover:text-white" /></button>
+                        </div>
+                        <div className="max-h-[400px] overflow-y-auto custom-scrollbar">
+                          {isSearching ? (
+                            <div className="p-8 text-center">
+                              <Loader2 className="w-5 h-5 text-[#ff4d00] animate-spin mx-auto mb-3" />
+                              <span className="text-[9px] font-black uppercase tracking-[0.5em] text-white/10">Neural_Search_Active</span>
+                            </div>
+                          ) : autoCompleteResults.length === 0 ? (
+                            <div className="p-8 text-center text-[9px] font-black uppercase tracking-[0.5em] text-white/10">No_Matches_Found</div>
+                          ) : (
+                            autoCompleteResults.map(comic => (
+                              <button 
+                                key={comic.id}
+                                onClick={() => {
+                                  setShowDropdown(false);
+                                  router.push(`/library/${comic.source}/${comic.id}`);
+                                }}
+                                className="w-full p-3 flex items-center gap-4 hover:bg-white/5 border-b border-white/5 transition-all text-left group"
+                              >
+                                <div className="relative w-10 aspect-[2/3] bg-black border border-white/10 shrink-0">
+                                  <Image src={comic.coverUrl || '/logo.png'} fill className="object-cover" alt="" unoptimized />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <div className="text-[10px] font-black uppercase tracking-widest text-white/80 group-hover:text-[#ff4d00] transition-colors truncate">{comic.title}</div>
+                                  <div className="flex items-center gap-2 mt-1">
+                                    <span className={`px-1 py-0.5 text-[6px] font-black uppercase tracking-tighter ${
+                                      comic.source === 'mangadex' ? 'bg-orange-500/20 text-orange-400' :
+                                      comic.source === 'marvel' ? 'bg-red-600/20 text-red-500' :
+                                      comic.source === 'archive' ? 'bg-blue-500/20 text-blue-400' :
+                                      'bg-white/10 text-white/40'
+                                    }`}>
+                                      {comic.source}
+                                    </span>
+                                    <span className="text-[8px] font-bold uppercase tracking-[0.2em] text-white/10">{comic.rating}</span>
+                                  </div>
+                                </div>
+                                <ChevronRight size={14} className="text-white/10 group-hover:text-[#ff4d00] transition-all" />
+                              </button>
+                            ))
+                          )}
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
                 <button onClick={handleNsfwToggle} className={`h-12 w-full flex items-center justify-center border transition-all md:h-16 md:w-16 ${nsfwEnabled ? 'bg-red-600 border-red-600' : 'border-white/10 text-white/20'}`}>
                   {isMounted && nsfwEnabled ? <Eye /> : <EyeOff />}
@@ -931,14 +1016,6 @@ export default function ComicLibraryClient() {
         }
       `}</style>
     </div>
-  );
-}
-
-export default function LibraryPage() {
-  return (
-    <Suspense fallback={null}>
-      <ComicLibrary />
-    </Suspense>
   );
 }
 

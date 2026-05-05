@@ -26,7 +26,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       query: '', // Empty query + FollowedCount desc = Popular
     });
 
-    const dynamicMangaRoutes = popularManga.items.map((item) => ({
+    const dynamicMangaRoutes = popularManga.items.map((item: { id: string }) => ({
       url: `${baseUrl}/library/mangadex/${item.id}`,
       lastModified: new Date(),
       changeFrequency: 'weekly' as const,

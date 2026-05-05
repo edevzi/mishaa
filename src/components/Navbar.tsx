@@ -72,7 +72,6 @@ export default function Navbar() {
   const navLinks = [
     { name: t.gallery, href: '/gallery' },
     { name: t.library, href: '/library' },
-    { name: 'Nexus', href: '/superheroes' },
     { name: t.about, href: '/about' },
     { name: t.support, href: '/support' },
   ];
@@ -88,17 +87,21 @@ export default function Navbar() {
     <nav className="fixed top-6 left-1/2 z-[1000] w-[min(94vw,90rem)] -translate-x-1/2 max-md:top-3">
       <div className="glass-panel relative flex items-center justify-between overflow-hidden rounded-[2.5rem] px-2 py-2 max-md:px-2">
         <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/30 to-transparent" />
-        <div className="absolute left-0 top-0 h-full w-1 bg-gradient-to-b from-[#ff5a1f] via-[#ffd36b] to-[#73f7ff]" />
 
         {/* Branding */}
         <Link href="/" className="flex items-center gap-4 pl-4 md:pl-6 group py-2 md:py-3 max-md:pl-2">
           <div className="relative flex h-11 w-11 items-center justify-center overflow-hidden rounded-2xl border border-white/10 bg-black/40 shadow-2xl transition-all duration-500 group-hover:border-[#ff5a1f]/50 md:h-12 md:w-12">
             <div className="absolute inset-0 bg-gradient-to-tr from-[#ff5a1f]/20 via-transparent to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
-            <span className="text-xl font-display font-black text-white z-10 transition-transform duration-500 group-hover:scale-110">iC</span>
+            <span className="font-accent text-xl z-10 transition-transform duration-500 group-hover:scale-110 leading-none" style={{letterSpacing: '0.02em'}}>
+              <span className="text-white">i</span><span style={{color: '#ff5a1f'}}>C</span>
+            </span>
           </div>
           <div className="flex flex-col">
-            <span className="text-base md:text-lg font-display font-bold leading-none text-white tracking-tight uppercase">iComics</span>
-            <span className="mt-1 text-[6px] md:text-[7px] font-black uppercase tracking-[0.4em] text-white/30 group-hover:text-[#ffd36b] transition-colors">Digital Studio</span>
+            <span className="text-lg md:text-xl font-accent leading-none tracking-wider select-none" style={{letterSpacing: '0.04em'}}>
+              <span className="text-white">iComics</span>
+              <span style={{color: '#ffd36b', margin: '0 1px'}}>·</span>
+              <span style={{color: '#ff5a1f'}}>wiki</span>
+            </span>
           </div>
         </Link>
 
@@ -112,8 +115,8 @@ export default function Navbar() {
                   key={link.href}
                   href={link.href}
                   className={`relative rounded-full px-5 py-2.5 text-[9px] font-black uppercase tracking-[0.25em] transition-all ${isActive
-                      ? 'bg-white text-black shadow-xl'
-                      : 'text-white/40 hover:text-white hover:bg-white/5'
+                    ? 'bg-white text-black shadow-xl'
+                    : 'text-white/40 hover:text-white hover:bg-white/5'
                     }`}
                 >
                   {link.name}
@@ -137,8 +140,8 @@ export default function Navbar() {
                 key={l}
                 onClick={() => handleLangChange(l)}
                 className={`rounded-full px-3.5 py-2 text-[8px] font-black tracking-widest transition-all ${lang === l.toLowerCase()
-                    ? 'bg-[#ff5a1f] text-white shadow-lg'
-                    : 'text-white/30 hover:text-white hover:bg-white/5'
+                  ? 'bg-[#ff5a1f] text-white shadow-lg'
+                  : 'text-white/30 hover:text-white hover:bg-white/5'
                   }`}
               >
                 {l}
@@ -151,7 +154,7 @@ export default function Navbar() {
           {user ? (
             <div className="flex items-center gap-3">
               <div className="relative group">
-                <Link 
+                <Link
                   href="/profile"
                   className="flex h-11 w-11 items-center justify-center overflow-hidden rounded-2xl border border-white/10 bg-white/[0.05] p-0.5 backdrop-blur-xl transition-all hover:border-[#ff5a1f]/50 hover:shadow-[0_0_20px_rgba(255,90,31,0.2)]"
                 >
@@ -236,8 +239,8 @@ export default function Navbar() {
                     key={l}
                     onClick={() => { handleLangChange(l); setIsOpen(false); }}
                     className={`flex-1 rounded-xl py-3 text-[10px] font-black tracking-widest transition-all ${lang === l.toLowerCase()
-                        ? 'bg-[#ff5a1f] text-white'
-                        : 'text-white/35 hover:bg-white/5 hover:text-white'
+                      ? 'bg-[#ff5a1f] text-white'
+                      : 'text-white/35 hover:bg-white/5 hover:text-white'
                       }`}
                   >
                     {l}

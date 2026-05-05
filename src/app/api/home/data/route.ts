@@ -11,6 +11,7 @@ import {
   resolveMangaDexLocalizedText, 
   MangaLanguage 
 } from "@/lib/manga-language";
+import { fetchTrendingAniListManga } from "@/lib/anilist";
 
 const MARVEL_API_BASE = "https://marvel.emreparker.com/v1";
 
@@ -19,7 +20,7 @@ const safeText = (value: unknown, fallback = '') => typeof value === 'string' &&
 async function loadMangaDex(params: URLSearchParams, lang: MangaLanguage) {
   try {
     const res = await fetch(`https://api.mangadex.org/manga?${params.toString()}`, {
-      headers: { 'User-Agent': 'iComics/1.0' },
+      headers: { 'User-Agent': 'iComics.wiki/1.0' },
       next: { revalidate: 3600 }
     });
     if (!res.ok) return [];
@@ -51,37 +52,65 @@ export async function GET(req: Request) {
   };
 
   // 1. Manga Hub Params
-  const mangaParams = new URLSearchParams({ limit: '12', offset: '0', 'order[followedCount]': 'desc' });
+  const mangaParams = new URLSearchParams({ limit: '30', offset: '0', 'order[followedCount]': 'desc' });
   mangaParams.append('includes[]', 'cover_art');
   appendMangaDexFilters(mangaParams, { ...filters, originalLanguages: ['ja'] });
 
   // 2. Webtoons Params
-  const webtoonsParams = new URLSearchParams({ limit: '12', offset: '0', 'order[followedCount]': 'desc' });
+  const webtoonsParams = new URLSearchParams({ limit: '30', offset: '0', 'order[followedCount]': 'desc' });
   webtoonsParams.append('includes[]', 'cover_art');
   appendMangaDexFilters(webtoonsParams, { ...filters, includedTagIds: [MANGADEX_LONG_STRIP_TAG_ID] });
 
   // 3. Manhwa Params
-  const manhwaParams = new URLSearchParams({ limit: '12', offset: '0', 'order[followedCount]': 'desc' });
+  const manhwaParams = new URLSearchParams({ limit: '30', offset: '0', 'order[followedCount]': 'desc' });
   manhwaParams.append('includes[]', 'cover_art');
   appendMangaDexFilters(manhwaParams, { ...filters, originalLanguages: ['ko'], excludedTagIds: [MANGADEX_LONG_STRIP_TAG_ID] });
 
-  try {
-    // 4. Marvel Shelf (Reusing the logic from our previous fix)
-    const marvelPromise = fetch(`${new URL(req.url).origin}/api/marvel/shelf?limit=12`).then(r => r.json()).then(d => d.items || []);
+  // 4. Newly Added Params
+  const latestParams = new URLSearchParams({ limit: '30', offset: '0', 'order[createdAt]': 'desc' });
+  latestParams.append('includes[]', 'cover_art');
+  appendMangaDexFilters(latestParams, filters);
 
-    const [manga, webtoons, manhwa, marvel] = await Promise.all([
-      loadMangaDex(mangaParams, lang),
-      loadMangaDex(webtoonsParams, lang),
-      loadMangaDex(manhwaParams, lang),
-      marvelPromise
+  try {
+    // 5. Marvel Shelf
+    const marvelPromise = fetch(`${new URL(req.url).origin}/api/marvel/shelf?limit=12`)
+      .then(r => r.ok ? r.json() : { items: [] })
+      .catch(() => ({ items: [] }))
+      .then(d => d.items || []);
+    
+    // 5. Global Trending (AniList)
+    const trendingPromise = fetchTrendingAniListManga(12)
+      .then(items => 
+        items.map(item => ({
+          id: item.id.toString(),
+          title: item.title.userPreferred || item.title.english || item.title.romaji,
+          description: item.description?.replace(/<[^>]*>?/gm, '').substring(0, 150) || 'Global trending pick',
+          coverUrl: item.coverImage.extraLarge || item.coverImage.large,
+          source: 'mangadex',
+          href: `/library/mangadex/${item.id}`,
+          meta: `TRENDING #${items.indexOf(item) + 1}`,
+          rating: (item.averageScore / 10).toFixed(1) || '8.5'
+        }))
+      )
+      .catch(() => []);
+
+    const [manga, webtoons, manhwa, marvel, trending, latest] = await Promise.all([
+      loadMangaDex(mangaParams, lang).catch(() => []),
+      loadMangaDex(webtoonsParams, lang).catch(() => []),
+      loadMangaDex(manhwaParams, lang).catch(() => []),
+      marvelPromise,
+      trendingPromise,
+      loadMangaDex(latestParams, lang).catch(() => [])
     ]);
 
     return NextResponse.json({
       shelves: {
-        'manga-hub': manga,
-        'webtoons': webtoons,
-        'manhwa': manhwa,
-        'marvel': marvel
+        'trending': trending || [],
+        'manga-hub': manga || [],
+        'new': latest || [],
+        'webtoons': webtoons || [],
+        'manhwa': manhwa || [],
+        'marvel': marvel || []
       }
     }, {
       headers: {

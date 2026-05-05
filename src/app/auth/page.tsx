@@ -55,7 +55,7 @@ function AuthPageContent() {
 
   const avatarUrl = username
     ? `https://api.dicebear.com/9.x/${selectedAvatarStyle}/svg?seed=${username}&backgroundColor=b6e3f4,c0aede,d1d4f9,ffd5dc,ffdfbf`
-    : `https://api.dicebear.com/9.x/${selectedAvatarStyle}/svg?seed=icomics&backgroundColor=b6e3f4`;
+    : `https://api.dicebear.com/9.x/${selectedAvatarStyle}/svg?seed=icomics.wiki&backgroundColor=b6e3f4`;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -112,7 +112,7 @@ function AuthPageContent() {
               animate={{ scale: 1, opacity: 1 }}
               className="inline-flex items-center justify-center w-16 h-16 bg-white rounded-2xl shadow-[0_0_40px_rgba(255,255,255,0.2)] mb-2"
             >
-              <span className="text-3xl font-display font-black text-white">iC</span>
+              <span className="text-3xl font-display font-black text-black">iC</span>
             </motion.div>
             <div className="space-y-1">
               <h1 className="text-4xl font-black uppercase tracking-tight text-white leading-none">
@@ -128,13 +128,13 @@ function AuthPageContent() {
           <div className="flex p-1 bg-white/5 rounded-2xl mb-8 border border-white/10">
             <button
               onClick={() => setMode('login')}
-              className={`flex-1 py-3 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all ${mode === 'login' ? 'bg-white text-white shadow-lg' : 'text-white/40 hover:text-white'}`}
+              className={`flex-1 py-3 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all ${mode === 'login' ? 'bg-white text-black shadow-lg' : 'text-white/40 hover:text-white'}`}
             >
               Sign In
             </button>
             <button
               onClick={() => setMode('signup')}
-              className={`flex-1 py-3 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all ${mode === 'signup' ? 'bg-white text-white shadow-lg' : 'text-white/40 hover:text-white'}`}
+              className={`flex-1 py-3 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all ${mode === 'signup' ? 'bg-white text-black shadow-lg' : 'text-white/40 hover:text-white'}`}
             >
               Register
             </button>
@@ -153,7 +153,7 @@ function AuthPageContent() {
                   {/* Avatar Section */}
                   <div className="flex items-center gap-5 p-4 bg-white/5 rounded-2xl border border-white/5">
                     <div className="w-14 h-14 rounded-xl bg-black border border-white/10 overflow-hidden shadow-inner flex-shrink-0 relative">
-                      <Image src={avatarUrl} alt="Avatar" fill className="object-cover" />
+                      <Image src={avatarUrl} alt="Avatar" fill unoptimized className="object-cover" />
                     </div>
                     <div className="flex-1">
                        <p className="text-[9px] font-black uppercase tracking-widest text-white/30 mb-2">Avatar Prototype</p>
@@ -163,7 +163,7 @@ function AuthPageContent() {
                               key={style}
                               type="button"
                               onClick={() => setSelectedAvatarStyle(style)}
-                              className={`px-2 py-1 text-[8px] font-black uppercase rounded-lg border transition-all ${selectedAvatarStyle === style ? 'bg-[#ff5a1f] border-transparent text-white' : 'border-white/10 text-white/40 hover:text-white'}`}
+                              className={`px-2 py-1 text-[8px] font-black uppercase rounded-lg border transition-all ${selectedAvatarStyle === style ? 'bg-[#ff5a1f] border-transparent text-white' : 'border-white/10 text-white/60 hover:text-white hover:bg-white/5'}`}
                             >
                               {style.split('-')[0]}
                             </button>
@@ -242,7 +242,7 @@ function AuthPageContent() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-4 rounded-xl bg-white text-white text-[11px] font-black uppercase tracking-[0.2em] shadow-[0_0_30px_rgba(255,255,255,0.1)] hover:shadow-[0_0_30px_rgba(255,90,31,0.3)] hover:bg-[#ff5a1f] hover:text-white transition-all transform active:scale-[0.98] disabled:opacity-50"
+              className="w-full py-4 rounded-xl bg-white text-black text-[11px] font-black uppercase tracking-[0.2em] shadow-[0_0_30px_rgba(255,255,255,0.1)] hover:shadow-[0_0_30px_rgba(255,90,31,0.3)] hover:bg-[#ff5a1f] hover:text-white transition-all transform active:scale-[0.98] disabled:opacity-50"
             >
               {loading ? 'Authenticating...' : (mode === 'login' ? 'Establish Connection' : 'Initialize Account')}
             </button>

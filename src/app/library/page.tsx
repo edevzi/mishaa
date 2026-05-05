@@ -8,7 +8,7 @@ export async function generateMetadata({ searchParams }: { searchParams: Promise
   const category = tab || 'Comics';
   const query = q ? ` search results for "${q}"` : '';
   
-  const title = `${category}${query} | iComics Studio Library`;
+  const title = `${category}${query} | iComics.wiki Studio Library`;
   const description = `Browse our extensive collection of ${category}. Find your favorite Manga, Manhwa, and Marvel comics in our digital vault.`;
 
   return {
@@ -31,7 +31,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ t
   const collectionSchema = {
     "@context": "https://schema.org",
     "@type": "CollectionPage",
-    "name": `${tab || 'Comic'} Collection | iComics Studio`,
+    "name": `${tab || 'Comic'} Collection | iComics.wiki Studio`,
     "description": "A curated collection of digital comics, manga, and graphic novels.",
     "url": "https://icomics.wiki/library",
     "breadcrumb": {

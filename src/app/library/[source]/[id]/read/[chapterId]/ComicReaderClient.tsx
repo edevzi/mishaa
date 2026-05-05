@@ -47,6 +47,9 @@ interface ComicDetails {
   author?: string;
   source: 'mangadex' | 'archive' | 'nhentai' | 'marvel' | 'superhero' | BooruSource;
   aniListId?: string;
+  malId?: string | number;
+  aniListData?: any;
+  jikanData?: any;
   superheroData?: any;
 }
 
@@ -86,6 +89,11 @@ export default function ComicReaderClient({ initialComic, initialChapters, sourc
   const [isAgeVerified, setIsAgeVerified] = useState(false);
   const [showAgeGate, setShowAgeGate] = useState(false);
   
+  // Professional Reader Settings
+  const [readerTheme, setReaderTheme] = useState<'dark' | 'light' | 'sepia'>('dark');
+  const [readingDirection, setReadingDirection] = useState<'ltr' | 'rtl'>('ltr');
+  const [showSettings, setShowSettings] = useState(false);
+  
   const readerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLDivElement>(null);
   const lastScrollY = useRef(0);
@@ -105,6 +113,12 @@ export default function ComicReaderClient({ initialComic, initialChapters, sourc
     const verified = readAgeVerification();
     const t = setTimeout(() => setIsAgeVerified(prev => (verified !== prev ? verified : prev)), 0);
     if (verified) persistAgeVerification();
+
+    // Load Professional Settings
+    const savedTheme = localStorage.getItem('reader_theme') as any;
+    if (savedTheme) setReaderTheme(savedTheme);
+    const savedDir = localStorage.getItem('reading_direction') as any;
+    if (savedDir) setReadingDirection(savedDir);
 
     return () => {
       window.removeEventListener('resize', checkMobile);
@@ -237,8 +251,21 @@ export default function ComicReaderClient({ initialComic, initialChapters, sourc
   useEffect(() => {
     if (chapters.length > 0) {
       void loadChapterPages(currentChapterIdx);
+      
+      // Save to reading history
+      if (typeof window !== 'undefined' && chapters[currentChapterIdx]) {
+        const history = JSON.parse(localStorage.getItem('reading_history') || '{}');
+        history[`${source}:${id}`] = {
+          id: chapters[currentChapterIdx].id,
+          title: chapters[currentChapterIdx].title || `Chapter ${chapters[currentChapterIdx].chapterNum}`,
+          aniListId: comic?.aniListId,
+          malId: comic?.malId,
+          timestamp: Date.now()
+        };
+        localStorage.setItem('reading_history', JSON.stringify(history));
+      }
     }
-  }, [currentChapterIdx, chapters, loadChapterPages]);
+  }, [currentChapterIdx, chapters, loadChapterPages, id, source]);
 
   useEffect(() => {
     if (comic && isAdultComic(comic) && !isAgeVerified && !showAgeGate) {
@@ -253,11 +280,12 @@ export default function ComicReaderClient({ initialComic, initialChapters, sourc
   };
 
   useEffect(() => {
-    document.body.style.backgroundColor = '#000000';
+    const bg = readerTheme === 'light' ? '#ffffff' : readerTheme === 'sepia' ? '#f4ecd8' : '#000000';
+    document.body.style.backgroundColor = bg;
     return () => {
       document.body.style.backgroundColor = '';
     };
-  }, []);
+  }, [readerTheme]);
 
   const nextChapter = useCallback(() => {
     if (currentChapterIdx < chapters.length - 1) {
@@ -346,7 +374,11 @@ export default function ComicReaderClient({ initialComic, initialChapters, sourc
         ref={readerRef} 
         initial={{ opacity: 0 }} 
         animate={{ opacity: 1 }} 
-        className="fixed inset-0 z-[10000] bg-[#050505] flex flex-col overflow-hidden select-none [-webkit-tap-highlight-color:transparent]"
+        className={`fixed inset-0 z-[10000] flex flex-col overflow-hidden select-none [-webkit-tap-highlight-color:transparent] ${
+          readerTheme === 'light' ? 'bg-white text-black' : 
+          readerTheme === 'sepia' ? 'bg-[#f4ecd8] text-[#433422]' : 
+          'bg-[#050505] text-white'
+        }`}
       >
         <AnimatePresence mode="wait">
           {readerLoading && (
@@ -395,7 +427,7 @@ export default function ComicReaderClient({ initialComic, initialChapters, sourc
         </AnimatePresence>
 
         <AnimatePresence>
-          {uiVisible && (
+          {uiVisible && pages.length > 0 && (
             <>
               <motion.div 
                 initial={{ opacity: 0 }}
@@ -501,11 +533,88 @@ export default function ComicReaderClient({ initialComic, initialChapters, sourc
           )}
         </AnimatePresence>
 
-        <div className={`fixed bottom-8 right-8 z-[10040] transition-all duration-300 ${uiVisible ? 'opacity-0 scale-50 pointer-events-none' : 'opacity-100 scale-100'}`}>
-           <button onClick={() => setUiVisible(true)} className="w-16 h-16 bg-[#ff4d00] text-white rounded-full flex items-center justify-center shadow-[0_10px_30px_rgba(255,77,0,0.5)] border border-[#ff4d00]/50 active:scale-90 transition-all">
-             <Settings size={28} />
-           </button>
-        </div>
+        {pages.length > 0 && (
+          <div className={`fixed bottom-8 right-8 z-[10040] transition-all duration-300 ${uiVisible ? 'opacity-0 scale-50 pointer-events-none' : 'opacity-100 scale-100'}`}>
+             <button onClick={() => setShowSettings(true)} className="w-16 h-16 bg-[#ff4d00] text-white rounded-full flex items-center justify-center shadow-[0_10px_30px_rgba(255,77,0,0.5)] border border-[#ff4d00]/50 active:scale-90 transition-all">
+               <Settings size={28} />
+             </button>
+          </div>
+        )}
+
+        {/* Professional Settings Modal */}
+        <AnimatePresence>
+          {showSettings && (
+            <div className="fixed inset-0 z-[20000] flex items-center justify-center p-4">
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowSettings(false)} className="absolute inset-0 bg-black/80 backdrop-blur-sm" />
+              <motion.div 
+                initial={{ y: 50, opacity: 0 }} 
+                animate={{ y: 0, opacity: 1 }} 
+                exit={{ y: 50, opacity: 0 }} 
+                className="relative bg-[#0a0a0a] border border-white/10 w-full max-w-md rounded-3xl p-8 space-y-10 shadow-2xl"
+              >
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="text-[10px] font-black uppercase tracking-[0.4em] text-[#ff4d00]">Neural_Reader_Config</div>
+                    <h3 className="mt-1 text-2xl font-black uppercase tracking-tight italic">Pro Settings</h3>
+                  </div>
+                  <button onClick={() => setShowSettings(false)} className="w-10 h-10 flex items-center justify-center bg-white/5 border border-white/10 rounded-xl text-white/50 hover:text-white"><X size={20}/></button>
+                </div>
+
+                <div className="space-y-8">
+                  {/* Theme Selector */}
+                  <div className="space-y-4">
+                    <div className="text-[10px] font-black uppercase tracking-[0.2em] text-white/30">Interface Theme</div>
+                    <div className="grid grid-cols-3 gap-3">
+                      {[
+                        { id: 'dark', bg: 'bg-black', label: 'Dark' },
+                        { id: 'sepia', bg: 'bg-[#f4ecd8]', label: 'Sepia' },
+                        { id: 'light', bg: 'bg-white', label: 'Light' }
+                      ].map(t => (
+                        <button 
+                          key={t.id} 
+                          onClick={() => { setReaderTheme(t.id as any); localStorage.setItem('reader_theme', t.id); }}
+                          className={`flex flex-col items-center gap-2 p-3 border transition-all ${readerTheme === t.id ? 'border-[#ff4d00] bg-[#ff4d00]/10' : 'border-white/5 bg-white/5 hover:bg-white/10'}`}
+                        >
+                          <div className={`w-8 h-8 rounded-full ${t.bg} border border-white/10`} />
+                          <span className={`text-[9px] font-black uppercase tracking-widest ${readerTheme === t.id ? 'text-white' : 'text-white/40'}`}>{t.label}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Reading Direction */}
+                  <div className="space-y-4">
+                    <div className="text-[10px] font-black uppercase tracking-[0.2em] text-white/30">Reading Direction</div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <button 
+                        onClick={() => { setReadingDirection('ltr'); localStorage.setItem('reading_direction', 'ltr'); }}
+                        className={`py-4 border text-[10px] font-black uppercase tracking-widest transition-all ${readingDirection === 'ltr' ? 'border-[#ff4d00] bg-[#ff4d00]/10 text-white' : 'border-white/5 bg-white/5 text-white/40'}`}
+                      >
+                        Left to Right
+                      </button>
+                      <button 
+                        onClick={() => { setReadingDirection('rtl'); localStorage.setItem('reading_direction', 'rtl'); }}
+                        className={`py-4 border text-[10px] font-black uppercase tracking-widest transition-all ${readingDirection === 'rtl' ? 'border-[#ff4d00] bg-[#ff4d00]/10 text-white' : 'border-white/5 bg-white/5 text-white/40'}`}
+                      >
+                        Right to Left
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* View Modes */}
+                  <div className="space-y-4">
+                    <div className="text-[10px] font-black uppercase tracking-[0.2em] text-white/30">Display Matrix</div>
+                    <div className="grid grid-cols-3 gap-2">
+                       <button onClick={() => setViewMode('classic')} className={`py-4 text-[9px] font-black uppercase tracking-widest border transition-all ${viewMode === 'classic' ? 'border-[#ff4d00] bg-[#ff4d00]/10 text-white' : 'border-white/5 bg-white/5 text-white/40'}`}>Classic</button>
+                       <button onClick={() => setViewMode('journal')} className={`py-4 text-[9px] font-black uppercase tracking-widest border transition-all ${viewMode === 'journal' ? 'border-[#ff4d00] bg-[#ff4d00]/10 text-white' : 'border-white/5 bg-white/5 text-white/40'}`}>Journal</button>
+                       <button onClick={() => setViewMode('flow')} className={`py-4 text-[9px] font-black uppercase tracking-widest border transition-all ${viewMode === 'flow' ? 'border-[#ff4d00] bg-[#ff4d00]/10 text-white' : 'border-white/5 bg-white/5 text-white/40'}`}>Flow</button>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>
         
         <div className={`fixed top-8 left-8 z-[10040] transition-all duration-300 ${uiVisible ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
            <button onClick={() => router.push(`/library/${source}/${id}`)} className="w-12 h-12 bg-white/5 backdrop-blur-md border border-white/10 rounded-full flex items-center justify-center text-white/50 hover:text-white hover:bg-[#ff4d00] transition-all">
@@ -516,20 +625,40 @@ export default function ComicReaderClient({ initialComic, initialChapters, sourc
         <div ref={canvasRef} className="flex-1 w-full bg-[#050505] overflow-y-auto relative scroll-smooth touch-pan-y">
            {viewMode !== 'flow' && (
              <>
-               <div className="fixed inset-y-0 left-0 w-[25%] md:w-[20%] z-[10015] cursor-pointer" onClick={(e) => { e.stopPropagation(); handlePrevPage(); }} />
-               <div className="fixed inset-y-0 right-0 w-[25%] md:w-[20%] z-[10015] cursor-pointer" onClick={(e) => { e.stopPropagation(); handleNextPage(); }} />
+               <div className="fixed inset-y-0 left-0 w-[25%] md:w-[20%] z-[10015] cursor-pointer" onClick={(e) => { e.stopPropagation(); readingDirection === 'ltr' ? handlePrevPage() : handleNextPage(); }} />
+               <div className="fixed inset-y-0 right-0 w-[25%] md:w-[20%] z-[10015] cursor-pointer" onClick={(e) => { e.stopPropagation(); readingDirection === 'ltr' ? handleNextPage() : handlePrevPage(); }} />
                <div className="fixed inset-y-0 left-[25%] right-[25%] md:left-[20%] md:right-[20%] z-[10015] cursor-pointer" onClick={(e) => { e.stopPropagation(); setUiVisible(prev => !prev); }} />
              </>
            )}
 
            {readerLoading ? null : pages.length === 0 ? (
-             <div className="h-full flex flex-col items-center justify-center gap-8 p-10 text-center">
-                <div className="text-[14px] font-black uppercase tracking-[0.4em] text-white/40">Empty_Chapter_Buffer</div>
+             <div className="h-full flex flex-col items-center justify-center gap-10 p-10 text-center max-w-xl mx-auto">
+                <div className="relative w-24 h-24 flex items-center justify-center">
+                   <div className="absolute inset-0 bg-[#ff4d00]/10 blur-3xl rounded-full" />
+                   <ExternalLink size={48} className="text-[#ff4d00]/40 relative z-10" />
+                </div>
+                <div className="space-y-4">
+                   <div className="text-[12px] font-black uppercase tracking-[0.5em] text-[#ff4d00]">External_Protocol_Required</div>
+                   <h2 className="text-xl md:text-2xl font-black uppercase tracking-tight">Official_Source_Access</h2>
+                   <p className="text-white/40 text-sm leading-relaxed">
+                      This chapter is hosted on an <b>official external platform</b> (MangaPlus/Viz). 
+                      MangaDex does not provide direct image assets for this specific unit to protect official licensing.
+                   </p>
+                </div>
                 {chapters[currentChapterIdx]?.externalUrl && (
-                  <a href={chapters[currentChapterIdx].externalUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-3 px-8 py-4 bg-[#ff4d00] text-white text-[11px] font-black uppercase rounded-xl">
-                    <ExternalLink size={18} /> Open_External
+                  <a 
+                    href={chapters[currentChapterIdx].externalUrl} 
+                    target="_blank" 
+                    rel="noopener noreferrer" 
+                    className="inline-flex items-center gap-4 px-10 py-5 bg-[#ff4d00] text-white text-[12px] font-black uppercase tracking-[0.2em] rounded-2xl hover:scale-105 active:scale-95 transition-all shadow-[0_20px_40px_rgba(255,77,0,0.3)]"
+                  >
+                    <ExternalLink size={20} /> Open_Official_Archive
                   </a>
                 )}
+                <div className="pt-10 flex gap-4">
+                   <button onClick={prevChapter} disabled={currentChapterIdx === 0} className="px-6 py-3 border border-white/10 text-[10px] font-black uppercase tracking-widest text-white/30 hover:text-white disabled:opacity-0 transition-all">Prev_Unit</button>
+                   <button onClick={nextChapter} disabled={currentChapterIdx === chapters.length - 1} className="px-6 py-3 border border-white/10 text-[10px] font-black uppercase tracking-widest text-white/30 hover:text-white disabled:opacity-0 transition-all">Next_Unit</button>
+                </div>
              </div>
            ) : (
               <div className={`mx-auto flex flex-col items-center transition-all duration-500 ${viewMode === 'flow' ? 'w-full pt-0 pb-20' : 'min-h-[calc(100vh-40px)] justify-center py-10 md:py-20'}`}>

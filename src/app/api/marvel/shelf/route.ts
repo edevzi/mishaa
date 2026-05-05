@@ -35,8 +35,11 @@ export async function GET(req: Request) {
 
           const path = issue.cover?.path || issue.thumbnail?.path;
           const ext = issue.cover?.extension || issue.thumbnail?.extension;
-          const coverUrl = path && ext
+          const directCoverUrl = path && ext
             ? `${path.replace('http://', 'https://')}/portrait_uncanny.${ext}`
+            : null;
+          const coverUrl = directCoverUrl 
+            ? `/api/proxy/image?url=${encodeURIComponent(directCoverUrl)}`
             : '/logo.png';
 
           return {
