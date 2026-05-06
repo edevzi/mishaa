@@ -70,6 +70,35 @@ async function run() {
   assert(nhentaiResults.length > 0, 'nhentai proxy: empty result');
   console.log(`nhentai proxy ok: ${nhentaiResults.length} item(s)`);
 
+  const nhentaiPageResponse = await fetch(buildUrl('/library/nhentai/648185'), {
+    headers: {
+      accept: 'text/html',
+    },
+  });
+  const nhentaiPageHtml = await nhentaiPageResponse.text();
+  assert(nhentaiPageResponse.ok, `nhentai page: HTTP ${nhentaiPageResponse.status}`);
+  assert(
+    nhentaiPageHtml.includes('/api/proxy/nhentai/image?path=galleries/3911833/2.webp'),
+    'nhentai page: missing expected gallery image URL'
+  );
+  console.log('nhentai page ok: gallery image URL rendered');
+
+  const nhentaiImageResponse = await fetch(
+    buildUrl('/api/proxy/nhentai/image?path=' + encodeURIComponent('galleries/3911833/2.webp')),
+    {
+      headers: {
+        cookie: cookieHeader,
+        referer: buildUrl('/library/nhentai/648185'),
+      },
+    }
+  );
+  assert(nhentaiImageResponse.ok, `nhentai image: HTTP ${nhentaiImageResponse.status}`);
+  assert(
+    (nhentaiImageResponse.headers.get('content-type') || '').startsWith('image/'),
+    `nhentai image: unexpected content-type ${nhentaiImageResponse.headers.get('content-type') || 'missing'}`
+  );
+  console.log('nhentai image ok: 200 image response');
+
   console.log('Smoke test passed');
 }
 

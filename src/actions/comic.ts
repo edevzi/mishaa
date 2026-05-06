@@ -90,7 +90,7 @@ interface NHentaiGallery {
   images: {
     thumbnail: { t: string };
     cover: { t: string };
-    pages: { t: string }[];
+    pages: Record<string, { t: string; w?: number; h?: number }> | { t: string; w?: number; h?: number }[];
   };
 }
 
@@ -115,6 +115,40 @@ const NHENTAI_GALLERY_HEADERS = {
 };
 
 const cleanTrailingCommas = (value: string) => value.replace(/,\s*([}\]])/g, '$1');
+const resolveNHentaiImageExt = (type?: string) => {
+  switch (type) {
+    case 'p':
+      return 'png';
+    case 'g':
+      return 'gif';
+    case 'w':
+      return 'webp';
+    case 'j':
+    default:
+      return 'jpg';
+  }
+};
+
+const getNHentaiPageEntries = (
+  pages: NHentaiGallery['images']['pages']
+) => {
+  if (!pages) return [];
+
+  if (Array.isArray(pages)) {
+    return pages.map((page, index) => ({
+      page: index + 1,
+      ...page,
+    }));
+  }
+
+  return Object.entries(pages)
+    .map(([page, value]) => ({
+      page: Number(page),
+      ...(value || {}),
+    }))
+    .filter((entry) => Number.isFinite(entry.page))
+    .sort((left, right) => left.page - right.page);
+};
 
 async function fetchJsonThroughProxy(path: string, fallbackUrl?: string) {
   const proxyUrl = `${getSiteUrl()}/api/proxy/mangadex?path=${encodeURIComponent(path)}`;
@@ -379,6 +413,8 @@ export async function getComicDetails(source: string, id: string, mangaLanguage:
     if (source === 'nhentai') {
       const data = await fetchNHentaiRaw(`gallery/${id}`) as NHentaiGallery;
       if (!data) return null;
+      const pageEntries = getNHentaiPageEntries(data.images.pages);
+      const firstPage = pageEntries[0];
 
       // Extract related comics if they exist
       const related = (data as any).related || [];
@@ -387,8 +423,10 @@ export async function getComicDetails(source: string, id: string, mangaLanguage:
         id: data.id.toString(),
         title: data.title?.english || data.title?.japanese || "Untitled",
         description: data.tags?.map((t: NHentaiTag) => t.name).join(', ') || "No description",
-        coverUrl: `/api/proxy/nhentai/image?path=galleries/${data.media_id}/thumb.${data.images.thumbnail.t === 'p' ? 'png' : data.images.thumbnail.t === 'g' ? 'gif' : 'jpg'}`,
-        bannerUrl: `/api/proxy/nhentai/image?path=galleries/${data.media_id}/1.${data.images.pages[0].t === 'p' ? 'png' : data.images.pages[0].t === 'g' ? 'gif' : 'jpg'}`,
+        coverUrl: `/api/proxy/nhentai/image?path=galleries/${data.media_id}/thumb.${resolveNHentaiImageExt(data.images.thumbnail.t)}`,
+        bannerUrl: firstPage
+          ? `/api/proxy/nhentai/image?path=galleries/${data.media_id}/${firstPage.page}.${resolveNHentaiImageExt(firstPage.t)}`
+          : `/api/proxy/nhentai/image?path=galleries/${data.media_id}/thumb.${resolveNHentaiImageExt(data.images.thumbnail.t)}`,
         rating: 'pornographic',
         genres: data.tags?.filter((t: NHentaiTag) => t.type === 'tag').map((t: NHentaiTag) => t.name) || [],
         status: 'Completed',
@@ -398,7 +436,7 @@ export async function getComicDetails(source: string, id: string, mangaLanguage:
         related: related.map((r: any) => ({
           id: r.id.toString(),
           title: r.title.english || r.title.japanese || "Untitled",
-          coverUrl: `/api/proxy/nhentai/image?path=galleries/${r.media_id}/thumb.${r.images.thumbnail.t === 'p' ? 'png' : r.images.thumbnail.t === 'g' ? 'gif' : 'jpg'}`,
+          coverUrl: `/api/proxy/nhentai/image?path=galleries/${r.media_id}/thumb.${resolveNHentaiImageExt(r.images.thumbnail.t)}`,
           source: 'nhentai' as const,
           rating: 'pornographic'
         }))
@@ -575,9 +613,10 @@ export async function getChapterPages(source: string, id: string, chapterId: str
     if (source === 'nhentai') {
        const data = await fetchNHentaiRaw(`gallery/${id}`) as NHentaiGallery;
        if (!data) return [];
-       return data.images.pages.map((p: { t: string }, i: number) => {
-          const ext = p.t === 'p' ? 'png' : 'jpg';
-          return `/api/proxy/nhentai/image?path=${encodeURIComponent(`galleries/${data.media_id}/${i + 1}.${ext}`)}`;
+       const pageEntries = getNHentaiPageEntries(data.images.pages);
+       return pageEntries.map((p: { page: number; t: string }) => {
+          const ext = resolveNHentaiImageExt(p.t);
+          return `/api/proxy/nhentai/image?path=${encodeURIComponent(`galleries/${data.media_id}/${p.page}.${ext}`)}`;
        });
     }
 
