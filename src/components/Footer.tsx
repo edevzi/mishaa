@@ -25,17 +25,17 @@ export default function Footer() {
   }, []);
 
   return (
-    <footer className="py-24 bg-[#111111] text-white overflow-hidden relative border-t-8 border-black max-md:py-14">
+    <footer className="relative overflow-hidden border-t-8 border-black bg-[#111111] py-16 text-white sm:py-20 lg:py-24">
       <div className="absolute inset-0 halftone-bg opacity-10 pointer-events-none" />
-      <div className="container mx-auto px-4 sm:px-8 relative z-10">
-        <div className="flex flex-col lg:flex-row justify-between gap-24 max-md:gap-14">
-          <div className="space-y-12 max-md:space-y-8">
-            <div className="flex items-center gap-6 max-md:gap-4">
-            <div className="flex h-16 w-16 items-center justify-center rounded-2xl border-4 border-white bg-black max-md:h-12 max-md:w-12 max-md:border-2">
+      <div className="container relative z-10 mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex flex-col justify-between gap-12 lg:flex-row lg:gap-24">
+          <div className="space-y-8 sm:space-y-10 lg:space-y-12">
+            <div className="flex items-center gap-4 sm:gap-6">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl border-2 border-white bg-black sm:h-14 sm:w-14 lg:h-16 lg:w-16 lg:border-4">
               <span className="text-3xl font-display font-black text-white max-md:text-xl">iC</span>
             </div>
               <div className="flex flex-col">
-                <h2 className="text-4xl font-display uppercase leading-none max-md:text-3xl">iComics.wiki</h2>
+                <h2 className="text-3xl font-display uppercase leading-none sm:text-4xl">iComics.wiki</h2>
                 <span className="text-[10px] font-black uppercase tracking-[0.4em] text-[#ff4d00]">Studio Edition</span>
               </div>
             </div>
@@ -48,8 +48,8 @@ export default function Footer() {
             </div>
           </div>
           
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-24 max-md:gap-12">
-            <div className="space-y-8 max-md:space-y-4">
+          <div className="grid grid-cols-1 gap-10 sm:grid-cols-3 sm:gap-12 lg:gap-24">
+            <div className="space-y-5 sm:space-y-6 lg:space-y-8">
               <span className="text-[11px] font-black uppercase tracking-[0.4em] text-[#ff4d00]">{t.studio}</span>
               <div className="flex flex-col gap-4 text-[10px] font-black uppercase tracking-widest opacity-60">
                 <Link href="/studio" className="hover:text-white hover:translate-x-2 transition-all">{t.launch}</Link>
@@ -57,18 +57,22 @@ export default function Footer() {
                 <Link href="/about" className="hover:text-white hover:translate-x-2 transition-all">{t.about}</Link>
               </div>
             </div>
-            <div className="space-y-8 max-md:space-y-4">
+            <div className="space-y-5 sm:space-y-6 lg:space-y-8">
               <span className="text-[11px] font-black uppercase tracking-[0.4em] text-[#ff4d00]">{t.support}</span>
               <div className="flex flex-col gap-4 text-[10px] font-black uppercase tracking-widest opacity-60">
                 <Link href="/faq" className="hover:text-white hover:translate-x-2 transition-all">{t.faq}</Link>
                 <Link href="/support" className="hover:text-white hover:translate-x-2 transition-all">{t.customer}</Link>
+                <Link href="/settings" className="hover:text-white hover:translate-x-2 transition-all">Settings</Link>
                 <a href="https://t.me/icomicsuz" target="_blank" className="hover:text-white hover:translate-x-2 transition-all">Telegram: @icomicsuz</a>
               </div>
             </div>
-            <div className="space-y-8 max-md:space-y-4">
+            <div className="space-y-5 sm:space-y-6 lg:space-y-8">
               <span className="text-[11px] font-black uppercase tracking-[0.4em] text-[#ff4d00]">{t.legal}</span>
               <div className="flex flex-col gap-4 text-[10px] font-black uppercase tracking-widest opacity-60">
                 <Link href="/privacy" className="hover:text-white hover:translate-x-2 transition-all">Privacy Policy</Link>
+                <Link href="/terms" className="hover:text-white hover:translate-x-2 transition-all">Terms</Link>
+                <Link href="/content-policy" className="hover:text-white hover:translate-x-2 transition-all">Content Policy</Link>
+                <Link href="/dmca" className="hover:text-white hover:translate-x-2 transition-all">DMCA</Link>
                 <Link href="/contact" className="hover:text-white hover:translate-x-2 transition-all">Contact: info@icomics.wiki</Link>
                 <span className="opacity-30">© 2026 icomics.wiki</span>
               </div>

@@ -15,11 +15,18 @@ export default function AboutPage() {
 
   useEffect(() => {
     const savedLang = readStorageItem('lang') as Lang;
-    if (savedLang && translations[savedLang]) setLang(savedLang);
+    const timer = savedLang && translations[savedLang]
+      ? window.setTimeout(() => setLang((current) => (savedLang !== current ? savedLang : current)), 0)
+      : undefined;
 
-    const handleLang = (e: any) => setLang(e.detail as Lang);
+    const handleLang = (event: Event) => {
+      setLang((event as CustomEvent<Lang>).detail);
+    };
     window.addEventListener('langChange', handleLang);
-    return () => window.removeEventListener('langChange', handleLang);
+    return () => {
+      window.removeEventListener('langChange', handleLang);
+      if (timer) window.clearTimeout(timer);
+    };
   }, []);
 
   const reasons = [
@@ -29,56 +36,56 @@ export default function AboutPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-[#020202] text-white selection:bg-[#ff4d00] selection:text-white overflow-x-hidden ">
+    <div className="min-h-screen bg-[#020202] text-white selection:bg-[#ff4d00] selection:text-white overflow-x-hidden">
       
       
       <Navbar />
 
-      <main className="container mx-auto px-8 pt-48 pb-32">
+      <main className="container mx-auto px-4 sm:px-6 lg:px-8 pt-32 sm:pt-36 lg:pt-48 pb-20 sm:pb-28 lg:pb-32">
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="max-w-4xl mx-auto space-y-24"
+          className="max-w-4xl mx-auto space-y-16 sm:space-y-24"
         >
           {/* Header */}
-          <div className="text-center space-y-8">
+          <div className="text-center space-y-6 sm:space-y-8">
             <div className="inline-block bg-[#ff4d00] px-6 py-2 border border-white/10 rounded-xl shadow-[6px_6px_0px_#000]">
               <span className="text-white text-[10px] font-black uppercase tracking-[0.4em]">{t.origin}</span>
             </div>
-            <h1 className="text-6xl md:text-9xl font-display uppercase tracking-tighter leading-none italic">
+            <h1 className="text-4xl sm:text-6xl md:text-9xl font-display uppercase tracking-tighter leading-none italic text-balance">
                THIS IS <span className="text-[#3b82f6]">ICOMICS.WIKI.</span>
             </h1>
-            <p className="text-2xl md:text-4xl font-sans font-black uppercase leading-tight tracking-tight border-y-4 border-black py-8">
+            <p className="text-lg sm:text-2xl md:text-4xl font-sans font-black uppercase leading-tight tracking-tight border-y-4 border-black py-6 sm:py-8">
               {t.headline}
             </p>
           </div>
 
           {/* Grid Layout for Content */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
-            <div className=" p-12 bg-white space-y-6 border border-white/10 rounded-xl shadow-[12px_12px_0_#000]">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-12">
+            <div className="p-6 sm:p-12 bg-white space-y-6 border border-white/10 rounded-xl shadow-[12px_12px_0_#000]">
               <div className="w-16 h-16 bg-[#ff4d00] border border-white/10 rounded-xl flex items-center justify-center shadow-[6px_6px_0px_#000]">
                 <BookOpen size={32} />
               </div>
-              <h2 className="text-4xl font-display uppercase tracking-tight">{t.missionTitle}</h2>
+              <h2 className="text-3xl sm:text-4xl font-display uppercase tracking-tight text-balance">{t.missionTitle}</h2>
               <p className="text-lg opacity-60 font-medium leading-relaxed">
                 {t.missionText}
               </p>
             </div>
 
-            <div className=" p-12 bg-[#111111] text-white space-y-6 border-4 border-white shadow-[12px_12px_0_#fff]">
+            <div className="p-6 sm:p-12 bg-[#111111] text-white space-y-6 border-4 border-white shadow-[12px_12px_0_#fff]">
               <div className="w-16 h-16 bg-[#ff4d00] border-4 border-white flex items-center justify-center shadow-[6px_6px_0px_#fff]">
                 <Zap size={32} />
               </div>
-              <h2 className="text-4xl font-display uppercase tracking-tight">{t.techTitle}</h2>
+              <h2 className="text-3xl sm:text-4xl font-display uppercase tracking-tight text-balance">{t.techTitle}</h2>
               <p className="text-lg opacity-60 font-medium leading-relaxed">
                 {t.techText}
               </p>
             </div>
           </div>
 
-          <div className="space-y-12">
-            <h2 className="text-5xl font-display uppercase tracking-tighter italic">{t.whyExist}</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-8">
+          <div className="space-y-8 sm:space-y-12">
+            <h2 className="text-3xl sm:text-5xl font-display uppercase tracking-tighter italic text-balance">{t.whyExist}</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 sm:gap-8">
                {reasons.map((item, i) => (
                  <div key={i} className="border-l-4 border-black pl-6 space-y-2">
                    <h4 className="font-black uppercase text-[10px] tracking-[0.3em] text-[#e63946]">{item.title}</h4>
@@ -89,13 +96,13 @@ export default function AboutPage() {
           </div>
 
           {/* Contact Accent */}
-          <div className="bg-[#ff4d00] border border-white/10 rounded-xl p-12 shadow-[12px_12px_0px_#000] flex flex-col md:flex-row items-center justify-between gap-8">
+          <div className="bg-[#ff4d00] border border-white/10 rounded-xl p-6 sm:p-12 shadow-[12px_12px_0px_#000] flex flex-col md:flex-row items-center justify-between gap-6 sm:gap-8">
             <div>
-              <h2 className="text-4xl font-display uppercase leading-none mb-2">{t.joinTitle}</h2>
+              <h2 className="text-3xl sm:text-4xl font-display uppercase leading-none mb-2 text-balance">{t.joinTitle}</h2>
               <p className="font-black uppercase text-[10px] tracking-widest opacity-40">{t.joinSub}</p>
             </div>
             <Link href="/auth">
-              <button className="px-8 py-4 uppercase font-black tracking-widest transition-all rounded-lg bg-black text-white px-12 py-6 border-2 border-white hover:bg-white hover:text-white transition-all">
+              <button className="rounded-lg border-2 border-white bg-black px-8 py-4 uppercase font-black tracking-widest text-white transition-all hover:bg-white hover:text-black md:px-12 md:py-6">
                 {t.activeBtn}
               </button>
             </Link>

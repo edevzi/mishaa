@@ -113,6 +113,7 @@ export const metadata: Metadata = {
 
 import SmoothAnimations from "@/components/SmoothAnimations";
 import GlobalAgeGate from "@/components/GlobalAgeGate";
+import AnalyticsBridge from "@/components/AnalyticsBridge";
 
 export default function RootLayout({
   children,
@@ -125,9 +126,18 @@ export default function RootLayout({
       className={`${syne.variable} ${outfit.variable} ${bricolage.variable} ${jetBrainsMono.variable} ${staatliches.variable} ${bangers.variable} h-full antialiased bg-[#06070b]`}
     >
       <body className="min-h-full flex flex-col bg-transparent pb-[env(safe-area-inset-bottom)]">
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only fixed left-4 top-4 z-[99999] rounded-xl bg-white px-4 py-3 text-[10px] font-black uppercase tracking-[0.35em] text-black"
+        >
+          Skip to content
+        </a>
         <SmoothAnimations />
         <GlobalAgeGate />
-        {children}
+        <div id="main-content" className="flex-1">
+          <AnalyticsBridge />
+          {children}
+        </div>
       </body>
     </html>
   );

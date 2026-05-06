@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { Layout, Archive, ArrowRight, Clock, Trash2, ExternalLink } from 'lucide-react';
+import { Layout, Clock, Trash2 } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import { translations, Lang } from '@/lib/translations';
 import { readStorageItem } from '@/lib/browser-storage';
@@ -24,9 +24,13 @@ export default function Gallery() {
 
   useEffect(() => {
     const savedLang = readStorageItem('lang') as Lang;
-    if (savedLang && translations[savedLang]) setLang(savedLang);
+    const timer = savedLang && translations[savedLang]
+      ? window.setTimeout(() => setLang((current) => (savedLang !== current ? savedLang : current)), 0)
+      : undefined;
 
-    const handleLang = (e: any) => setLang(e.detail as Lang);
+    const handleLang = (event: Event) => {
+      setLang((event as CustomEvent<Lang>).detail);
+    };
     window.addEventListener('langChange', handleLang);
 
     async function fetchStories() {
@@ -34,7 +38,7 @@ export default function Gallery() {
         const res = await fetch('/api/stories');
         const data = await res.json() as GalleryStory[];
         setStories(Array.isArray(data) ? data : []);
-      } catch (err) {
+      } catch {
         console.error('Failed to fetch stories');
       } finally {
         setLoading(false);
@@ -42,7 +46,10 @@ export default function Gallery() {
     }
     fetchStories();
 
-    return () => window.removeEventListener('langChange', handleLang);
+    return () => {
+      window.removeEventListener('langChange', handleLang);
+      if (timer) window.clearTimeout(timer);
+    };
   }, []);
 
   const deleteStory = async (id: string) => {
@@ -50,7 +57,7 @@ export default function Gallery() {
     try {
       await fetch(`/api/stories?id=${id}`, { method: 'DELETE' });
       setStories(stories.filter(s => s.id !== id));
-    } catch (err) {
+    } catch {
       alert('Delete failed');
     }
   };
@@ -60,20 +67,20 @@ export default function Gallery() {
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0%,rgba(0,0,0,0.4)_100%)] pointer-events-none" />
       <Navbar />
 
-      <main className="container mx-auto px-8 pt-48 pb-32">
-         <div className="p-10 md:p-16 mb-24 relative overflow-hidden bg-white/5 border border-white/10 rounded-3xl backdrop-blur-xl">
+      <main className="container mx-auto px-4 sm:px-6 lg:px-8 pt-32 sm:pt-36 lg:pt-48 pb-20 sm:pb-28 lg:pb-32">
+         <div className="relative mb-16 overflow-hidden rounded-3xl border border-white/10 bg-white/5 p-6 sm:p-10 md:p-16 backdrop-blur-xl">
             <div className="relative z-10 flex flex-col md:flex-row items-end justify-between gap-12">
                <div className="space-y-6">
                   <div className="inline-block bg-[#ff4d00] px-4 py-1">
                     <span className="text-white text-[9px] font-black uppercase tracking-widest">{t.archiveHeadline}</span>
                   </div>
-                  <h1 className="text-[4rem] md:text-[6rem] font-black italic uppercase tracking-tighter leading-none">{t.title}</h1>
-                  <p className="text-white/60 text-base md:text-lg max-w-xl leading-relaxed">
+                  <h1 className="text-4xl sm:text-6xl md:text-[6rem] font-black italic uppercase tracking-tighter leading-none text-balance">{t.title}</h1>
+                  <p className="text-white/60 text-sm sm:text-base md:text-lg max-w-xl leading-relaxed">
                      {t.desc}
                   </p>
                </div>
                <Link href="/studio">
-                  <button className="px-8 py-4 bg-[#ff4d00] text-white text-[10px] font-black uppercase tracking-widest hover:bg-white hover:text-white transition-all">
+                  <button className="rounded-lg bg-[#ff4d00] px-8 py-4 text-[10px] font-black uppercase tracking-widest text-white transition-all hover:bg-white hover:text-black">
                     {t.newPub}
                   </button>
                </Link>

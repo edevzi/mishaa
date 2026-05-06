@@ -15,6 +15,8 @@ import {
 } from '@/lib/booru';
 import { translations, Lang } from '@/lib/translations';
 import { readStorageItem, writeStorageItem } from '@/lib/browser-storage';
+import { removeBookmark, upsertBookmark, BOOKMARKS_UPDATED_EVENT, LIBRARY_ACTIVITY_EVENT, readReadingHistory } from '@/lib/library-storage';
+import { trackEvent } from '@/lib/analytics';
 import {
   readStoredMangaLanguage,
   MangaLanguage,
@@ -182,7 +184,7 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
   const [linkCopied, setLinkCopied] = useState(false);
-  const [lastReadChapter, setLastReadChapter] = useState<{ id: string, title: string } | null>(null);
+  const [lastReadChapter, setLastReadChapter] = useState<{ id: string, title: string, progressPercent?: number, currentPage?: number } | null>(null);
 
   const dominantColor = useDominantColor(comic?.coverUrl);
   const restrictedSource = isRestrictedSource(source);
@@ -270,30 +272,80 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
 
 
   useEffect(() => {
-    const bookmarks = JSON.parse(localStorage.getItem('bookmarks') || '[]');
+    let cancelled = false;
+
+    const syncLibraryState = async () => {
+      const bookmarks = JSON.parse(localStorage.getItem('bookmarks') || '[]');
       const bookmarked = bookmarks.some((b: any) => b.id === id && b.source === source);
       setIsBookmarked(bookmarked);
 
-      // Check for last read chapter
-      const history = JSON.parse(localStorage.getItem('reading_history') || '{}');
-      const comicHistory = history[`${source}:${id}`];
-      if (comicHistory) setLastReadChapter(comicHistory);
+      const localHistory = readReadingHistory();
+      const localComicHistory = localHistory[`${source}:${id}`];
+      let nextHistory = localComicHistory
+        ? {
+            id: localComicHistory.chapterId || localComicHistory.id || id,
+            title: localComicHistory.chapterTitle || localComicHistory.title || 'Continue reading',
+            progressPercent: localComicHistory.progressPercent,
+            currentPage: localComicHistory.currentPage,
+          }
+        : null;
+
+      try {
+        const meRes = await fetch('/api/auth/me');
+        const meData = await meRes.json().catch(() => null);
+
+        if (meData?.user) {
+          const progressRes = await fetch(`/api/reading-progress?source=${encodeURIComponent(source)}&comicId=${encodeURIComponent(id)}`);
+          const progressData = await progressRes.json().catch(() => null);
+          const progress = progressData?.progress;
+          if (progress?.chapterId) {
+            nextHistory = {
+              id: progress.chapterId,
+              title: progress.chapterTitle || 'Continue reading',
+              progressPercent: progress.progressPercent,
+              currentPage: progress.currentPage,
+            };
+          }
+        }
+      } catch {
+        // Local history is still available even if the cloud sync fails.
+      }
+
+      if (!cancelled) {
+        setLastReadChapter(nextHistory);
+      }
+    };
+
+    void syncLibraryState();
+    window.addEventListener(BOOKMARKS_UPDATED_EVENT, syncLibraryState);
+    window.addEventListener(LIBRARY_ACTIVITY_EVENT, syncLibraryState);
+    window.addEventListener('storage', syncLibraryState);
+    return () => {
+      cancelled = true;
+      window.removeEventListener(BOOKMARKS_UPDATED_EVENT, syncLibraryState);
+      window.removeEventListener(LIBRARY_ACTIVITY_EVENT, syncLibraryState);
+      window.removeEventListener('storage', syncLibraryState);
+    };
   }, [id, source]);
 
   const toggleBookmark = () => {
     if (typeof window === 'undefined') return;
-    const bookmarks = JSON.parse(localStorage.getItem('bookmarks') || '[]');
-    let newBookmarks;
     if (isBookmarked) {
-      newBookmarks = bookmarks.filter((b: any) => !(b.id === id && b.source === source));
+      removeBookmark(source, id);
+      trackEvent('bookmark_removed', { source, comicId: id, comicTitle: comic?.title || id });
     } else {
-      newBookmarks = [...bookmarks, { id, source, title: comic?.title, coverUrl: comic?.coverUrl }];
+      upsertBookmark({
+        id,
+        source,
+        title: comic?.title,
+        coverUrl: comic?.coverUrl,
+        rating: comic?.rating,
+        href: `/library/${source}/${id}`,
+        savedAt: Date.now(),
+      });
+      trackEvent('bookmark_added', { source, comicId: id, comicTitle: comic?.title || id });
     }
-    localStorage.setItem('bookmarks', JSON.stringify(newBookmarks));
     setIsBookmarked(!isBookmarked);
-    
-    // Dispatch custom event for real-time updates in other components
-    window.dispatchEvent(new Event('bookmarksUpdated'));
   };
 
   const shareToTelegram = () => {
@@ -325,6 +377,18 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
     }
   };
 
+  const reportIssue = () => {
+    const params = new URLSearchParams({
+      category: 'CONTENT_ISSUE',
+      comic: comic?.title || id,
+      source,
+      details: `Please review this item for broken metadata, unsafe content, or copyright concerns.\n\n${comic?.title || id} (${source}:${id})`,
+    });
+
+    trackEvent('report_opened', { source, comicId: id, comicTitle: comic?.title || id });
+    router.push(`/support?${params.toString()}`);
+  };
+
   useEffect(() => {
     if ((restrictedSource || (comic && isAdultComic(comic))) && !isAgeVerified && !showAgeGate) {
       const timer = setTimeout(() => setShowAgeGate(true), 0);
@@ -340,7 +404,16 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
 
   const startReading = () => {
     if (chapters.length > 0) {
-      router.push(`/library/${source}/${id}/read/${chapters[0].id}`);
+      const resumeChapterId = lastReadChapter?.id && chapters.some((chapter) => chapter.id === lastReadChapter.id)
+        ? lastReadChapter.id
+        : chapters[0].id;
+      trackEvent('comic_start_reading', {
+        source,
+        comicId: id,
+        comicTitle: comic?.title || id,
+        chapterId: resumeChapterId,
+      });
+      router.push(`/library/${source}/${id}/read/${resumeChapterId}`);
     } else {
       // Professional approach: Scroll to the chapters section to show the explanation
       const chaptersSection = document.getElementById('chapters-section');
@@ -831,6 +904,11 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
                  >
                    <span className="text-[#ff4d00]">Continue_Reading</span>
                    <span className="text-white/40 opacity-70 truncate px-4 w-full text-center">{lastReadChapter.title}</span>
+                   {typeof lastReadChapter.progressPercent === 'number' && (
+                     <span className="text-[8px] font-black uppercase tracking-[0.35em] text-white/25">
+                       {lastReadChapter.progressPercent}% complete
+                     </span>
+                   )}
                  </motion.button>
                )}
                {comic.source === 'superhero' && (
@@ -839,7 +917,7 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
                    <span className="relative z-10 flex items-center gap-3"><Sparkles fill="currentColor" size={16} /> Forge_Character</span>
                  </button>
                )}
-               <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-4">
                   <button 
                     onClick={toggleBookmark}
                     className={`py-4 border flex items-center justify-center gap-2 text-[9px] font-black uppercase tracking-widest transition-all ${
@@ -856,6 +934,12 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
                     className="py-4 border border-white/10 flex items-center justify-center gap-2 text-[9px] font-black uppercase tracking-widest hover:bg-white/5 transition-all"
                   >
                     <Share2 size={14} /> Share
+                  </button>
+                  <button
+                    onClick={reportIssue}
+                    className="col-span-2 py-4 border border-[#ff4d00]/30 bg-[#ff4d00]/10 flex items-center justify-center gap-2 text-[9px] font-black uppercase tracking-widest text-[#ff4d00] hover:bg-[#ff4d00] hover:text-white transition-all"
+                  >
+                    Report Issue
                   </button>
                </div>
             </div>

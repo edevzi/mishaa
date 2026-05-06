@@ -19,11 +19,14 @@ import {
 } from '@/lib/booru';
 import { translations, Lang } from '@/lib/translations';
 import { readStorageItem, writeStorageItem } from '@/lib/browser-storage';
+import { readReadingHistory, upsertReadingHistory } from '@/lib/library-storage';
+import { trackEvent } from '@/lib/analytics';
 import { getChapterFromCache, saveChapterToCache } from '@/lib/comic-cache';
 import {
   readStoredMangaLanguage,
   MangaLanguage,
 } from '@/lib/manga-language';
+import { calculateReadingProgressPercent, deriveReadingProgressStatus } from '@/lib/reading-progress';
 import { getChapterPages, getComicDetails, getChapters } from '@/actions/comic';
 import Image from 'next/image';
 
@@ -148,6 +151,8 @@ export default function ComicReaderClient({ initialComic, initialChapters, sourc
   const [readingDirection, setReadingDirection] = useState<'ltr' | 'rtl'>('ltr');
   const [showSettings, setShowSettings] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [savedPageIndex, setSavedPageIndex] = useState<number | null>(null);
   
   const readerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLDivElement>(null);
@@ -155,6 +160,7 @@ export default function ComicReaderClient({ initialComic, initialChapters, sourc
   const chapterPageCacheRef = useRef<Map<string, string[]>>(new Map());
   const chapterPageRequestRef = useRef<Map<string, Promise<string[]>>>(new Map());
   const touchStartRef = useRef({ x: 0, y: 0 });
+  const progressSaveAbortRef = useRef<AbortController | null>(null);
 
   const restrictedSource = isRestrictedSource(source);
 
@@ -183,6 +189,51 @@ export default function ComicReaderClient({ initialComic, initialChapters, sourc
       clearTimeout(t);
     };
   }, [initialAgeVerified]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadSessionAndProgress = async () => {
+      try {
+        const res = await fetch('/api/auth/me');
+        const data = await res.json().catch(() => null);
+        if (cancelled) return;
+
+        const hasSession = Boolean(data?.user);
+        setIsLoggedIn(hasSession);
+
+        const localHistory = readReadingHistory();
+        const localEntry = localHistory[`${source}:${id}`];
+
+        if (!hasSession) {
+          if (localEntry?.chapterId === chapterId) {
+            setSavedPageIndex(Number(localEntry.currentPage || 0));
+          }
+          return;
+        }
+
+        const progressRes = await fetch(`/api/reading-progress?source=${encodeURIComponent(source)}&comicId=${encodeURIComponent(id)}`);
+        const progressData = await progressRes.json().catch(() => null);
+        if (cancelled) return;
+
+        const progress = progressData?.progress;
+        if (progress?.chapterId === chapterId) {
+          setSavedPageIndex(Number(progress.currentPage || 0));
+        } else if (localEntry?.chapterId === chapterId) {
+          setSavedPageIndex(Number(localEntry.currentPage || 0));
+        }
+      } catch (error) {
+        console.error('Failed to load reader progress:', error);
+        if (!cancelled) setIsLoggedIn(false);
+      }
+    };
+
+    void loadSessionAndProgress();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [chapterId, id, source]);
 
   useEffect(() => {
     if (restrictedSource && !isAgeVerified) return;
@@ -414,23 +465,20 @@ export default function ComicReaderClient({ initialComic, initialChapters, sourc
   }, [pages, currentPage, viewMode, isSpreadCover]);
 
   useEffect(() => {
+    if (savedPageIndex === null || pages.length === 0) return;
+    if (chapters[currentChapterIdx]?.id !== chapterId) return;
+
+    const nextPage = Math.max(0, Math.min(savedPageIndex, pages.length - 1));
+    if (nextPage !== currentPage) {
+      setCurrentPage(nextPage);
+    }
+  }, [chapterId, chapters, currentChapterIdx, currentPage, pages.length, savedPageIndex]);
+
+  useEffect(() => {
     if (chapters.length > 0) {
       void loadChapterPages(currentChapterIdx);
-      
-      // Save to reading history
-      if (typeof window !== 'undefined' && chapters[currentChapterIdx]) {
-        const history = JSON.parse(localStorage.getItem('reading_history') || '{}');
-        history[`${source}:${id}`] = {
-          id: chapters[currentChapterIdx].id,
-          title: chapters[currentChapterIdx].title || `Chapter ${chapters[currentChapterIdx].chapterNum}`,
-          aniListId: comic?.aniListId,
-          malId: comic?.malId,
-          timestamp: Date.now()
-        };
-        localStorage.setItem('reading_history', JSON.stringify(history));
-      }
     }
-  }, [currentChapterIdx, chapters, loadChapterPages, id, source]);
+  }, [currentChapterIdx, chapters, loadChapterPages]);
 
   useEffect(() => {
     if ((restrictedSource || (comic && isAdultComic(comic))) && !isAgeVerified && !showAgeGate) {
@@ -485,6 +533,147 @@ export default function ComicReaderClient({ initialComic, initialChapters, sourc
       prevChapter();
     }
   }, [viewMode, isSpreadCover, currentPage, prevChapter]);
+
+  const handleTouchStart = useCallback((event: React.TouchEvent<HTMLDivElement>) => {
+    const touch = event.touches[0];
+    if (!touch) return;
+    touchStartRef.current = { x: touch.clientX, y: touch.clientY };
+  }, []);
+
+  const handleTouchEnd = useCallback((event: React.TouchEvent<HTMLDivElement>) => {
+    if (viewMode === 'flow') return;
+
+    const touch = event.changedTouches[0];
+    if (!touch) return;
+
+    const dx = touch.clientX - touchStartRef.current.x;
+    const dy = touch.clientY - touchStartRef.current.y;
+    if (Math.abs(dx) < 50 || Math.abs(dx) <= Math.abs(dy)) return;
+
+    const currentChapterId = chapters[currentChapterIdx]?.id || chapterId;
+    if (dx < 0) {
+      trackEvent('reader_swipe_next', { source, comicId: id, chapterId: currentChapterId });
+      readingDirection === 'ltr' ? handleNextPage() : handlePrevPage();
+      return;
+    }
+
+    trackEvent('reader_swipe_prev', { source, comicId: id, chapterId: currentChapterId });
+    readingDirection === 'ltr' ? handlePrevPage() : handleNextPage();
+  }, [chapterId, chapters, currentChapterIdx, handleNextPage, handlePrevPage, id, readingDirection, source, viewMode]);
+
+  const currentProgressPercent = calculateReadingProgressPercent({
+    source,
+    comicId: id,
+    comicTitle: comic?.title,
+    comicCoverUrl: comic?.coverUrl,
+    chapterId: chapters[currentChapterIdx]?.id || chapterId,
+    chapterTitle: chapters[currentChapterIdx]?.title,
+    chapterIndex: currentChapterIdx,
+    chapterCount: chapters.length,
+    currentPage,
+    totalPages: pages.length,
+    scrollProgress,
+    viewMode,
+  });
+
+  const persistReadingProgress = useCallback(async () => {
+    if (!comic || chapters.length === 0) return;
+
+    const activeChapter = chapters[currentChapterIdx];
+    if (!activeChapter) return;
+
+    const timestamp = Date.now();
+    const progressStatus = deriveReadingProgressStatus(currentProgressPercent);
+    const payload = {
+      source,
+      comicId: id,
+      comicTitle: comic.title,
+      comicCoverUrl: comic.coverUrl,
+      chapterId: activeChapter.id,
+      chapterTitle: activeChapter.title || `Chapter ${activeChapter.chapterNum}`,
+      chapterIndex: currentChapterIdx,
+      chapterCount: chapters.length,
+      currentPage,
+      totalPages: pages.length,
+      scrollProgress,
+      viewMode,
+      timestamp,
+    };
+
+    upsertReadingHistory({
+      id,
+      comicTitle: comic.title,
+      comicCoverUrl: comic.coverUrl,
+      comicSource: source,
+      chapterId: activeChapter.id,
+      chapterTitle: activeChapter.title || `Chapter ${activeChapter.chapterNum}`,
+      chapterIndex: currentChapterIdx,
+      chapterCount: chapters.length,
+      currentPage,
+      totalPages: pages.length,
+      progressPercent: currentProgressPercent,
+      progressStatus,
+      aniListId: comic.aniListId,
+      malId: comic.malId,
+      timestamp,
+      lastReadAt: timestamp,
+    });
+
+    if (!isLoggedIn) return;
+
+    progressSaveAbortRef.current?.abort();
+    const controller = new AbortController();
+    progressSaveAbortRef.current = controller;
+
+    try {
+      await fetch('/api/reading-progress', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+        signal: controller.signal,
+      });
+    } catch (error) {
+      if ((error as { name?: string } | null)?.name !== 'AbortError') {
+        console.error('Failed to sync reading progress:', error);
+      }
+    }
+  }, [
+    chapters,
+    comic,
+    currentChapterIdx,
+    currentPage,
+    currentProgressPercent,
+    id,
+    isLoggedIn,
+    pages.length,
+    scrollProgress,
+    source,
+    viewMode,
+  ]);
+
+  useEffect(() => {
+    if (readerLoading || pages.length === 0 || !comic || chapters.length === 0) return;
+
+    const timer = window.setTimeout(() => {
+      void persistReadingProgress();
+    }, 500);
+
+    return () => {
+      window.clearTimeout(timer);
+    };
+  }, [
+    chapters.length,
+    comic,
+    currentChapterIdx,
+    currentPage,
+    pages.length,
+    persistReadingProgress,
+    readerLoading,
+    scrollProgress,
+    viewMode,
+  ]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -590,6 +779,8 @@ export default function ComicReaderClient({ initialComic, initialChapters, sourc
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               className="fixed inset-0 z-[10050] bg-[#020202] flex flex-col items-center justify-center overflow-hidden"
+              role="status"
+              aria-live="polite"
             >
               <div className="relative w-40 h-40 flex items-center justify-center mb-12">
                  <motion.div 
@@ -664,13 +855,13 @@ export default function ComicReaderClient({ initialComic, initialChapters, sourc
                      <div className="space-y-4">
                        <div className="text-[11px] font-black uppercase tracking-[0.2em] text-white/40">Reading Mode</div>
                        <div className="flex items-center gap-2 bg-white/5 p-1.5 rounded-2xl">
-                          <button onClick={() => { setViewMode('classic'); setUiVisible(false); }} className={`flex-1 flex items-center justify-center gap-2 py-4 rounded-xl text-[11px] font-black uppercase transition-all ${viewMode === 'classic' ? 'bg-[#ff4d00] text-white' : 'text-white/40 hover:text-white'}`}>
+                          <button aria-label="Classic reading mode" onClick={() => { setViewMode('classic'); setUiVisible(false); }} className={`flex-1 flex items-center justify-center gap-2 py-4 rounded-xl text-[11px] font-black uppercase transition-all ${viewMode === 'classic' ? 'bg-[#ff4d00] text-white' : 'text-white/40 hover:text-white'}`}>
                             Classic
                           </button>
-                          <button onClick={() => { setViewMode('journal'); setUiVisible(false); }} className={`flex-1 flex items-center justify-center gap-2 py-4 rounded-xl text-[11px] font-black uppercase transition-all ${viewMode === 'journal' ? 'bg-[#ff4d00] text-white' : 'text-white/40 hover:text-white'}`}>
+                          <button aria-label="Journal reading mode" onClick={() => { setViewMode('journal'); setUiVisible(false); }} className={`flex-1 flex items-center justify-center gap-2 py-4 rounded-xl text-[11px] font-black uppercase transition-all ${viewMode === 'journal' ? 'bg-[#ff4d00] text-white' : 'text-white/40 hover:text-white'}`}>
                             Journal
                           </button>
-                          <button onClick={() => { setViewMode('flow'); setUiVisible(false); }} className={`flex-1 flex items-center justify-center gap-2 py-4 rounded-xl text-[11px] font-black uppercase transition-all ${viewMode === 'flow' ? 'bg-[#ff4d00] text-white' : 'text-white/40 hover:text-white'}`}>
+                          <button aria-label="Flow reading mode" onClick={() => { setViewMode('flow'); setUiVisible(false); }} className={`flex-1 flex items-center justify-center gap-2 py-4 rounded-xl text-[11px] font-black uppercase transition-all ${viewMode === 'flow' ? 'bg-[#ff4d00] text-white' : 'text-white/40 hover:text-white'}`}>
                             Flow
                           </button>
                        </div>
@@ -681,10 +872,10 @@ export default function ComicReaderClient({ initialComic, initialChapters, sourc
                           <span className="text-[#ff4d00]">{chapters.length} Total</span>
                        </div>
                        <div className="flex items-center gap-3">
-                          <button onClick={() => { prevChapter(); setUiVisible(false); }} disabled={currentChapterIdx === 0} className="flex-1 h-14 bg-white/5 border border-white/10 rounded-xl text-[11px] font-black uppercase disabled:opacity-20 transition-all flex items-center justify-center gap-2">
+                          <button aria-label="Previous chapter" onClick={() => { prevChapter(); setUiVisible(false); }} disabled={currentChapterIdx === 0} className="flex-1 h-14 bg-white/5 border border-white/10 rounded-xl text-[11px] font-black uppercase disabled:opacity-20 transition-all flex items-center justify-center gap-2">
                             <ChevronLeft size={18} /> Prev
                           </button>
-                          <button onClick={() => { nextChapter(); setUiVisible(false); }} disabled={currentChapterIdx === chapters.length - 1} className="flex-1 h-14 bg-[#ff4d00] text-white rounded-xl text-[11px] font-black uppercase disabled:opacity-20 transition-all flex items-center justify-center gap-2">
+                          <button aria-label="Next chapter" onClick={() => { nextChapter(); setUiVisible(false); }} disabled={currentChapterIdx === chapters.length - 1} className="flex-1 h-14 bg-[#ff4d00] text-white rounded-xl text-[11px] font-black uppercase disabled:opacity-20 transition-all flex items-center justify-center gap-2">
                             Next <ChevronRight size={18} />
                           </button>
                        </div>
@@ -718,11 +909,11 @@ export default function ComicReaderClient({ initialComic, initialChapters, sourc
                      <div className="space-y-4">
                        <div className="text-[11px] font-black uppercase tracking-[0.2em] text-white/40">Tools</div>
                        <div className="flex items-center gap-3">
-                          <button onClick={() => setShowGrid(true)} className="flex-1 h-14 flex items-center justify-center gap-2 bg-white/5 border border-white/10 rounded-xl text-[11px] font-black uppercase">
+                          <button aria-label="Open page overview" onClick={() => setShowGrid(true)} className="flex-1 h-14 flex items-center justify-center gap-2 bg-white/5 border border-white/10 rounded-xl text-[11px] font-black uppercase">
                              <List size={18}/> Overview
                           </button>
                           {viewMode === 'flow' && (
-                            <button onClick={() => { setUiVisible(false); canvasRef.current?.scrollTo({ top: 0, behavior: 'smooth' }); }} className="flex-1 h-14 bg-white/5 border border-white/10 rounded-xl flex items-center justify-center gap-2 text-[11px] font-black uppercase">
+                            <button aria-label="Scroll to top" onClick={() => { setUiVisible(false); canvasRef.current?.scrollTo({ top: 0, behavior: 'smooth' }); }} className="flex-1 h-14 bg-white/5 border border-white/10 rounded-xl flex items-center justify-center gap-2 text-[11px] font-black uppercase">
                               <ChevronUp size={18}/> Top
                             </button>
                           )}
@@ -872,6 +1063,7 @@ export default function ComicReaderClient({ initialComic, initialChapters, sourc
         
         <div className={`fixed top-8 left-8 z-[10040] transition-all duration-300 ${uiVisible ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
            <button
+             aria-label="Close reader"
              onClick={() => router.push(`/library/${source}/${id}`)}
              className="w-12 h-12 backdrop-blur-md border rounded-full flex items-center justify-center transition-all"
              style={{
@@ -888,6 +1080,9 @@ export default function ComicReaderClient({ initialComic, initialChapters, sourc
           ref={canvasRef}
           className="flex-1 w-full overflow-y-auto relative scroll-smooth touch-pan-y"
           style={{ backgroundColor: READER_THEMES[readerTheme].canvasBg }}
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
+          aria-label="Comic reader content"
         >
            {viewMode !== 'flow' && (
              <>
@@ -943,7 +1138,7 @@ export default function ComicReaderClient({ initialComic, initialChapters, sourc
                          src={pages[currentPage]}
                          style={{ maxWidth: isMobile ? '100%' : '80vw', maxHeight: '90vh' }}
                          className="shadow-2xl border border-white/10 rounded-sm object-contain"
-                         alt=""
+                         alt={`Page ${currentPage + 1} of ${comic.title}`}
                        />
                      )}
                    </div>
@@ -955,16 +1150,16 @@ export default function ComicReaderClient({ initialComic, initialChapters, sourc
                         </div>
                       ) : currentPage === 0 && isSpreadCover ? (
                         <div className="relative max-h-[90vh] w-full aspect-[2/3] flex justify-center">
-                          <Image src={pages[0]} fill className="object-contain shadow-2xl border border-white/10" alt="cover" unoptimized />
+                          <Image src={pages[0]} fill className="object-contain shadow-2xl border border-white/10" alt={`${comic.title} cover`} unoptimized />
                         </div>
                       ) : (
                         <div className="flex items-center justify-center w-full gap-0">
                           <div className="relative flex-1 aspect-[2/3] max-h-[90vh]">
-                            <Image src={pages[currentPage]} fill className="object-contain shadow-2xl" alt={`Page ${currentPage + 1}`} unoptimized />
+                            <Image src={pages[currentPage]} fill className="object-contain shadow-2xl" alt={`Page ${currentPage + 1} of ${comic.title}`} unoptimized />
                           </div>
                           {pages[currentPage + 1] && (
                             <div className="relative flex-1 aspect-[2/3] max-h-[90vh]">
-                              <Image src={pages[currentPage + 1]} fill className="object-contain shadow-2xl" alt={`Page ${currentPage + 2}`} unoptimized />
+                              <Image src={pages[currentPage + 1]} fill className="object-contain shadow-2xl" alt={`Page ${currentPage + 2} of ${comic.title}`} unoptimized />
                             </div>
                           )}
                         </div>
@@ -993,10 +1188,10 @@ export default function ComicReaderClient({ initialComic, initialChapters, sourc
            {showGrid && (
              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[10050] bg-black/90 overflow-y-auto p-4 md:p-16">
                 <div className="fixed top-0 left-0 right-0 h-24 bg-black/90 backdrop-blur-xl z-[10060] px-6 flex items-center justify-between border-b border-white/10 pt-[env(safe-area-inset-top)]">
-                   <button onClick={() => setShowGrid(false)} className="flex items-center gap-3 text-[10px] font-black uppercase tracking-widest text-white/40">
+                  <button aria-label="Back to reader" onClick={() => setShowGrid(false)} className="flex items-center gap-3 text-[10px] font-black uppercase tracking-widest text-white/40">
                       <ChevronLeft size={20} /> BACK_TO_READER
                    </button>
-                   <button onClick={() => setShowGrid(false)} className="w-11 h-11 flex items-center justify-center bg-white/5 border border-white/10 rounded-xl"><X size={24}/></button>
+                   <button aria-label="Close overview" onClick={() => setShowGrid(false)} className="w-11 h-11 flex items-center justify-center bg-white/5 border border-white/10 rounded-xl"><X size={24}/></button>
                 </div>
                 <div className="mt-24 grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 md:gap-8 max-w-7xl mx-auto">
                    {pages.map((p, i) => (

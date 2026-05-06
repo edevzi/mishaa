@@ -62,3 +62,20 @@ export const persistAgeVerification = () => {
     // If cookies are blocked, we still keep the session alive in-memory.
   }
 };
+
+export const clearAgeVerification = () => {
+  if (typeof window === 'undefined') return;
+
+  try {
+    window.localStorage.removeItem(AGE_VERIFICATION_STORAGE_KEY);
+    window.localStorage.removeItem(`${AGE_VERIFICATION_STORAGE_KEY}_timestamp`);
+  } catch {
+    // Ignore storage failures.
+  }
+
+  try {
+    document.cookie = `${AGE_VERIFICATION_COOKIE}=; Path=/; Max-Age=0; SameSite=Lax`;
+  } catch {
+    // Ignore cookie failures.
+  }
+};

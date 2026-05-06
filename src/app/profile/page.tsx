@@ -103,16 +103,16 @@ export default function ProfilePage() {
     <div className="min-h-screen bg-[#020202] text-white selection:bg-[#ff4d00] selection:text-white">
       <Navbar />
 
-      <main className="container mx-auto px-6 pt-40 pb-32">
-        <div className="max-w-6xl mx-auto grid gap-12 lg:grid-cols-[1fr_380px]">
+      <main className="container mx-auto px-4 sm:px-6 lg:px-8 pt-32 sm:pt-36 lg:pt-40 pb-20 sm:pb-28 lg:pb-32">
+        <div className="max-w-6xl mx-auto grid gap-8 lg:gap-12 lg:grid-cols-[1fr_380px]">
           {/* Left Column: Form & Info */}
-          <section className="space-y-12">
-            <div className="space-y-6">
+          <section className="space-y-8 sm:space-y-12">
+            <div className="space-y-4 sm:space-y-6">
               <div className="inline-flex items-center gap-2 px-3 py-1 bg-[#ff4d00]/10 border border-[#ff4d00]/20 rounded-full">
                 <span className="w-1.5 h-1.5 bg-[#ff4d00] rounded-full animate-pulse" />
                 <span className="text-[#ff4d00] text-[10px] font-black uppercase tracking-[0.2em]">Secure_Profile_Control</span>
               </div>
-              <h1 className="text-6xl md:text-8xl font-black italic uppercase tracking-tighter leading-[0.85] text-balance">
+              <h1 className="text-4xl sm:text-6xl md:text-8xl font-black italic uppercase tracking-tighter leading-[0.85] text-balance">
                 Digital_ID<br/>
                 <span className="text-[#ff4d00]">Environment</span>
               </h1>
@@ -131,8 +131,8 @@ export default function ProfilePage() {
                 {/* Identity Card */}
                 <div className="relative group">
                   <div className="absolute -inset-1 bg-gradient-to-r from-[#ff4d00] to-transparent opacity-20 blur-xl group-hover:opacity-40 transition-opacity" />
-                  <div className="relative grid md:grid-cols-[240px_1fr] bg-white/[0.03] border border-white/10 rounded-3xl overflow-hidden backdrop-blur-xl">
-                    <div className="aspect-square relative bg-[#0a0a0a] border-r border-white/10 overflow-hidden">
+                <div className="relative grid md:grid-cols-[240px_1fr] bg-white/[0.03] border border-white/10 rounded-3xl overflow-hidden backdrop-blur-xl">
+                  <div className="aspect-square relative bg-[#0a0a0a] border-r border-white/10 overflow-hidden">
                       <img
                         src={user.avatar || '/logo.png'}
                         alt={`${user.firstName} ${user.lastName}`}
@@ -142,12 +142,12 @@ export default function ProfilePage() {
                         Authorized_Subject
                       </div>
                     </div>
-                    <div className="p-8 md:p-10 flex flex-col justify-between space-y-6">
+                    <div className="p-6 sm:p-8 md:p-10 flex flex-col justify-between gap-6">
                       <div className="space-y-1">
                         <p className="text-[10px] font-black uppercase tracking-[0.4em] text-white/30 italic">Nexus_Identifier</p>
                         <p className="text-xl md:text-2xl font-black tracking-tighter text-white/90 break-all font-mono">{user.id}</p>
                       </div>
-                      <div className="flex gap-10">
+                      <div className="flex flex-col gap-4 sm:flex-row sm:gap-10">
                         <div>
                           <p className="text-[9px] font-black uppercase tracking-[0.3em] text-white/20 mb-1">Creation_Epoch</p>
                           <p className="text-xs font-black text-white/60">{new Date(user.createdAt).toLocaleDateString()}</p>
@@ -162,8 +162,8 @@ export default function ProfilePage() {
                 </div>
 
                 {/* Settings Form */}
-                <form onSubmit={handleSave} className="space-y-10 p-10 bg-white/[0.02] border border-white/5 rounded-3xl">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <form onSubmit={handleSave} className="space-y-8 sm:space-y-10 p-6 sm:p-10 bg-white/[0.02] border border-white/5 rounded-3xl">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8">
                     <div className="space-y-2">
                       <label className="text-[9px] font-black uppercase tracking-[0.4em] text-white/30 ml-1">First_Name</label>
                       <input
@@ -182,7 +182,7 @@ export default function ProfilePage() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8">
                     <div className="space-y-2">
                       <label className="text-[9px] font-black uppercase tracking-[0.4em] text-white/30 ml-1">Global_Username</label>
                       <input
@@ -237,7 +237,7 @@ export default function ProfilePage() {
                 </form>
               </div>
             ) : (
-              <div className="p-20 border border-white/5 bg-white/[0.01] rounded-3xl flex flex-col items-center justify-center space-y-4">
+              <div className="p-8 sm:p-20 border border-white/5 bg-white/[0.01] rounded-3xl flex flex-col items-center justify-center space-y-4">
                 <p className="text-white/20 font-black uppercase tracking-[0.5em] text-xs">Profile_Not_Found</p>
                 <button onClick={() => router.refresh()} className="text-[10px] font-black uppercase tracking-widest text-[#ff4d00]">Retry_Sync</button>
               </div>
@@ -246,7 +246,7 @@ export default function ProfilePage() {
 
           {/* Right Column: Cards & Actions */}
           <aside className="space-y-8">
-            <div className="bg-[#0a0a0a] p-8 border border-white/10 rounded-3xl space-y-6">
+            <div className="bg-[#0a0a0a] p-6 sm:p-8 border border-white/10 rounded-3xl space-y-6">
               <p className="text-[10px] font-black uppercase tracking-[0.5em] text-white/30 italic">Linked_Protocols</p>
               <div className="space-y-4">
                 <div className="flex items-center justify-between p-4 bg-white/[0.02] border border-white/5 rounded-2xl">
@@ -264,7 +264,7 @@ export default function ProfilePage() {
               </div>
             </div>
 
-            <div className="bg-white/[0.02] p-8 border border-white/5 rounded-3xl space-y-6">
+            <div className="bg-white/[0.02] p-6 sm:p-8 border border-white/5 rounded-3xl space-y-6">
               <p className="text-[10px] font-black uppercase tracking-[0.5em] text-white/30 italic">Account_Metrics</p>
               <div className="grid grid-cols-2 gap-4">
                 <div className="p-5 bg-black border border-white/10 rounded-2xl flex flex-col items-center justify-center space-y-1">
@@ -280,7 +280,7 @@ export default function ProfilePage() {
 
             <div className="flex flex-col gap-3">
               <Link href="/">
-                <button className="w-full py-5 bg-white/[0.05] border border-white/10 text-white font-black uppercase tracking-[0.4em] text-[10px] hover:bg-white hover:text-black transition-all">
+                <button className="w-full py-4 sm:py-5 bg-white/[0.05] border border-white/10 text-white font-black uppercase tracking-[0.4em] text-[10px] hover:bg-white hover:text-black transition-all">
                   Back_To_Nexus
                 </button>
               </Link>
@@ -289,7 +289,7 @@ export default function ProfilePage() {
                   const res = await fetch('/api/auth/logout', { method: 'POST' });
                   if (res.ok) router.push('/');
                 }}
-                className="w-full py-5 bg-[#ff4d00]/10 border border-[#ff4d00]/20 text-[#ff4d00] font-black uppercase tracking-[0.4em] text-[10px] hover:bg-[#ff4d00] hover:text-white transition-all"
+                className="w-full py-4 sm:py-5 bg-[#ff4d00]/10 border border-[#ff4d00]/20 text-[#ff4d00] font-black uppercase tracking-[0.4em] text-[10px] hover:bg-[#ff4d00] hover:text-white transition-all"
               >
                 Terminate_Session
               </button>

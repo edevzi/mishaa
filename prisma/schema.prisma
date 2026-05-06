@@ -21,6 +21,7 @@ model User {
   createdAt    DateTime @default(now())
   stories      Story[]
   characters   Character[]
+  readingProgress ReadingProgress[]
 }
 
 model Story {
@@ -59,4 +60,28 @@ model Character {
   createdAt   DateTime @default(now())
   userId      String?
   user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+}
+
+model ReadingProgress {
+  id              String   @id @default(cuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  source          String
+  comicId         String
+  comicTitle      String?
+  comicCoverUrl   String?
+  chapterId       String?
+  chapterTitle    String?
+  currentPage     Int      @default(0)
+  totalPages      Int      @default(0)
+  chapterIndex    Int      @default(0)
+  chapterCount    Int      @default(0)
+  progressPercent Int      @default(0)
+  progressStatus  String   @default("started")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([userId, source, comicId])
+  @@index([userId, updatedAt])
+  @@index([source, comicId])
 }

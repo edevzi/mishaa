@@ -25,6 +25,7 @@ import {
   persistStoredMangaLanguage,
 } from '@/lib/manga-language';
 import { readAgeVerification, persistAgeVerification } from '@/lib/age-verification';
+import { readBookmarks, readRecentHistoryItems, BOOKMARKS_UPDATED_EVENT, LIBRARY_ACTIVITY_EVENT } from '@/lib/library-storage';
 
 // --- Types ---
 type ComicSource = 'mangadex' | 'marvel' | 'nhentai';
@@ -41,7 +42,19 @@ interface LibraryComic {
   meta: string;
   rating?: string;
   year?: string;
+  timestamp?: number;
+  progressPercent?: number;
+  progressStatus?: string;
 }
+
+type NhentaiGallery = {
+  id?: number | string;
+  gallery_id?: number | string;
+  english_title?: string;
+  title?: { english?: string; japanese?: string };
+  num_pages?: number;
+  thumbnail?: string | { path?: string };
+};
 
 interface ShelfDefinition {
   key: ShelfKey;
@@ -123,7 +136,7 @@ export default function HomeClient({ initialData, initialAgeVerified = false }: 
     : SHELVES.filter((shelf) => !['doujinshi', 'milf', 'ntr'].includes(shelf.key));
 
   const [shelfState, setShelfState] = useState<Record<string, { items: LibraryComic[]; loading: boolean }>>(() => {
-    const base: any = {};
+    const base = {} as Record<string, { items: LibraryComic[]; loading: boolean }>;
     SHELVES.forEach(s => {
       base[s.key] = { items: initialData?.[s.key] || [], loading: !initialData?.[s.key] };
     });
@@ -159,7 +172,7 @@ export default function HomeClient({ initialData, initialAgeVerified = false }: 
       const results = Array.isArray(data?.result) ? data.result : [];
 
       if (results.length > 0) {
-        const items: LibraryComic[] = results.map((item: any) => {
+        const items: LibraryComic[] = results.map((item: NhentaiGallery) => {
           const thumbnailPath = typeof item.thumbnail === 'object'
             ? item.thumbnail?.path
             : item.thumbnail;
@@ -248,11 +261,136 @@ export default function HomeClient({ initialData, initialAgeVerified = false }: 
   const [personalRecs, setPersonalRecs] = useState<LibraryComic[]>([]);
   const [isRecsLoading, setIsRecsLoading] = useState(false);
   const [now] = useState(() => new Date());
+  const [savedBookmarks, setSavedBookmarks] = useState<LibraryComic[]>([]);
+  const [recentHistory, setRecentHistory] = useState<LibraryComic[]>([]);
+  const [remoteHistory, setRemoteHistory] = useState<LibraryComic[]>([]);
+  const hasTrendingInitialItems = Boolean(initialData?.['trending']?.length);
 
   useEffect(() => {
     const saved = readStoredMangaLanguage();
     const t = setTimeout(() => setMangaLanguage(prev => (saved !== prev ? saved : prev)), 0);
     return () => clearTimeout(t);
+  }, []);
+
+  const syncLibraryActivity = useCallback(() => {
+    if (typeof window === 'undefined') return;
+
+    const localHistory = readRecentHistoryItems(6).map((entry) => ({
+      id: entry.id,
+      title: entry.title || 'Continue reading',
+      description: entry.chapterTitle
+        ? `Last chapter: ${entry.chapterTitle}`
+        : entry.progressPercent
+          ? `${entry.progressPercent}% read`
+          : 'Continue reading',
+      coverUrl: entry.coverUrl || '/logo.png',
+      source: entry.source as ComicSource,
+      href: entry.href,
+      meta: entry.progressPercent ? `${entry.progressPercent}%` : 'Resume',
+      rating: 'Reading',
+      timestamp: Number(entry.timestamp || 0),
+      progressPercent: entry.progressPercent,
+      progressStatus: entry.progressStatus,
+    }));
+
+    const mergedHistory = [...remoteHistory, ...localHistory].reduce((acc, item) => {
+      const key = `${item.source}:${item.id}`;
+      const existing = acc.get(key);
+      if (!existing || Number(item.timestamp || 0) >= Number(existing.timestamp || 0)) {
+        acc.set(key, item);
+      }
+      return acc;
+    }, new Map<string, LibraryComic>());
+
+    const bookmarks = readBookmarks().map((bookmark) => ({
+      id: bookmark.id,
+      title: bookmark.title || 'Untitled',
+      description: bookmark.rating ? `Saved item · ${bookmark.rating}` : 'Saved for later',
+      coverUrl: bookmark.coverUrl || '/logo.png',
+      source: bookmark.source as ComicSource,
+      href: bookmark.href || `/library/${bookmark.source}/${bookmark.id}`,
+      meta: bookmark.rating || 'Saved',
+      rating: bookmark.rating,
+    }));
+
+    setSavedBookmarks(bookmarks);
+    setRecentHistory(Array.from(mergedHistory.values()).sort((a, b) => Number(b.timestamp || 0) - Number(a.timestamp || 0)));
+  }, [remoteHistory]);
+
+  useEffect(() => {
+    const timer = window.setTimeout(syncLibraryActivity, 0);
+    const handleActivity = () => syncLibraryActivity();
+    window.addEventListener(LIBRARY_ACTIVITY_EVENT, handleActivity);
+    window.addEventListener(BOOKMARKS_UPDATED_EVENT, handleActivity);
+    window.addEventListener('storage', handleActivity);
+
+    return () => {
+      window.clearTimeout(timer);
+      window.removeEventListener(LIBRARY_ACTIVITY_EVENT, handleActivity);
+      window.removeEventListener(BOOKMARKS_UPDATED_EVENT, handleActivity);
+      window.removeEventListener('storage', handleActivity);
+    };
+  }, [syncLibraryActivity]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadCloudHistory = async () => {
+      try {
+        const meRes = await fetch('/api/auth/me');
+        const meData = await meRes.json().catch(() => null);
+        if (cancelled) return;
+
+        if (!meData?.user) {
+          setRemoteHistory([]);
+          return;
+        }
+
+        const progressRes = await fetch('/api/reading-progress');
+        const progressData = await progressRes.json().catch(() => null);
+        if (cancelled) return;
+
+        const items = Array.isArray(progressData?.items)
+          ? progressData.items.map((item: {
+              comicId?: string;
+              comicTitle?: string;
+              comicCoverUrl?: string | null;
+              source?: string;
+              chapterTitle?: string | null;
+              progressPercent?: number;
+              progressStatus?: string;
+              updatedAt?: string;
+              createdAt?: string;
+              chapterId?: string | null;
+            }) => ({
+              id: String(item.comicId || ''),
+              title: item.comicTitle || 'Continue reading',
+              description: item.chapterTitle
+                ? `Last chapter: ${item.chapterTitle}`
+                : 'Continue reading',
+              coverUrl: item.comicCoverUrl || '/logo.png',
+              source: item.source as ComicSource,
+              href: `/library/${item.source}/${item.comicId}`,
+              meta: item.progressPercent ? `${item.progressPercent}%` : 'Resume',
+              rating: item.progressStatus || 'Reading',
+              timestamp: Date.parse(item.updatedAt || item.createdAt || '') || Date.now(),
+              progressPercent: item.progressPercent,
+              progressStatus: item.progressStatus,
+            }))
+          : [];
+
+        setRemoteHistory(items.filter((item) => item.id && item.source));
+      } catch (error) {
+        console.error('Cloud reading progress error:', error);
+        if (!cancelled) setRemoteHistory([]);
+      }
+    };
+
+    void loadCloudHistory();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   useEffect(() => {
@@ -325,7 +463,7 @@ export default function HomeClient({ initialData, initialAgeVerified = false }: 
           return;
         }
 
-        const historyEntries = Object.values(history) as any[];
+        const historyEntries = Object.values(history) as Array<{ aniListId?: number | string }>;
         const aniListIds = historyEntries
           .map(entry => entry.aniListId)
           .filter(Boolean);
@@ -341,7 +479,7 @@ export default function HomeClient({ initialData, initialAgeVerified = false }: 
         const data = await res.json();
         if (data.items?.length > 0) {
           setPersonalRecs(data.items);
-          setActiveTab(prev => (prev === 'for-you' || shelfState['trending'].items.length === 0) ? 'for-you' : prev);
+          setActiveTab(prev => (prev === 'for-you' || !hasTrendingInitialItems) ? 'for-you' : prev);
         }
       } catch (e) {
         console.error('Recs error:', e);
@@ -350,7 +488,7 @@ export default function HomeClient({ initialData, initialAgeVerified = false }: 
       }
     };
     loadPersonalRecs();
-  }, []);
+  }, [hasTrendingInitialItems]);
 
   const handleLanguageChange = (newLang: MangaLanguage) => {
     setMangaLanguage(newLang);
@@ -362,6 +500,8 @@ export default function HomeClient({ initialData, initialAgeVerified = false }: 
     if (!pool.length) return null;
     return pool[now.getHours() % pool.length];
   }, [activeTab, shelfState, personalRecs, now]);
+
+  const hasPersonalLibrary = recentHistory.length > 0 || savedBookmarks.length > 0;
 
   const websiteSchema = {
     "@context": "https://schema.org",
@@ -393,7 +533,7 @@ export default function HomeClient({ initialData, initialAgeVerified = false }: 
       <JsonLd data={orgSchema} />
       <Navbar />
 
-      <main className="relative pt-20">
+      <main className="relative pt-24 sm:pt-28 lg:pt-32">
 
         {/* --- DYNAMIC HERO BANNER --- */}
         <section className="relative min-h-[70vh] md:min-h-[85vh] w-full">
@@ -404,9 +544,9 @@ export default function HomeClient({ initialData, initialAgeVerified = false }: 
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className="relative min-h-[70vh] md:min-h-[85vh] w-full pt-48 pb-32"
+                className="relative min-h-[70vh] md:min-h-[85vh] w-full pt-32 pb-20 sm:pt-40 sm:pb-24 lg:pt-48 lg:pb-32"
               >
-                <div className="container mx-auto px-4 md:px-8 h-full flex items-center">
+                <div className="container mx-auto flex h-full items-center px-4 sm:px-6 md:px-8">
                   <div className="grid w-full gap-12 lg:grid-cols-[1fr_320px]">
                     <div className="space-y-6">
                       <div className="h-6 w-32 bg-white/5 rounded-full animate-pulse" />
@@ -443,7 +583,7 @@ export default function HomeClient({ initialData, initialAgeVerified = false }: 
                 <div className="absolute inset-0 bg-gradient-to-t from-[#05060a] via-[#05060a]/40 to-transparent" />
                 <div className="absolute inset-0 bg-gradient-to-r from-[#05060a] via-transparent to-transparent" />
 
-                <div className="container relative z-10 mx-auto flex h-full items-center px-4 md:px-8 py-20">
+                <div className="container relative z-10 mx-auto flex h-full items-center px-4 sm:px-6 md:px-8 py-16 sm:py-20 lg:py-24">
                   <div className="grid w-full gap-12 lg:grid-cols-[1fr_320px]">
 
                     {/* Text Info */}
@@ -544,11 +684,117 @@ export default function HomeClient({ initialData, initialAgeVerified = false }: 
           </AnimatePresence>
         </section>
 
+        {hasPersonalLibrary && (
+          <section className="relative z-20 container mx-auto px-4 sm:px-6 md:px-8 pb-10">
+            <div className="max-w-6xl mx-auto grid gap-8 lg:grid-cols-2">
+              {recentHistory.length > 0 && (
+                <div className="rounded-[2rem] border border-white/10 bg-white/[0.03] p-6 md:p-8 backdrop-blur-2xl">
+                  <div className="flex items-center justify-between gap-4 mb-6">
+                    <div>
+                      <p className="text-[9px] font-black uppercase tracking-[0.5em] text-[#ff5a1f]">Continue Reading</p>
+                      <h2 className="text-2xl md:text-3xl font-black uppercase tracking-tight mt-2">Pick up where you left off</h2>
+                    </div>
+                    <Link href="/library" className="text-[9px] font-black uppercase tracking-[0.35em] text-white/40 hover:text-white transition-colors">
+                      Open Library
+                    </Link>
+                  </div>
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    {recentHistory.slice(0, 4).map((comic) => (
+                      <Link
+                        key={`${comic.source}:${comic.id}`}
+                        href={comic.href}
+                        className="group flex items-center gap-4 rounded-2xl border border-white/5 bg-black/30 p-3 transition-all hover:border-[#ff5a1f]/30 hover:bg-black/50"
+                      >
+                        <div className="relative h-24 w-16 overflow-hidden rounded-xl border border-white/10 bg-black shrink-0">
+                          <Image src={comic.coverUrl || '/logo.png'} alt={comic.title} fill unoptimized className="object-cover" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-[8px] font-black uppercase tracking-[0.35em] text-[#ffca3a]">
+                            {comic.progressPercent ? `${comic.progressPercent}% Resume` : 'Resume'}
+                          </p>
+                          <h3 className="mt-1 truncate text-sm font-black uppercase tracking-widest text-white group-hover:text-[#ff5a1f] transition-colors">
+                            {comic.title}
+                          </h3>
+                          <p className="mt-1 line-clamp-2 text-[10px] text-white/35">
+                            {comic.description}
+                          </p>
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {savedBookmarks.length > 0 && (
+                <div className="rounded-[2rem] border border-white/10 bg-white/[0.03] p-6 md:p-8 backdrop-blur-2xl">
+                  <div className="flex items-center justify-between gap-4 mb-6">
+                    <div>
+                      <p className="text-[9px] font-black uppercase tracking-[0.5em] text-[#ff5a1f]">Bookmarks</p>
+                      <h2 className="text-2xl md:text-3xl font-black uppercase tracking-tight mt-2">Saved for later</h2>
+                    </div>
+                    <Link href="/settings" className="text-[9px] font-black uppercase tracking-[0.35em] text-white/40 hover:text-white transition-colors">
+                      Manage
+                    </Link>
+                  </div>
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    {savedBookmarks.slice(0, 4).map((comic) => (
+                      <Link
+                        key={`${comic.source}:${comic.id}`}
+                        href={comic.href}
+                        className="group flex items-center gap-4 rounded-2xl border border-white/5 bg-black/30 p-3 transition-all hover:border-[#ff5a1f]/30 hover:bg-black/50"
+                      >
+                        <div className="relative h-24 w-16 overflow-hidden rounded-xl border border-white/10 bg-black shrink-0">
+                          <Image src={comic.coverUrl || '/logo.png'} alt={comic.title} fill unoptimized className="object-cover" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-[8px] font-black uppercase tracking-[0.35em] text-[#ffca3a]">Bookmark</p>
+                          <h3 className="mt-1 truncate text-sm font-black uppercase tracking-widest text-white group-hover:text-[#ff5a1f] transition-colors">
+                            {comic.title}
+                          </h3>
+                          <p className="mt-1 line-clamp-2 text-[10px] text-white/35">
+                            {comic.meta || 'Saved item'}
+                          </p>
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </section>
+        )}
+
+        {!hasPersonalLibrary && (
+          <section className="relative z-20 container mx-auto px-4 sm:px-6 md:px-8 pb-10">
+            <div className="max-w-6xl mx-auto rounded-[2rem] border border-white/10 bg-white/[0.03] p-8 md:p-12 backdrop-blur-2xl">
+              <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr] items-center">
+                <div className="space-y-4">
+                  <p className="text-[9px] font-black uppercase tracking-[0.5em] text-[#ff5a1f]">Your library is empty</p>
+                  <h2 className="text-3xl md:text-5xl font-black uppercase tracking-tight leading-[0.95]">
+                    Start reading to unlock continue reading and bookmarks
+                  </h2>
+                  <p className="text-white/45 text-sm md:text-base max-w-2xl leading-relaxed">
+                    Once you open a comic and bookmark it, this section will start showing your personal reading queue and saved items here.
+                  </p>
+                </div>
+                <div className="flex flex-col gap-3">
+                  <Link href="/library" className="rounded-2xl bg-[#ff5a1f] px-5 py-4 text-center text-[10px] font-black uppercase tracking-[0.35em] text-white transition-all hover:bg-white hover:text-black">
+                    Explore Library
+                  </Link>
+                  <Link href="/settings" className="rounded-2xl border border-white/10 bg-black/30 px-5 py-4 text-center text-[10px] font-black uppercase tracking-[0.35em] text-white/60 transition-all hover:border-white/25 hover:text-white">
+                    Configure Preferences
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </section>
+        )}
+
         {/* --- EXPLORE SECTION --- */}
-        <section className="relative z-20 -mt-16 container mx-auto px-4 md:px-8 pb-32">
+        <section className="relative z-20 -mt-16 container mx-auto px-4 sm:px-6 md:px-8 pb-24 sm:pb-28 lg:pb-32">
 
           {/* --- EXPLORE & DISCOVERY CONTROLS --- */}
-          <div className="mb-20 flex flex-col gap-10 max-w-6xl mx-auto">
+          <div className="mb-16 flex flex-col gap-10 max-w-6xl mx-auto sm:mb-20">
 
             {/* 1. Category Navigation Layer */}
             <div className="flex flex-col gap-5">
@@ -726,7 +972,7 @@ export default function HomeClient({ initialData, initialAgeVerified = false }: 
 
         {/* Infinite Discover Section */}
         <section className="py-20 bg-black/40">
-          <div className="max-w-7xl mx-auto px-6">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6">
             <div className="flex items-center gap-4 mb-12">
               <div className="w-1.5 h-8 bg-[#ff4d00] rounded-full" />
               <div>

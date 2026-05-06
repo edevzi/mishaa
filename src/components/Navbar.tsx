@@ -5,7 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Menu, UserCircle2 } from 'lucide-react';
+import { X, Menu, UserCircle2, Settings2 } from 'lucide-react';
 import { translations, Lang } from '@/lib/translations';
 import { readStorageItem, writeStorageItem } from '@/lib/browser-storage';
 
@@ -84,20 +84,20 @@ export default function Navbar() {
   };
 
   return (
-    <nav className="fixed top-6 left-1/2 z-[1000] w-[min(94vw,90rem)] -translate-x-1/2 max-md:top-3">
-      <div className="glass-panel relative flex items-center justify-between overflow-hidden rounded-[2.5rem] px-2 py-2 max-md:px-2">
+    <nav className="fixed top-6 left-1/2 z-[1000] w-[min(96vw,90rem)] -translate-x-1/2 max-md:top-3">
+      <div className="glass-panel relative flex items-center justify-between overflow-hidden rounded-[2.5rem] px-3 py-2 sm:px-2">
         <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/30 to-transparent" />
 
         {/* Branding */}
-        <Link href="/" className="flex items-center gap-4 pl-4 md:pl-6 group py-2 md:py-3 max-md:pl-2">
-          <div className="relative flex h-11 w-11 items-center justify-center overflow-hidden rounded-2xl border border-white/10 bg-black/40 shadow-2xl transition-all duration-500 group-hover:border-[#ff5a1f]/50 md:h-12 md:w-12">
+        <Link href="/" className="flex min-w-0 items-center gap-3 pl-2 pr-2 py-2 sm:gap-4 sm:pl-4 md:pl-6 md:py-3 group">
+          <div className="relative flex h-10 w-10 items-center justify-center overflow-hidden rounded-2xl border border-white/10 bg-black/40 shadow-2xl transition-all duration-500 group-hover:border-[#ff5a1f]/50 md:h-12 md:w-12">
             <div className="absolute inset-0 bg-gradient-to-tr from-[#ff5a1f]/20 via-transparent to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
             <span className="font-accent text-xl z-10 transition-transform duration-500 group-hover:scale-110 leading-none" style={{letterSpacing: '0.02em'}}>
               <span className="text-white">i</span><span style={{color: '#ff5a1f'}}>C</span>
             </span>
           </div>
-          <div className="flex flex-col">
-            <span className="text-lg md:text-xl font-accent leading-none tracking-wider select-none" style={{letterSpacing: '0.04em'}}>
+          <div className="hidden min-w-0 flex-col sm:flex">
+            <span className="truncate text-lg md:text-xl font-accent leading-none tracking-wider select-none" style={{letterSpacing: '0.04em'}}>
               <span className="text-white">iComics</span>
               <span style={{color: '#ffd36b', margin: '0 1px'}}>·</span>
               <span style={{color: '#ff5a1f'}}>wiki</span>
@@ -179,6 +179,9 @@ export default function Navbar() {
                     <Link href="/profile" className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest text-white/50 hover:bg-white/5 hover:text-white transition-all">
                       <UserCircle2 size={14} /> Profile
                     </Link>
+                    <Link href="/settings" className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest text-white/50 hover:bg-white/5 hover:text-white transition-all">
+                      <Settings2 size={14} /> Settings
+                    </Link>
                     <Link href="/studio" className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest text-white/50 hover:bg-white/5 hover:text-white transition-all">
                       <Menu size={14} /> Studio
                     </Link>
@@ -205,7 +208,7 @@ export default function Navbar() {
 
         {/* Mobile toggle */}
         <button
-          className="mr-1 rounded-2xl border border-white/10 bg-white/5 p-3 text-white transition-colors hover:text-[#ff5a1f] lg:hidden max-md:p-2"
+          className="mr-0 shrink-0 rounded-2xl border border-white/10 bg-white/5 p-2.5 text-white transition-colors hover:text-[#ff5a1f] lg:hidden sm:p-3"
           onClick={() => setIsOpen(!isOpen)}
         >
           {isOpen ? <X size={18} /> : <Menu size={18} />}
@@ -219,7 +222,7 @@ export default function Navbar() {
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
-            className="glass-panel absolute left-0 right-0 top-full mt-4 space-y-8 rounded-3xl p-6 shadow-2xl lg:hidden max-md:mt-2 max-md:p-5"
+            className="glass-panel absolute left-0 right-0 top-full mt-4 space-y-8 rounded-3xl p-5 shadow-2xl lg:hidden max-md:mt-2 max-md:p-4"
           >
             <div className="flex flex-col gap-6">
               {navLinks.map((link) => (

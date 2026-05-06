@@ -1,6 +1,6 @@
 "use client";
 
-import React, { Suspense, useState, useEffect, useRef, useCallback, useSyncExternalStore } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useSyncExternalStore, useMemo } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
@@ -30,6 +30,7 @@ import {
 } from '@/lib/mangadex';
 import { searchComics, fetchNHentaiRaw } from '@/actions/comic';
 import Image from 'next/image';
+import { readBookmarks, BOOKMARKS_UPDATED_EVENT, LIBRARY_ACTIVITY_EVENT, type StoredBookmark } from '@/lib/library-storage';
 interface Comic {
   id: string;
   title: string;
@@ -147,6 +148,10 @@ export default function ComicLibraryClient({ initialAgeVerified = false }: Comic
   const [autoCompleteResults, setAutoCompleteResults] = useState<Comic[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
+  const [bookmarks, setBookmarks] = useState<StoredBookmark[]>([]);
+  const [sourceFilter, setSourceFilter] = useState<'all' | Comic['source']>('all');
+  const [savedOnly, setSavedOnly] = useState(false);
+  const [sortOrder, setSortOrder] = useState<'featured' | 'title-asc' | 'title-desc'>('featured');
   
   const [mangaLanguage, setMangaLanguage] = useState<MangaLanguage>(readStoredMangaLanguage);
   const isMounted = useSyncExternalStore(
@@ -163,6 +168,27 @@ export default function ComicLibraryClient({ initialAgeVerified = false }: Comic
   const readerRef = useRef<HTMLDivElement>(null);
   const observer = useRef<IntersectionObserver | null>(null);
   const searchQuery = categoryQueries[activeCategory] ?? '';
+  const bookmarkedKeys = useMemo(() => new Set(bookmarks.map((bookmark) => `${bookmark.source}:${bookmark.id}`)), [bookmarks]);
+  const visibleComics = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+
+    return comics
+      .filter((comic) => {
+        const matchesQuery =
+          !query ||
+          comic.title.toLowerCase().includes(query) ||
+          comic.description.toLowerCase().includes(query) ||
+          comic.rating.toLowerCase().includes(query);
+        const matchesSource = sourceFilter === 'all' || comic.source === sourceFilter;
+        const matchesSaved = !savedOnly || bookmarkedKeys.has(`${comic.source}:${comic.id}`);
+        return matchesQuery && matchesSource && matchesSaved;
+      })
+      .sort((left, right) => {
+        if (sortOrder === 'title-asc') return left.title.localeCompare(right.title);
+        if (sortOrder === 'title-desc') return right.title.localeCompare(left.title);
+        return 0;
+      });
+  }, [bookmarkedKeys, comics, savedOnly, searchQuery, sourceFilter, sortOrder]);
 
   useEffect(() => {
     const verified = initialAgeVerified || readAgeVerification();
@@ -177,6 +203,21 @@ export default function ComicLibraryClient({ initialAgeVerified = false }: Comic
   useEffect(() => {
     persistStoredMangaLanguage(mangaLanguage);
   }, [mangaLanguage]);
+
+  useEffect(() => {
+    const syncBookmarks = () => setBookmarks(readBookmarks());
+    const timer = window.setTimeout(syncBookmarks, 0);
+    window.addEventListener(BOOKMARKS_UPDATED_EVENT, syncBookmarks);
+    window.addEventListener(LIBRARY_ACTIVITY_EVENT, syncBookmarks);
+    window.addEventListener('storage', syncBookmarks);
+
+    return () => {
+      window.clearTimeout(timer);
+      window.removeEventListener(BOOKMARKS_UPDATED_EVENT, syncBookmarks);
+      window.removeEventListener(LIBRARY_ACTIVITY_EVENT, syncBookmarks);
+      window.removeEventListener('storage', syncBookmarks);
+    };
+  }, []);
 
   useEffect(() => {
     let t: NodeJS.Timeout;
@@ -304,54 +345,6 @@ export default function ComicLibraryClient({ initialAgeVerified = false }: Comic
 
 
   // Fetch from nhentai
-  const fetchNHentai = useCallback(async (query: string, page: number): Promise<LoadResult> => {
-    try {
-      let path = '';
-      if (!query || query === 'all') {
-        path = `galleries?page=${page + 1}`;
-      } else if (query.includes('&sort=')) {
-        const [q, sort] = query.split('&sort=');
-        path = `search?query=${encodeURIComponent(q)}&sort=${sort}&page=${page + 1}`;
-      } else {
-        path = `search?query=${encodeURIComponent(query)}&page=${page + 1}`;
-      }
-        
-      const res = await fetch(`/api/proxy/nhentai?path=${encodeURIComponent(path)}`);
-      if (!res.ok) return { items: [], hasMore: false };
-      
-      const text = await res.text();
-      let data;
-      try {
-        data = JSON.parse(text);
-      } catch (e) {
-        console.warn(`nHentai proxy returned non-JSON content for path ${path}`);
-        return { items: [], hasMore: false };
-      }
-
-      const results = Array.isArray(data?.result) ? data.result : Array.isArray(data) ? data : [];
-      const numPages = Number(data?.num_pages ?? 0);
-
-      return {
-        items: results.map((item: { id: number | string; english_title?: string; title?: { english?: string; japanese?: string }; num_pages?: number; thumbnail?: string | { path: string } }) => {
-        return {
-          id: item.id.toString(),
-          title: item.english_title || item.title?.english || item.title?.japanese || "Untitled",
-          description: `${item.num_pages} pages`,
-          coverUrl: (typeof item.thumbnail === 'object' ? item.thumbnail?.path : item.thumbnail)
-            ? `/api/proxy/nhentai/image?path=${encodeURIComponent(typeof item.thumbnail === 'object' ? item.thumbnail?.path : (item.thumbnail || ''))}`
-            : '/logo.png',
-          source: 'nhentai',
-          rating: 'pornographic'
-        };
-        }),
-        hasMore: Number.isFinite(numPages) && numPages > 0 ? page + 1 < numPages : results.length > 0,
-      };
-    } catch (e) {
-      console.error(e);
-      return { items: [], hasMore: false };
-    }
-  }, []);
-
   const fetchBooru = useCallback(async (
     source: BooruSource,
     query: string,
@@ -534,18 +527,23 @@ export default function ComicLibraryClient({ initialAgeVerified = false }: Comic
         setLoadingMore(false);
       }
     }
-  }, [activeCategory, fetchArchive, fetchBooru, fetchMangaDex, fetchMarvelIssues, fetchSuperheroes, fetchNHentai, isAgeVerified, mangaLanguage, searchQuery]);
+  }, [activeCategory, fetchArchive, fetchBooru, fetchMangaDex, fetchMarvelIssues, fetchSuperheroes, isAgeVerified, mangaLanguage, searchQuery]);
 
   useEffect(() => {
-    void loadData(0, false);
+    const timer = window.setTimeout(() => {
+      void loadData(0, false);
+    }, 0);
+    return () => window.clearTimeout(timer);
   }, [activeCategory, searchQuery, nsfwEnabled, mangaLanguage, loadData]);
 
   // Autocomplete Effect
   useEffect(() => {
     if (searchQuery.length < 3) {
-      setAutoCompleteResults([]);
-      setShowDropdown(false);
-      return;
+      const timer = window.setTimeout(() => {
+        setAutoCompleteResults([]);
+        setShowDropdown(false);
+      }, 0);
+      return () => window.clearTimeout(timer);
     }
 
     const timer = setTimeout(async () => {
@@ -560,7 +558,7 @@ export default function ComicLibraryClient({ initialAgeVerified = false }: Comic
           page: 0,
           mangaLanguage 
         });
-        setAutoCompleteResults((res.items as any).slice(0, 8));
+        setAutoCompleteResults((res.items as Comic[]).slice(0, 8));
       } catch (e) {
         console.error('Autocomplete error:', e);
       } finally {
@@ -720,6 +718,51 @@ export default function ComicLibraryClient({ initialAgeVerified = false }: Comic
                   {isMounted && nsfwEnabled ? <Eye /> : <EyeOff />}
                 </button>
               </div>
+
+              <div className="grid gap-3 md:grid-cols-[1.4fr_1fr_auto]">
+                <div className="flex items-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
+                  <span className="text-[8px] font-black uppercase tracking-[0.35em] text-white/30">Filter</span>
+                  <select
+                    value={sourceFilter}
+                    onChange={(e) => setSourceFilter(e.target.value as typeof sourceFilter)}
+                    className="flex-1 bg-transparent text-[10px] font-black uppercase tracking-[0.25em] text-white outline-none"
+                  >
+                    <option value="all">All sources</option>
+                    <option value="mangadex">MangaDex</option>
+                    <option value="marvel">Marvel</option>
+                    <option value="archive">Archive</option>
+                    <option value="superhero">Superheroes</option>
+                    <option value="nhentai">nhentai</option>
+                    <option value="e621">e621</option>
+                    <option value="danbooru">danbooru</option>
+                    <option value="gelbooru">gelbooru</option>
+                  </select>
+                </div>
+
+                <div className="flex items-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
+                  <span className="text-[8px] font-black uppercase tracking-[0.35em] text-white/30">Sort</span>
+                  <select
+                    value={sortOrder}
+                    onChange={(e) => setSortOrder(e.target.value as typeof sortOrder)}
+                    className="flex-1 bg-transparent text-[10px] font-black uppercase tracking-[0.25em] text-white outline-none"
+                  >
+                    <option value="featured">Featured</option>
+                    <option value="title-asc">Title A-Z</option>
+                    <option value="title-desc">Title Z-A</option>
+                  </select>
+                </div>
+
+                <button
+                  onClick={() => setSavedOnly((current) => !current)}
+                  className={`rounded-2xl border px-4 py-3 text-[10px] font-black uppercase tracking-[0.35em] transition-all ${
+                    savedOnly
+                      ? 'border-[#ff4d00] bg-[#ff4d00] text-white'
+                      : 'border-white/10 bg-white/5 text-white/40 hover:border-white/30 hover:text-white'
+                  }`}
+                >
+                  Saved Only
+                </button>
+              </div>
             </div>
 
             <div className="flex gap-2 overflow-x-auto pb-2 pt-6 border-t border-white/5 md:flex-wrap md:overflow-visible md:gap-3 md:pb-0">
@@ -742,16 +785,41 @@ export default function ComicLibraryClient({ initialAgeVerified = false }: Comic
             <div className="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-x-4 gap-y-10 md:gap-x-10 md:gap-y-20">
               {[...Array(12)].map((_, i) => <ComicSkeleton key={i} />)}
             </div>
-          ) : comics.length === 0 ? (
-             <div className="max-w-7xl mx-auto py-40 text-center">
+          ) : visibleComics.length === 0 ? (
+             <div className="max-w-3xl mx-auto py-28 text-center">
                 <Sparkles className="w-12 h-12 text-white/5 mx-auto mb-6" />
-                <h3 className="text-[10px] font-black uppercase tracking-[0.8em] text-white/20">Empty_Archive_Detected</h3>
+                <h3 className="text-[10px] font-black uppercase tracking-[0.8em] text-white/20">No results found</h3>
+                <p className="mt-4 text-sm text-white/35 leading-relaxed">
+                  {savedOnly
+                    ? 'You are filtering to saved items only. Try turning off Saved Only or clear the source filter.'
+                    : searchQuery
+                      ? `Nothing matches "${searchQuery}". Try a broader title or switch the source filter.`
+                      : 'This section is currently empty. Pick a different category or come back after the next sync.'}
+                </p>
+                <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+                  <button
+                    onClick={() => {
+                      setSavedOnly(false);
+                      setSourceFilter('all');
+                      setSortOrder('featured');
+                    }}
+                    className="rounded-2xl border border-white/10 bg-white/5 px-5 py-3 text-[10px] font-black uppercase tracking-[0.35em] text-white/60 transition-all hover:border-white/25 hover:text-white"
+                  >
+                    Reset Filters
+                  </button>
+                  <button
+                    onClick={() => router.push('/support')}
+                    className="rounded-2xl bg-[#ff4d00] px-5 py-3 text-[10px] font-black uppercase tracking-[0.35em] text-white transition-all hover:bg-white hover:text-black"
+                  >
+                    Report Issue
+                  </button>
+                </div>
              </div>
           ) : (
             <div className="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-x-4 gap-y-10 md:gap-x-10 md:gap-y-20">
-              {comics.map((comic, index) => (
+              {visibleComics.map((comic, index) => (
                 <motion.div 
-                  ref={comics.length === index + 1 ? lastComicRef : null}
+                  ref={visibleComics.length === index + 1 ? lastComicRef : null}
                   key={`${comic.source}:${comic.id}`} 
                   whileHover={{ 
                     y: -15, 
