@@ -17,12 +17,11 @@ const MARVEL_API_BASE = "https://marvel.emreparker.com/v1";
 
 const safeText = (value: unknown, fallback = '') => typeof value === 'string' && value.trim() ? value : fallback;
 
-async function loadMangaDex(params: URLSearchParams, lang: MangaLanguage) {
+async function loadMangaDex(params: URLSearchParams, lang: MangaLanguage, origin: string) {
   try {
-    const res = await fetch(`https://api.mangadex.org/manga?${params.toString()}`, {
-      headers: { 'User-Agent': 'iComics.wiki/1.0' },
-      next: { revalidate: 3600 }
-    });
+    const proxyBase = new URL('/api/proxy/mangadex', origin);
+    proxyBase.searchParams.set('path', `manga?${params.toString()}`);
+    const res = await fetch(proxyBase.toString(), { next: { revalidate: 3600 } });
     if (!res.ok) return [];
     const data = await res.json();
     const items = Array.isArray(data?.data) ? data.data : [];
@@ -45,6 +44,7 @@ async function loadMangaDex(params: URLSearchParams, lang: MangaLanguage) {
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const lang = (searchParams.get("lang") || "ru") as MangaLanguage;
+  const origin = new URL(req.url).origin;
 
   const filters = {
     contentRatings: ['safe', 'suggestive'],
@@ -95,12 +95,12 @@ export async function GET(req: Request) {
       .catch(() => []);
 
     const [manga, webtoons, manhwa, marvel, trending, latest] = await Promise.all([
-      loadMangaDex(mangaParams, lang).catch(() => []),
-      loadMangaDex(webtoonsParams, lang).catch(() => []),
-      loadMangaDex(manhwaParams, lang).catch(() => []),
+      loadMangaDex(mangaParams, lang, origin).catch(() => []),
+      loadMangaDex(webtoonsParams, lang, origin).catch(() => []),
+      loadMangaDex(manhwaParams, lang, origin).catch(() => []),
       marvelPromise,
       trendingPromise,
-      loadMangaDex(latestParams, lang).catch(() => [])
+      loadMangaDex(latestParams, lang, origin).catch(() => [])
     ]);
 
     return NextResponse.json({

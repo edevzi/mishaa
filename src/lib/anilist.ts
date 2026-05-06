@@ -93,6 +93,7 @@ query ($id: Int) {
       medium
       color
     }
+    bannerImage
     externalLinks {
       url
       site
@@ -174,6 +175,7 @@ export async function fetchTrendingAniListManga(limit = 12): Promise<AniListMedi
             extraLarge
             color
           }
+          bannerImage
           description
           averageScore
           popularity

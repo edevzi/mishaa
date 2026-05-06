@@ -26,28 +26,43 @@ export async function GET(req: NextRequest) {
     'Referer': 'https://nhentai.net/',
   };
 
-  try {
-    // nhentai API v2
-    const targetUrl = `https://nhentai.net/api/v2/${path}`;
-    console.log(`Proxying to: ${targetUrl}`);
-    
-    const res = await fetch(targetUrl, { headers, next: { revalidate: 3600 } });
+  const apiPaths = path.startsWith('v2/')
+    ? [path, path.replace(/^v2\//, '')]
+    : [path, `v2/${path}`];
+  const mirrors = ['nhentai.net', 'nhentai.to', 'nhentai.xxx'];
 
-    // If 404/403, try fallback search
-    if (!res.ok) {
-      console.warn(`nhentai.net returned ${res.status}.`);
-      return NextResponse.json({ 
-        error: `Failed to fetch from nhentai: ${res.status}`,
-        status: res.status 
-      }, { status: res.status });
+  try {
+    for (const mirror of mirrors) {
+      for (const apiPath of apiPaths) {
+        const targetUrl = `https://${mirror}/api/${apiPath}`;
+        const res = await fetch(targetUrl, { headers, next: { revalidate: 3600 }, signal: AbortSignal.timeout(8000) });
+
+        if (!res.ok) {
+          console.warn(`nhentai mirror ${mirror} returned ${res.status} for ${apiPath}`);
+          continue;
+        }
+
+        const body = await res.text();
+        try {
+          const data = JSON.parse(body);
+          return NextResponse.json(data, {
+            headers: {
+              'Cache-Control': 'public, max-age=3600, stale-while-revalidate=86400',
+            },
+          });
+        } catch {
+          return new NextResponse(body, {
+            status: 200,
+            headers: {
+              'Content-Type': res.headers.get('content-type') || 'application/json',
+              'Cache-Control': 'public, max-age=3600, stale-while-revalidate=86400',
+            },
+          });
+        }
+      }
     }
 
-    const data = await res.json();
-    return NextResponse.json(data, {
-      headers: {
-        'Cache-Control': 'public, max-age=3600, stale-while-revalidate=86400',
-      },
-    });
+    return NextResponse.json({ error: 'Failed to fetch from nhentai' }, { status: 502 });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Unknown proxy error';
     console.error('Proxy Error:', error);

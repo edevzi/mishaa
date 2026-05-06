@@ -5,6 +5,7 @@ import { buildMangaDexCoverUrl, pickMangaDexCoverFileName, appendMangaDexFilters
 import { resolveMangaDexLocalizedText, MangaLanguage, getMangaDexTranslatedLanguages, DEFAULT_MANGA_LANGUAGE } from "@/lib/manga-language";
 import { fetchAniListManga } from "@/lib/anilist";
 import { fetchJikanManga } from "@/lib/jikan";
+import { getSiteUrl } from "@/lib/site-url";
 
 export interface MarvelCreator {
   role: string;
@@ -107,6 +108,39 @@ const NHENTAI_HEADERS = {
   'Referer': 'https://nhentai.net/',
 };
 
+const NHENTAI_GALLERY_HEADERS = {
+  'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+  'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+  'Accept-Language': 'en-US,en;q=0.9',
+};
+
+const cleanTrailingCommas = (value: string) => value.replace(/,\s*([}\]])/g, '$1');
+
+async function fetchJsonThroughProxy(path: string, fallbackUrl?: string) {
+  const proxyUrl = `${getSiteUrl()}/api/proxy/mangadex?path=${encodeURIComponent(path)}`;
+  const endpoints = fallbackUrl ? [proxyUrl, fallbackUrl] : [proxyUrl];
+
+  for (const url of endpoints) {
+    try {
+      const res = await fetch(url, { cache: 'no-store' });
+      const text = await res.text();
+      if (!res.ok) {
+        continue;
+      }
+
+      try {
+        return JSON.parse(text);
+      } catch {
+        continue;
+      }
+    } catch {
+      continue;
+    }
+  }
+
+  throw new Error('MangaDex fetch failed');
+}
+
 export async function fetchNHentaiRaw(path: string) {
   // Check server-side cache first
   const cacheKey = `nhentai_${path}`;
@@ -145,24 +179,35 @@ export async function fetchNHentaiRaw(path: string) {
 
   // Add HTML Parsing tasks if it's a gallery
   if (isGallery && id) {
-    for (const mirror of mirrors) {
+    for (const mirror of ['nhentai.to', 'nhentai.xxx']) {
       const gUrl = `https://${mirror}/g/${id}/`;
       fetchTasks.push((async () => {
         try {
-          const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(gUrl)}`;
-          const res = await fetch(proxyUrl, { next: { revalidate: 3600 }, signal: AbortSignal.timeout(10000) });
-          if (!res.ok) throw new Error("HTML Proxy failed");
-          const text = await res.text();
-          const html = text.includes('"contents":') ? JSON.parse(text).contents : text;
-          
-          const match = html.match(/window\._gallery\s*=\s*JSON\.parse\("(.+?)"\);/);
-          if (match && match[1]) {
-            const json = match[1].replace(/\\u0022/g, '"').replace(/\\u0027/g, "'").replace(/\\\\/g, '\\');
-            console.log(`[nHentai] ✅ HTML Parsing Success from ${mirror} for ID ${id}`);
-            return JSON.parse(json);
-          }
-          throw new Error("JSON not found");
-        } catch { throw new Error("Error"); }
+          const res = await fetch(gUrl, {
+            headers: NHENTAI_GALLERY_HEADERS,
+            next: { revalidate: 3600 },
+            signal: AbortSignal.timeout(10000),
+          });
+          if (!res.ok) throw new Error(`Gallery HTML failed: ${res.status}`);
+
+          const html = await res.text();
+          const marker = 'var gallery = new N.gallery(';
+          const markerIndex = html.indexOf(marker);
+          if (markerIndex < 0) throw new Error('Gallery payload not found');
+
+          const objectStart = html.indexOf('{', markerIndex);
+          if (objectStart < 0) throw new Error('Gallery payload start not found');
+
+          const objectEnd = html.indexOf(');', objectStart);
+          if (objectEnd < 0) throw new Error('Gallery payload end not found');
+
+          const raw = html.slice(objectStart, objectEnd);
+          const parsed = JSON.parse(cleanTrailingCommas(raw));
+          console.log(`[nHentai] ✅ Gallery HTML parsed from ${mirror} for ID ${id}`);
+          return parsed;
+        } catch {
+          throw new Error("Error");
+        }
       })());
     }
   }
@@ -284,9 +329,10 @@ export async function getComicDetails(source: string, id: string, mangaLanguage:
 
 
     if (source === 'mangadex') {
-      const res = await fetch(`https://api.mangadex.org/manga/${id}?includes[]=cover_art&includes[]=author&includes[]=artist`, { next: { revalidate: 3600 } });
-      if (!res.ok) throw new Error('MangaDex fetch failed');
-      const data = await res.json();
+      const data = await fetchJsonThroughProxy(
+        `manga/${id}?includes[]=cover_art&includes[]=author&includes[]=artist`,
+        `https://api.mangadex.org/manga/${id}?includes[]=cover_art&includes[]=author&includes[]=artist`
+      );
       const manga = data.data;
 
       const coverFileName = pickMangaDexCoverFileName(manga.relationships);
@@ -423,8 +469,10 @@ export async function getChapters(source: string, id: string, mangaLanguage: Man
       translatedLanguages?.forEach(lang => params.append('translatedLanguage[]', lang));
       
       console.log(`[MangaDex] Fetching chapters for ${id}, lang: ${mangaLanguage}`);
-      const res = await fetch(`https://api.mangadex.org/manga/${id}/feed?${params.toString()}`, { cache: 'no-store' });
-      let data = await res.json();
+      let data = await fetchJsonThroughProxy(
+        `manga/${id}/feed?${params.toString()}`,
+        `https://api.mangadex.org/manga/${id}/feed?${params.toString()}`
+      );
       
       // Fallback to English if no chapters found in preferred languages
       if ((!data.data || data.data.length === 0) && mangaLanguage !== 'en') {
@@ -434,8 +482,10 @@ export async function getChapters(source: string, id: string, mangaLanguage: Man
           'order[chapter]': 'asc',
           'translatedLanguage[]': 'en'
         });
-        const fallbackRes = await fetch(`https://api.mangadex.org/manga/${id}/feed?${fallbackParams.toString()}`, { cache: 'no-store' });
-        data = await fallbackRes.json();
+        data = await fetchJsonThroughProxy(
+          `manga/${id}/feed?${fallbackParams.toString()}`,
+          `https://api.mangadex.org/manga/${id}/feed?${fallbackParams.toString()}`
+        );
       }
 
       // Aggressive fallback to ANY language if still empty
@@ -445,8 +495,10 @@ export async function getChapters(source: string, id: string, mangaLanguage: Man
           limit: '500',
           'order[chapter]': 'asc',
         });
-        const aggrRes = await fetch(`https://api.mangadex.org/manga/${id}/feed?${aggrParams.toString()}`, { cache: 'no-store' });
-        data = await aggrRes.json();
+        data = await fetchJsonThroughProxy(
+          `manga/${id}/feed?${aggrParams.toString()}`,
+          `https://api.mangadex.org/manga/${id}/feed?${aggrParams.toString()}`
+        );
       }
 
       console.log(`[MangaDex] Total chapters found: ${data.data?.length || 0}`);
@@ -497,12 +549,10 @@ export async function getChapterPages(source: string, id: string, chapterId: str
     }
 
     if (source === 'mangadex') {
-      const res = await fetch(`https://api.mangadex.org/at-home/server/${chapterId}`, { next: { revalidate: 3600 } });
-      if (!res.ok) {
-        console.error(`MangaDex at-home error: ${res.status}`);
-        return [];
-      }
-      const data = await res.json();
+      const data = await fetchJsonThroughProxy(
+        `at-home/server/${chapterId}`,
+        `https://api.mangadex.org/at-home/server/${chapterId}`
+      );
       const baseUrl = data.baseUrl;
       const hash = data.chapter?.hash;
       let fileNames = data.chapter?.data;
@@ -640,8 +690,10 @@ export async function searchComics(params: {
         searchParams.set('order[followedCount]', 'desc');
       }
 
-      const res = await fetch(`https://api.mangadex.org/manga?${searchParams.toString()}`, { next: { revalidate: 900 } });
-      const data = await res.json();
+      const data = await fetchJsonThroughProxy(
+        `manga?${searchParams.toString()}`,
+        `https://api.mangadex.org/manga?${searchParams.toString()}`
+      );
       const items = data.data || [];
 
       return {

@@ -7,6 +7,7 @@
     "build": "prisma generate && next build && opennextjs-cloudflare build -s",
     "start": "next start",
     "lint": "eslint",
+    "smoke:prod": "node scripts/smoke-prod.mjs",
     "deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
     "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview"
   },

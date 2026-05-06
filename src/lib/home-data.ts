@@ -11,16 +11,15 @@ import {
   MangaLanguage 
 } from "@/lib/manga-language";
 import { fetchNHentaiRaw } from "@/actions/comic";
+import { getSiteUrl } from "@/lib/site-url";
 
 
 const safeText = (value: unknown, fallback = '') => typeof value === 'string' && value.trim() ? value : fallback;
 
 async function loadMangaDex(params: URLSearchParams, lang: MangaLanguage) {
   try {
-    const res = await fetch(`https://api.mangadex.org/manga?${params.toString()}`, {
-      headers: { 'User-Agent': 'iComics.wiki/1.0' },
-      next: { revalidate: 3600 }
-    });
+    const proxyUrl = `${getSiteUrl()}/api/proxy/mangadex?path=${encodeURIComponent(`manga?${params.toString()}`)}`;
+    const res = await fetch(proxyUrl, { next: { revalidate: 3600 } });
     if (!res.ok) return [];
     const data = await res.json();
     const items = Array.isArray(data?.data) ? data.data : [];
@@ -93,6 +92,7 @@ export async function getHomeData(lang: MangaLanguage = 'en') {
         title: item.title.userPreferred || item.title.english || item.title.romaji,
         description: item.description?.replace(/<[^>]*>?/gm, '').substring(0, 150) || 'Global trending pick',
         coverUrl: item.coverImage.extraLarge || item.coverImage.large,
+        bannerUrl: item.bannerImage || undefined,
         source: 'mangadex' as const,
         href: `/library/mangadex/${item.id}`,
         meta: `TRENDING #${items.indexOf(item) + 1}`,

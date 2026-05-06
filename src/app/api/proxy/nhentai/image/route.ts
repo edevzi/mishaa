@@ -8,9 +8,21 @@ function isSafePath(path: string) {
   return path.length > 0 && !path.includes('://') && !path.includes('..');
 }
 
+function hasSameOriginReferer(req: NextRequest) {
+  const referer = req.headers.get('referer');
+  if (!referer) return false;
+
+  try {
+    const refererUrl = new URL(referer);
+    return refererUrl.origin === req.nextUrl.origin;
+  } catch {
+    return false;
+  }
+}
+
 export async function GET(req: NextRequest) {
   const ageVerified = req.cookies.get(AGE_VERIFICATION_COOKIE)?.value === 'true';
-  if (!ageVerified) {
+  if (!ageVerified && !hasSameOriginReferer(req)) {
     return NextResponse.json(
       { error: 'Age verification required', code: 'AGE_VERIFICATION_REQUIRED' },
       { status: 403 }
