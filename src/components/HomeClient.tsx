@@ -18,10 +18,8 @@ import {
 } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import {
-  MANGA_LANGUAGE_OPTIONS,
   MangaLanguage,
   readStoredMangaLanguage,
-  persistStoredMangaLanguage,
 } from '@/lib/manga-language';
 import { readAgeVerification, persistAgeVerification } from '@/lib/age-verification';
 
@@ -195,7 +193,7 @@ export default function HomeClient({
     base['trending'] = { items: initialData?.['trending'] || [], loading: !(initialData?.['trending']?.length) };
     return base;
   });
-  const [searchQuery, setSearchQuery] = useState('');
+  const searchQuery = '';
   const [activeTab, setActiveTab] = useState<ShelfKey>('all');
 
   // Infinite Scroll State
@@ -438,11 +436,6 @@ export default function HomeClient({
     loadPersonalRecs();
   }, [hasTrendingInitialItems, isTouchDevice]);
 
-  const handleLanguageChange = (newLang: MangaLanguage) => {
-    setMangaLanguage(newLang);
-    persistStoredMangaLanguage(newLang);
-  };
-
   const featuredComic = useMemo(() => {
     const pool = activeTab === 'all'
       ? (personalRecs.length > 0 ? personalRecs : shelfState.trending?.items || [])
@@ -613,133 +606,6 @@ export default function HomeClient({
             ) : null}
           </AnimatePresence>
         </section>
-        {/* --- BROWSE CONTROLS --- */}
-        <section id="browse-categories" className="relative z-20 px-4 pb-12 sm:px-6 md:px-8 lg:pb-16">
-          <div className="mx-auto max-w-7xl rounded-[2.5rem] border border-white/10 bg-white/[0.03] p-5 shadow-[0_24px_80px_rgba(0,0,0,0.35)] backdrop-blur-2xl sm:p-6 lg:p-8">
-            <div className="flex flex-wrap items-end justify-between gap-4 border-b border-white/10 pb-6">
-              <div>
-                <p className="text-[9px] font-black uppercase tracking-[0.5em] text-[#ff5a1f]">
-                  Browse
-                </p>
-                <h2 className="mt-3 text-2xl font-black uppercase tracking-tight text-white sm:text-3xl">
-                  Browse categories
-                </h2>
-                <p className="mt-3 max-w-2xl text-sm leading-6 text-white/45">
-                  Pick a category to refine the experience. The section stays clean and category-first, without showing a manga preview.
-                </p>
-              </div>
-            </div>
-
-            <div className="mt-6">
-              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                <motion.button
-                  type="button"
-                  whileHover={{ y: -2 }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={() => setActiveTab('all')}
-                  className={`group flex items-center gap-4 rounded-[1.5rem] border p-4 text-left transition-all duration-300 cursor-pointer ${
-                    activeTab === 'all'
-                      ? 'border-[#ff5a1f]/70 bg-[#ff5a1f]/12'
-                      : 'border-white/10 bg-black/20 hover:border-white/20 hover:bg-white/[0.05]'
-                  }`}
-                >
-                  <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl ${
-                    activeTab === 'all' ? 'bg-[#ff5a1f] text-white' : 'bg-white/[0.06] text-white/70'
-                  }`}>
-                    <LayoutGrid size={18} />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center justify-between gap-3">
-                      <h3 className="text-sm font-black uppercase tracking-[0.25em] text-white">
-                        All categories
-                      </h3>
-                      {activeTab === 'all' && (
-                        <span className="rounded-full border border-white/15 bg-white/10 px-3 py-1 text-[8px] font-black uppercase tracking-[0.35em] text-white">
-                          Active
-                        </span>
-                      )}
-                    </div>
-                    <p className="mt-2 text-[11px] leading-5 text-white/42">
-                      Show all categories
-                    </p>
-                  </div>
-                </motion.button>
-
-                {visibleShelves.map((shelf) => {
-                  const isActive = activeTab === shelf.key;
-                  return (
-                    <motion.button
-                      key={shelf.key}
-                      type="button"
-                      whileHover={{ y: -2 }}
-                      whileTap={{ scale: 0.98 }}
-                      onClick={() => setActiveTab(shelf.key)}
-                      className={`group flex items-center gap-4 rounded-[1.5rem] border p-4 text-left transition-all duration-300 cursor-pointer ${
-                        isActive
-                          ? 'border-[#ff5a1f]/70 bg-[#ff5a1f]/12'
-                          : 'border-white/10 bg-black/20 hover:border-white/20 hover:bg-white/[0.05]'
-                      }`}
-                    >
-                      <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl ${
-                        isActive ? 'bg-[#ff5a1f] text-white' : 'bg-white/[0.06] text-white/70'
-                      }`}>
-                        {shelf.icon}
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center justify-between gap-3">
-                          <h3 className="text-sm font-black uppercase tracking-[0.25em] text-white">
-                            {shelf.title}
-                          </h3>
-                          {isActive && (
-                            <span className="rounded-full border border-white/15 bg-white/10 px-3 py-1 text-[8px] font-black uppercase tracking-[0.35em] text-white">
-                              Active
-                            </span>
-                          )}
-                        </div>
-                        <p className="mt-2 text-[11px] leading-5 text-white/42">
-                          {shelf.subtitle}
-                        </p>
-                      </div>
-                    </motion.button>
-                  );
-                })}
-              </div>
-
-              <div className="mt-6 grid gap-4 rounded-[1.6rem] border border-white/10 bg-black/20 p-4 lg:grid-cols-[1fr_auto] lg:items-center">
-                <div className="flex items-center gap-3 overflow-x-auto no-scrollbar">
-                  <span className="shrink-0 text-[9px] font-black uppercase tracking-[0.35em] text-white/30">
-                    Language
-                  </span>
-                  {MANGA_LANGUAGE_OPTIONS.filter(o => ['en', 'ru', 'es', 'fr', 'all'].includes(o.value)).map((opt) => (
-                    <button
-                      key={opt.value}
-                      onClick={() => handleLanguageChange(opt.value)}
-                      className={`shrink-0 rounded-full px-4 py-2 text-[10px] font-black uppercase tracking-[0.3em] transition-all ${
-                        mangaLanguage === opt.value
-                          ? 'bg-white text-black shadow-lg'
-                          : 'border border-white/10 bg-white/[0.03] text-white/45 hover:border-white/20 hover:text-white'
-                      }`}
-                    >
-                      {opt.value === 'all' ? 'Mixed' : opt.value}
-                    </button>
-                  ))}
-                </div>
-
-                <label className="relative min-w-[280px] lg:min-w-[340px]">
-                  <Search className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-white/30" size={16} />
-                  <input
-                    type="text"
-                    placeholder="Search titles..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full rounded-full border border-white/10 bg-white/[0.03] py-3 pl-11 pr-4 text-sm text-white outline-none placeholder:text-white/25 focus:border-[#ff5a1f] transition-colors"
-                  />
-                </label>
-              </div>
-            </div>
-          </div>
-        </section>
-
         {/* Shelves Layout */}
         <section className="relative z-20 px-4 sm:px-6 md:px-8 pb-24 sm:pb-28 lg:pb-32">
           <div className="space-y-20">
