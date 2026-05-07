@@ -1,5 +1,14 @@
 export const MANGADEX_LONG_STRIP_TAG_ID = '3e2b8dae-350e-4ab8-a8ce-016e844b9f0d';
 
+const MANGADEX_HEADERS = {
+  'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+  Accept: 'application/json',
+  'Accept-Language': 'en-US,en;q=0.9',
+};
+
+const MANGADEX_UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const mangaDexIdResolutionCache = new Map<string, string>();
+
 export type MangaDexCoverRelationship = {
   type?: string;
   attributes?: {
@@ -22,6 +31,45 @@ const coverExtensionBySize: Record<CoverSize, string> = {
 
 function proxyImageUrl(url: string) {
   return `/api/proxy/image?url=${encodeURIComponent(url)}`;
+}
+
+export function isMangaDexUuid(value: string) {
+  return MANGADEX_UUID_PATTERN.test(value);
+}
+
+export function cacheMangaDexIdResolution(sourceId: string, mangaDexId: string) {
+  const key = sourceId.trim();
+  if (!key || !isMangaDexUuid(mangaDexId)) return;
+  mangaDexIdResolutionCache.set(key, mangaDexId);
+}
+
+export function getCachedMangaDexIdResolution(sourceId: string) {
+  const key = sourceId.trim();
+  return key ? mangaDexIdResolutionCache.get(key) || null : null;
+}
+
+export async function searchMangaDexByTitle(title: string, limit = 1) {
+  const query = title.trim();
+  if (!query) return [];
+
+  try {
+    const res = await fetch(`https://api.mangadex.org/manga?title=${encodeURIComponent(query)}&limit=${limit}`, {
+      headers: MANGADEX_HEADERS,
+      next: { revalidate: 3600 },
+    });
+
+    if (!res.ok) return [];
+
+    const data = await res.json();
+    return Array.isArray(data?.data) ? data.data : [];
+  } catch {
+    return [];
+  }
+}
+
+export async function resolveMangaDexIdFromTitle(title: string) {
+  const firstMatch = (await searchMangaDexByTitle(title, 1))[0];
+  return typeof firstMatch?.id === 'string' ? firstMatch.id : null;
 }
 
 export function buildMangaDexCoverUrl(

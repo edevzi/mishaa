@@ -84,8 +84,8 @@ export default function Navbar() {
   };
 
   return (
-    <nav className="fixed top-6 left-1/2 z-[1000] w-[min(96vw,90rem)] -translate-x-1/2 max-md:top-3">
-      <div className="glass-panel relative flex items-center justify-between overflow-hidden rounded-[2.5rem] px-3 py-2 sm:px-2">
+    <nav className="fixed top-5 left-1/2 z-[1000] w-[min(96vw,86rem)] -translate-x-1/2 max-md:top-3">
+      <div className="glass-panel relative flex items-center justify-between overflow-hidden rounded-[1.9rem] px-3 py-2 sm:px-2">
         <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/30 to-transparent" />
 
         {/* Branding */}
@@ -107,7 +107,7 @@ export default function Navbar() {
 
         {/* Desktop Menu */}
         <div className="hidden lg:flex items-center gap-2 pr-4">
-          <div className="flex items-center gap-1 bg-white/[0.03] border border-white/5 rounded-full p-1 backdrop-blur-md">
+          <div className="flex items-center gap-1 rounded-full border border-white/5 bg-white/[0.025] p-1 backdrop-blur-md">
             {navLinks.map((link) => {
               const isActive = pathname === link.href;
               return (
@@ -134,7 +134,7 @@ export default function Navbar() {
           <div className="mx-3 h-4 w-px bg-white/10" />
 
           {/* New Language Switcher */}
-          <div className="flex items-center gap-1 bg-white/[0.03] border border-white/5 rounded-full p-1 backdrop-blur-md">
+          <div className="flex items-center gap-1 rounded-full border border-white/5 bg-white/[0.025] p-1 backdrop-blur-md">
             {['EN', 'RU', 'UZ'].map((l) => (
               <button
                 key={l}

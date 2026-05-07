@@ -93,7 +93,6 @@ query ($id: Int) {
       medium
       color
     }
-    bannerImage
     externalLinks {
       url
       site
@@ -111,22 +110,6 @@ query ($id: Int) {
             large
           }
           type
-        }
-      }
-    }
-    characters (limit: 12, sort: [ROLE, RELEVANCE]) {
-      edges {
-        role
-        node {
-          id
-          name {
-            userPreferred
-            full
-          }
-          image {
-            large
-          }
-          description
         }
       }
     }
@@ -152,6 +135,9 @@ export async function fetchAniListManga(aniListId: string | number): Promise<Ani
     });
 
     const data = await response.json();
+    if (data.errors?.length) {
+      console.error('[AniList] GraphQL errors:', data.errors);
+    }
     return data.data?.Media || null;
   } catch (error) {
     console.error('[AniList] Fetch Error:', error);

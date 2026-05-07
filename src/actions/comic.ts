@@ -2,7 +2,7 @@
 
 import { cookies } from 'next/headers';
 import { BooruSource, mapBooruDetail } from "@/lib/booru";
-import { buildMangaDexCoverUrl, pickMangaDexCoverFileName, appendMangaDexFilters } from "@/lib/mangadex";
+import { buildMangaDexCoverUrl, pickMangaDexCoverFileName, appendMangaDexFilters, isMangaDexUuid, resolveMangaDexIdFromTitle, getCachedMangaDexIdResolution, cacheMangaDexIdResolution } from "@/lib/mangadex";
 import { resolveMangaDexLocalizedText, MangaLanguage, getMangaDexTranslatedLanguages, DEFAULT_MANGA_LANGUAGE } from "@/lib/manga-language";
 import { fetchAniListManga } from "@/lib/anilist";
 import { fetchJikanManga } from "@/lib/jikan";
@@ -186,6 +186,27 @@ async function fetchJsonThroughProxy(path: string, fallbackUrl?: string) {
   }
 
   throw new Error('MangaDex fetch failed');
+}
+
+async function resolveMangaDexLookupId(source: string, id: string) {
+  if (source !== 'mangadex' || isMangaDexUuid(id)) {
+    return id;
+  }
+
+  const cached = getCachedMangaDexIdResolution(id);
+  if (cached) {
+    return cached;
+  }
+
+  const aniList = await fetchAniListManga(id);
+  const title = aniList?.title.userPreferred || aniList?.title.english || aniList?.title.romaji;
+  if (!title) {
+    return id;
+  }
+
+  const resolved = (await resolveMangaDexIdFromTitle(title)) || id;
+  cacheMangaDexIdResolution(id, resolved);
+  return resolved;
 }
 
 export async function fetchNHentaiRaw(path: string) {
@@ -388,9 +409,10 @@ export async function getComicDetails(source: string, id: string, mangaLanguage:
 
 
     if (source === 'mangadex') {
+      const mangaDexId = await resolveMangaDexLookupId(source, id);
       const data = await fetchJsonThroughProxy(
-        `manga/${id}?includes[]=cover_art&includes[]=author&includes[]=artist`,
-        `https://api.mangadex.org/manga/${id}?includes[]=cover_art&includes[]=author&includes[]=artist`
+        `manga/${mangaDexId}?includes[]=cover_art&includes[]=author&includes[]=artist`,
+        `https://api.mangadex.org/manga/${mangaDexId}?includes[]=cover_art&includes[]=author&includes[]=artist`
       );
       const manga = data.data;
 
@@ -414,6 +436,10 @@ export async function getComicDetails(source: string, id: string, mangaLanguage:
               rating: 'Safe',
             }))
         : [];
+
+      if (manga.attributes.links?.al) {
+        cacheMangaDexIdResolution(String(manga.attributes.links.al), manga.id);
+      }
 
       return {
         id: manga.id,
@@ -528,6 +554,7 @@ export async function getChapters(source: string, id: string, mangaLanguage: Man
     }
 
     if (source === 'mangadex') {
+      const mangaDexId = await resolveMangaDexLookupId(source, id);
       const translatedLanguages = getMangaDexTranslatedLanguages(mangaLanguage);
       const params = new URLSearchParams({
         limit: '500',
@@ -537,8 +564,8 @@ export async function getChapters(source: string, id: string, mangaLanguage: Man
       
       console.log(`[MangaDex] Fetching chapters for ${id}, lang: ${mangaLanguage}`);
       let data = await fetchJsonThroughProxy(
-        `manga/${id}/feed?${params.toString()}`,
-        `https://api.mangadex.org/manga/${id}/feed?${params.toString()}`
+        `manga/${mangaDexId}/feed?${params.toString()}`,
+        `https://api.mangadex.org/manga/${mangaDexId}/feed?${params.toString()}`
       );
       
       // Fallback to English if no chapters found in preferred languages
@@ -550,8 +577,8 @@ export async function getChapters(source: string, id: string, mangaLanguage: Man
           'translatedLanguage[]': 'en'
         });
         data = await fetchJsonThroughProxy(
-          `manga/${id}/feed?${fallbackParams.toString()}`,
-          `https://api.mangadex.org/manga/${id}/feed?${fallbackParams.toString()}`
+          `manga/${mangaDexId}/feed?${fallbackParams.toString()}`,
+          `https://api.mangadex.org/manga/${mangaDexId}/feed?${fallbackParams.toString()}`
         );
       }
 
@@ -563,8 +590,8 @@ export async function getChapters(source: string, id: string, mangaLanguage: Man
           'order[chapter]': 'asc',
         });
         data = await fetchJsonThroughProxy(
-          `manga/${id}/feed?${aggrParams.toString()}`,
-          `https://api.mangadex.org/manga/${id}/feed?${aggrParams.toString()}`
+          `manga/${mangaDexId}/feed?${aggrParams.toString()}`,
+          `https://api.mangadex.org/manga/${mangaDexId}/feed?${aggrParams.toString()}`
         );
       }
 

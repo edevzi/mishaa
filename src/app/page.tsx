@@ -3,12 +3,12 @@ import { cookies } from 'next/headers';
 import HomeClient from '@/components/HomeClient';
 
 export const metadata: Metadata = {
-  title: 'AI-Powered Comic Creation & Digital Library',
-  description: 'Explore a massive library of Manga, Manhwa, and Marvel comics. Read online, discover new series, and use our AI-powered studio to create your own visual narratives.',
-  keywords: 'read manga online, manhwa wiki, marvel comics archive, free comic reader, ai comic creator, digital comics library',
+  title: 'Ultimate Manga, Manhwa & Hentai Library | iComics.wiki',
+  description: 'Explore a massive collection of Manga, Manhwa, and Adult stories. Read thousands of chapters online for free on iComics.wiki.',
+  keywords: 'read manga online, manhwa archive, adult comics, hentai library, manhwa wiki, free comic reader, digital comics library',
   openGraph: {
-    title: 'AI-Powered Comic Creation & Digital Library',
-    description: 'Read thousands of comics online and create your own stories with AI.',
+    title: 'Ultimate Manga, Manhwa & Hentai Library | iComics.wiki',
+    description: 'Access a massive collection of Manga, Manhwa, and Adult stories. High-fidelity reading experience.',
     url: 'https://icomics.wiki',
     siteName: 'iComics.wiki',
     images: [
@@ -24,8 +24,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'AI-Powered Comic Creation & Digital Library',
-    description: 'The ultimate synthesis environment for comic readers and creators.',
+    title: 'Manga, Manhwa & Hentai Library | iComics.wiki',
+    description: 'The ultimate destination for Manga, Manhwa, and Adult comic readers.',
     images: ['/logo.png'],
   },
   alternates: {

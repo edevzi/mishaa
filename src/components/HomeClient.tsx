@@ -12,7 +12,6 @@ import {
   TrendingUp,
   LayoutGrid,
   Star,
-  Play,
   Sparkles,
   Heart,
   Zap
@@ -25,11 +24,10 @@ import {
   persistStoredMangaLanguage,
 } from '@/lib/manga-language';
 import { readAgeVerification, persistAgeVerification } from '@/lib/age-verification';
-import { readBookmarks, readRecentHistoryItems, BOOKMARKS_UPDATED_EVENT, LIBRARY_ACTIVITY_EVENT } from '@/lib/library-storage';
 
 // --- Types ---
 type ComicSource = 'mangadex' | 'marvel' | 'nhentai';
-type ShelfKey = 'featured' | 'manga-hub' | 'webtoons' | 'manhwa' | 'marvel' | 'trending' | 'for-you' | 'new' | 'doujinshi' | 'milf' | 'ntr';
+type ShelfKey = 'all' | 'featured' | 'manga-hub' | 'webtoons' | 'manhwa' | 'marvel' | 'trending' | 'for-you' | 'new' | 'doujinshi' | 'milf' | 'ntr';
 
 interface LibraryComic {
   id: string;
@@ -63,59 +61,120 @@ interface ShelfDefinition {
   icon: React.ReactNode;
 }
 
+const DEFAULT_IMAGE_SRC = '/logo.png';
+
+function resolveImageSrc(src?: string | null) {
+  return typeof src === 'string' && src.trim().length > 0 ? src : DEFAULT_IMAGE_SRC;
+}
+
+function getShelfPreviewSrc(
+  shelfKey: ShelfKey,
+  shelfState: Record<string, { items: LibraryComic[]; loading: boolean }>,
+  personalRecs: LibraryComic[],
+) {
+  if (shelfKey === 'all') {
+    return (
+      personalRecs[0]?.coverUrl ||
+      shelfState.trending?.items?.[0]?.coverUrl ||
+      DEFAULT_IMAGE_SRC
+    );
+  }
+
+  if (shelfKey === 'for-you') {
+    return personalRecs[0]?.coverUrl || DEFAULT_IMAGE_SRC;
+  }
+
+  return shelfState[shelfKey]?.items?.[0]?.coverUrl || DEFAULT_IMAGE_SRC;
+}
+
+type SafeCoverImageProps = {
+  src?: string | null;
+  alt: string;
+  sizes?: string;
+  priority?: boolean;
+  className?: string;
+};
+
+function SafeCoverImage({
+  src,
+  alt,
+  sizes,
+  priority = false,
+  className,
+}: SafeCoverImageProps) {
+  const [currentSrc, setCurrentSrc] = useState(() => resolveImageSrc(src));
+
+  return (
+    <Image
+      src={currentSrc}
+      alt={alt}
+      fill
+      sizes={sizes}
+      preload={priority}
+      unoptimized
+      onError={() => {
+        if (currentSrc !== DEFAULT_IMAGE_SRC) {
+          setCurrentSrc(DEFAULT_IMAGE_SRC);
+        }
+      }}
+      className={className}
+    />
+  );
+}
+
 const SHELVES: ShelfDefinition[] = [
   {
     key: 'trending',
-    title: 'Global Trending',
-    subtitle: 'Real-time popular picks',
+    title: 'Trending',
+    subtitle: 'Popular now',
     icon: <Flame className="text-orange-500" size={18} />,
   },
   {
     key: 'for-you',
     title: 'For You',
-    subtitle: 'Neural tailored picks',
+    subtitle: 'Based on your activity',
     icon: <Sparkles className="text-[#ffca3a]" size={18} />,
   },
   {
     key: 'manga-hub',
-    title: 'Manga Hub',
-    subtitle: 'Popular Japanese narratives',
+    title: 'Manga',
+    subtitle: 'Japanese comics',
     icon: <LayoutGrid className="text-pink-500" size={18} />,
   },
   {
     key: 'new',
-    title: 'Newly Added',
-    subtitle: 'Fresh narrative arrivals',
+    title: 'New',
+    subtitle: 'Recently added',
     icon: <Clock className="text-green-500" size={18} />,
   },
   {
     key: 'doujinshi',
-    title: 'Popular Doujinshi',
-    subtitle: 'High-quality fan comics',
+    title: 'Doujinshi',
+    subtitle: 'Fan comics',
     icon: <Star className="text-yellow-500" size={18} />,
   },
   {
     key: 'milf',
-    title: 'MILF / Mature',
-    subtitle: 'Mature relationship stories',
+    title: 'Mature',
+    subtitle: '18+ titles',
     icon: <Heart className="text-red-500" size={18} />,
   },
   {
     key: 'ntr',
-    title: 'NTR / Netorare',
-    subtitle: 'Dramatic emotional narratives',
+    title: 'NTR',
+    subtitle: 'Drama-focused',
     icon: <Zap className="text-purple-500" size={18} />,
   },
   {
     key: 'manhwa',
     title: 'Manhwa',
-    subtitle: 'Korean catalog picks',
+    subtitle: 'Korean comics',
     icon: <TrendingUp className="text-cyan-500" size={18} />,
   },
   {
     key: 'webtoons',
     title: 'Webtoons',
-    subtitle: 'Long-strip vertical reads',
+    subtitle: 'Vertical reads',
     icon: <Clock className="text-amber-500" size={18} />,
   },
 ];
@@ -148,7 +207,7 @@ export default function HomeClient({ initialData, initialAgeVerified = false }: 
     return base;
   });
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeTab, setActiveTab] = useState<ShelfKey>(initialData ? 'trending' : 'for-you');
+  const [activeTab, setActiveTab] = useState<ShelfKey>('all');
 
   // Infinite Scroll State
   const [infiniteItems, setInfiniteItems] = useState<LibraryComic[]>([]);
@@ -272,137 +331,12 @@ export default function HomeClient({ initialData, initialAgeVerified = false }: 
   const [mangaLanguage, setMangaLanguage] = useState<MangaLanguage>('en');
   const [personalRecs, setPersonalRecs] = useState<LibraryComic[]>([]);
   const [isRecsLoading, setIsRecsLoading] = useState(false);
-  const [now] = useState(() => new Date());
-  const [savedBookmarks, setSavedBookmarks] = useState<LibraryComic[]>([]);
-  const [recentHistory, setRecentHistory] = useState<LibraryComic[]>([]);
-  const [remoteHistory, setRemoteHistory] = useState<LibraryComic[]>([]);
   const hasTrendingInitialItems = Boolean(initialData?.['trending']?.length);
 
   useEffect(() => {
     const saved = readStoredMangaLanguage();
     const t = setTimeout(() => setMangaLanguage(prev => (saved !== prev ? saved : prev)), 0);
     return () => clearTimeout(t);
-  }, []);
-
-  const syncLibraryActivity = useCallback(() => {
-    if (typeof window === 'undefined') return;
-
-    const localHistory = readRecentHistoryItems(6).map((entry) => ({
-      id: entry.id,
-      title: entry.title || 'Continue reading',
-      description: entry.chapterTitle
-        ? `Last chapter: ${entry.chapterTitle}`
-        : entry.progressPercent
-          ? `${entry.progressPercent}% read`
-          : 'Continue reading',
-      coverUrl: entry.coverUrl || '/logo.png',
-      source: entry.source as ComicSource,
-      href: entry.href,
-      meta: entry.progressPercent ? `${entry.progressPercent}%` : 'Resume',
-      rating: 'Reading',
-      timestamp: Number(entry.timestamp || 0),
-      progressPercent: entry.progressPercent,
-      progressStatus: entry.progressStatus,
-    }));
-
-    const mergedHistory = [...remoteHistory, ...localHistory].reduce((acc, item) => {
-      const key = `${item.source}:${item.id}`;
-      const existing = acc.get(key);
-      if (!existing || Number(item.timestamp || 0) >= Number(existing.timestamp || 0)) {
-        acc.set(key, item);
-      }
-      return acc;
-    }, new Map<string, LibraryComic>());
-
-    const bookmarks = readBookmarks().map((bookmark) => ({
-      id: bookmark.id,
-      title: bookmark.title || 'Untitled',
-      description: bookmark.rating ? `Saved item · ${bookmark.rating}` : 'Saved for later',
-      coverUrl: bookmark.coverUrl || '/logo.png',
-      source: bookmark.source as ComicSource,
-      href: bookmark.href || `/library/${bookmark.source}/${bookmark.id}`,
-      meta: bookmark.rating || 'Saved',
-      rating: bookmark.rating,
-    }));
-
-    setSavedBookmarks(bookmarks);
-    setRecentHistory(Array.from(mergedHistory.values()).sort((a, b) => Number(b.timestamp || 0) - Number(a.timestamp || 0)));
-  }, [remoteHistory]);
-
-  useEffect(() => {
-    const timer = window.setTimeout(syncLibraryActivity, 0);
-    const handleActivity = () => syncLibraryActivity();
-    window.addEventListener(LIBRARY_ACTIVITY_EVENT, handleActivity);
-    window.addEventListener(BOOKMARKS_UPDATED_EVENT, handleActivity);
-    window.addEventListener('storage', handleActivity);
-
-    return () => {
-      window.clearTimeout(timer);
-      window.removeEventListener(LIBRARY_ACTIVITY_EVENT, handleActivity);
-      window.removeEventListener(BOOKMARKS_UPDATED_EVENT, handleActivity);
-      window.removeEventListener('storage', handleActivity);
-    };
-  }, [syncLibraryActivity]);
-
-  useEffect(() => {
-    let cancelled = false;
-
-    const loadCloudHistory = async () => {
-      try {
-        const meRes = await fetch('/api/auth/me');
-        const meData = await meRes.json().catch(() => null);
-        if (cancelled) return;
-
-        if (!meData?.user) {
-          setRemoteHistory([]);
-          return;
-        }
-
-        const progressRes = await fetch('/api/reading-progress');
-        const progressData = await progressRes.json().catch(() => null);
-        if (cancelled) return;
-
-        const items: LibraryComic[] = Array.isArray(progressData?.items)
-          ? progressData.items.map((item: {
-              comicId?: string;
-              comicTitle?: string;
-              comicCoverUrl?: string | null;
-              source?: string;
-              chapterTitle?: string | null;
-              progressPercent?: number;
-              progressStatus?: string;
-              updatedAt?: string;
-              createdAt?: string;
-              chapterId?: string | null;
-            }) => ({
-              id: String(item.comicId || ''),
-              title: item.comicTitle || 'Continue reading',
-              description: item.chapterTitle
-                ? `Last chapter: ${item.chapterTitle}`
-                : 'Continue reading',
-              coverUrl: item.comicCoverUrl || '/logo.png',
-              source: item.source as ComicSource,
-              href: `/library/${item.source}/${item.comicId}`,
-              meta: item.progressPercent ? `${item.progressPercent}%` : 'Resume',
-              rating: item.progressStatus || 'Reading',
-              timestamp: Date.parse(item.updatedAt || item.createdAt || '') || Date.now(),
-              progressPercent: item.progressPercent,
-              progressStatus: item.progressStatus,
-            }))
-          : [];
-
-        setRemoteHistory(items.filter((item) => item.id && item.source));
-      } catch (error) {
-        console.error('Cloud reading progress error:', error);
-        if (!cancelled) setRemoteHistory([]);
-      }
-    };
-
-    void loadCloudHistory();
-
-    return () => {
-      cancelled = true;
-    };
   }, []);
 
   useEffect(() => {
@@ -519,15 +453,18 @@ export default function HomeClient({ initialData, initialAgeVerified = false }: 
   };
 
   const featuredComic = useMemo(() => {
-    const pool = activeTab === 'for-you' ? personalRecs : (shelfState[activeTab]?.items || []);
+    const pool = activeTab === 'all'
+      ? (personalRecs.length > 0 ? personalRecs : shelfState.trending?.items || [])
+      : (activeTab === 'for-you' ? personalRecs : (shelfState[activeTab]?.items || []));
     if (!pool.length) return null;
-    return pool[now.getHours() % pool.length];
-  }, [activeTab, shelfState, personalRecs, now]);
+    return pool[0];
+  }, [activeTab, shelfState, personalRecs]);
 
-  const hasPersonalLibrary = recentHistory.length > 0 || savedBookmarks.length > 0;
-  const activeShelfCount = shelfState[activeTab]?.items.length || 0;
-  const featuredImageSrc = featuredComic?.bannerUrl || featuredComic?.coverUrl || '/logo.png';
-  const featuredHasBanner = Boolean(featuredComic?.bannerUrl);
+  const featuredBackgroundSrc = featuredComic?.bannerUrl || featuredComic?.coverUrl || DEFAULT_IMAGE_SRC;
+  const featuredPosterSrc = featuredComic?.coverUrl || featuredComic?.bannerUrl || DEFAULT_IMAGE_SRC;
+  const renderedShelves = activeTab === 'all'
+    ? visibleShelves
+    : visibleShelves.filter((shelf) => shelf.key === activeTab);
 
   const websiteSchema = {
     "@context": "https://schema.org",
@@ -578,22 +515,22 @@ export default function HomeClient({ initialData, initialAgeVerified = false }: 
                 className="relative w-full"
               >
                 <div className="mx-auto max-w-7xl px-4 sm:px-6 md:px-8 pb-16">
-                  <div className="grid gap-8 rounded-[3rem] border border-white/5 bg-white/[0.02] p-8 lg:grid-cols-[1.15fr_0.85fr] lg:p-12 backdrop-blur-3xl shadow-[0_40px_100px_rgba(0,0,0,0.5)]">
-                    <div className="space-y-8">
-                      <div className="h-8 w-40 rounded-full bg-white/5 animate-pulse" />
-                      <div className="h-20 w-full rounded-2xl bg-white/5 animate-pulse" />
-                      <div className="h-24 w-3/4 rounded-2xl bg-white/5 animate-pulse" />
-                      <div className="flex flex-wrap gap-4">
-                        <div className="h-14 w-44 rounded-2xl bg-white/5 animate-pulse" />
-                        <div className="h-14 w-44 rounded-2xl bg-white/5 animate-pulse" />
+                  <div className="grid gap-6 rounded-[2.5rem] border border-white/10 bg-white/[0.03] p-5 shadow-[0_40px_100px_rgba(0,0,0,0.5)] backdrop-blur-3xl lg:grid-cols-[1.1fr_0.9fr] lg:gap-8 lg:p-8">
+                    <div className="space-y-6">
+                      <div className="h-9 w-48 rounded-full bg-white/5 animate-pulse" />
+                      <div className="h-24 w-full rounded-[2rem] bg-white/5 animate-pulse" />
+                      <div className="h-20 w-4/5 rounded-[2rem] bg-white/5 animate-pulse" />
+                      <div className="flex flex-wrap gap-3">
+                        <div className="h-12 w-40 rounded-full bg-white/5 animate-pulse" />
+                        <div className="h-12 w-40 rounded-full bg-white/5 animate-pulse" />
                       </div>
-                      <div className="grid gap-4 sm:grid-cols-3">
-                        <div className="h-28 rounded-[2rem] bg-white/5 animate-pulse" />
-                        <div className="h-28 rounded-[2rem] bg-white/5 animate-pulse" />
-                        <div className="h-28 rounded-[2rem] bg-white/5 animate-pulse" />
+                      <div className="grid gap-3 sm:grid-cols-3">
+                        <div className="h-24 rounded-[1.5rem] bg-white/5 animate-pulse" />
+                        <div className="h-24 rounded-[1.5rem] bg-white/5 animate-pulse" />
+                        <div className="h-24 rounded-[1.5rem] bg-white/5 animate-pulse" />
                       </div>
                     </div>
-                    <div className="hidden lg:block rounded-[2.5rem] border border-white/5 bg-white/[0.03] animate-pulse" />
+                    <div className="rounded-[2rem] border border-white/10 bg-white/[0.03] animate-pulse" />
                   </div>
                 </div>
               </motion.div>
@@ -606,243 +543,219 @@ export default function HomeClient({ initialData, initialAgeVerified = false }: 
                 transition={{ duration: 1, ease: [0.22, 1, 0.36, 1] }}
                 className="relative w-full"
               >
-                <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pb-32">
-                  <div className="grid grid-cols-1 lg:grid-cols-[1.1fr_1fr] gap-16 items-center">
-                    
-                    {/* Content Left Side */}
-                    <div className="space-y-12 relative z-20 order-2 lg:order-1">
-                      <div className="space-y-6">
-                        <motion.div
-                          initial={{ opacity: 0, x: -20 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          className="flex items-center gap-4 text-[#ff5a1f]"
-                        >
-                          <div className="h-px w-10 bg-current" />
-                          <span className="text-[10px] font-bold uppercase tracking-[0.4em]">Featured Story</span>
-                        </motion.div>
+                <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pb-14 lg:pb-18">
+                  <div className="relative overflow-hidden rounded-[2.75rem] bg-black shadow-[0_50px_140px_rgba(0,0,0,0.72)]">
+                    <div className="absolute inset-0">
+                      <SafeCoverImage
+                        key={featuredBackgroundSrc}
+                        src={featuredBackgroundSrc}
+                        alt={featuredComic.title}
+                        priority
+                        sizes="100vw"
+                        className="object-cover object-center scale-105 opacity-[0.2] blur-[2px]"
+                      />
+                      <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(5,6,10,0.96)_0%,rgba(5,6,10,0.9)_42%,rgba(5,6,10,0.54)_100%)]" />
+                      <div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_28%,rgba(255,90,31,0.14),transparent_28%),radial-gradient(circle_at_82%_18%,rgba(255,211,107,0.09),transparent_20%),radial-gradient(circle_at_70%_72%,rgba(255,90,31,0.08),transparent_26%)]" />
+                    </div>
 
-                        <motion.h1
-                          initial={{ opacity: 0, y: 30 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: 0.1, duration: 0.8 }}
-                          className="text-display text-4xl sm:text-6xl xl:text-7xl text-white leading-[1.1]"
-                        >
+                    <div className="relative grid gap-8 px-6 py-8 sm:px-10 sm:py-10 lg:grid-cols-[1.15fr_0.85fr] lg:items-center lg:gap-14 lg:px-12 lg:py-12">
+                      <div className="relative z-20 max-w-3xl lg:py-12">
+                        <p className="text-[9px] font-black uppercase tracking-[0.5em] text-white/42">
+                          {featuredComic.source}
+                        </p>
+
+                        <h1 className="mt-6 text-display text-5xl leading-[0.9] text-white sm:text-6xl xl:text-[5.9rem]">
                           {featuredComic.title}
-                        </motion.h1>
+                        </h1>
 
-                        <motion.p
-                          initial={{ opacity: 0, y: 20 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: 0.2, duration: 0.8 }}
-                          className="max-w-xl text-lg sm:text-xl leading-relaxed text-white/40 font-medium"
+                        <div className="mt-8 flex items-baseline gap-4">
+                          <span className="text-[9px] font-black uppercase tracking-[0.55em] text-white/32">
+                            Rating
+                          </span>
+                          <span className="text-2xl font-black uppercase tracking-[0.18em] text-white">
+                            {featuredComic.rating || '8.5'}
+                          </span>
+                        </div>
+
+                        <Link
+                          href={featuredComic.href}
+                          className="mt-10 inline-flex h-12 items-center justify-center rounded-full bg-white px-6 text-[10px] font-black uppercase tracking-[0.4em] text-black transition-transform hover:scale-[1.02] active:scale-95"
                         >
-                          {featuredComic.description}
-                        </motion.p>
+                          Read
+                        </Link>
                       </div>
 
                       <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.3 }}
-                        className="flex flex-wrap items-center gap-6"
+                        initial={{ opacity: 0, scale: 0.96, y: 12 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        transition={{ delay: 0.06, duration: 0.75 }}
+                        className="relative z-20 mx-auto w-full max-w-[26rem] lg:mx-0 lg:ml-auto lg:translate-y-2"
                       >
-                        <Link
-                          href={featuredComic.href}
-                          className="h-20 px-12 rounded-full bg-white text-black text-xs font-black uppercase tracking-widest flex items-center justify-center transition-all hover:scale-105 active:scale-95 shadow-2xl"
-                        >
-                          Begin Narrative
-                        </Link>
-                        
-                        <button className="text-[10px] font-bold uppercase tracking-[0.3em] text-white/20 hover:text-white transition-colors">
-                          Add to Collection +
-                        </button>
+                        <div className="relative aspect-[3/4] overflow-hidden rounded-[2.25rem] bg-black shadow-[0_35px_110px_rgba(0,0,0,0.62)]">
+                          <SafeCoverImage
+                            key={featuredPosterSrc}
+                            src={featuredPosterSrc}
+                            alt={featuredComic.title}
+                            priority
+                            sizes="(max-width: 1024px) 78vw, 420px"
+                            className="object-cover object-center"
+                          />
+                          <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,0.02)_0%,rgba(0,0,0,0.12)_58%,rgba(0,0,0,0.58)_100%)]" />
+                          <div className="absolute right-4 top-4 rounded-full border border-white/10 bg-black/55 px-4 py-2 text-[9px] font-black uppercase tracking-[0.35em] text-white/70 backdrop-blur-xl">
+                            {featuredComic.rating || '8.5'}
+                          </div>
+                        </div>
                       </motion.div>
                     </div>
-
-                    {/* Right Side: Large Visual */}
-                    <motion.div
-                      initial={{ opacity: 0, scale: 0.9 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      transition={{ delay: 0.2, duration: 1 }}
-                      className="relative z-10 order-1 lg:order-2"
-                    >
-                      <div className="relative aspect-[4/5] sm:aspect-square w-full rounded-[4rem] overflow-hidden border border-white/5 shadow-2xl">
-                        <Image
-                          src={featuredImageSrc}
-                          alt={featuredComic.title}
-                          fill
-                          priority
-                          sizes="(max-width: 1024px) 100vw, 600px"
-                          unoptimized
-                          className="object-cover object-center transition-transform duration-1000"
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-60" />
-                        
-                        <div className="absolute bottom-12 left-12 right-12">
-                          <p className="text-[10px] font-bold uppercase tracking-[0.5em] text-white/40 mb-2">Primary Feature</p>
-                          <h3 className="text-3xl font-black text-white">{featuredComic.title}</h3>
-                        </div>
-                      </div>
-                      
-                      {/* Atmospheric Glow */}
-                      <div className="absolute -inset-20 -z-10 bg-[#ff5a1f]/10 blur-[120px] rounded-full" />
-                    </motion.div>
-
                   </div>
                 </div>
               </motion.div>
             ) : null}
           </AnimatePresence>
         </section>
-
-
-        {hasPersonalLibrary && (
-          <section className="relative z-20 container mx-auto px-4 sm:px-6 md:px-8 pb-10">
-            <div className="max-w-6xl mx-auto grid gap-8 lg:grid-cols-2">
-              {recentHistory.length > 0 && (
-                <div className="rounded-[2rem] border border-white/10 bg-white/[0.03] p-6 md:p-8 backdrop-blur-2xl">
-                  <div className="flex items-center justify-between gap-4 mb-6">
-                    <div>
-                      <p className="text-[9px] font-black uppercase tracking-[0.5em] text-[#ff5a1f]">Continue Reading</p>
-                      <h2 className="text-2xl md:text-3xl font-black uppercase tracking-tight mt-2">Pick up where you left off</h2>
-                    </div>
-                    <Link href="/library" className="text-[9px] font-black uppercase tracking-[0.35em] text-white/40 hover:text-white transition-colors">
-                      Open Library
-                    </Link>
-                  </div>
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    {recentHistory.slice(0, 4).map((comic) => (
-                      <Link
-                        key={`${comic.source}:${comic.id}`}
-                        href={comic.href}
-                        className="group flex items-center gap-5 rounded-2xl border border-white/5 bg-black/30 p-3 transition-all hover:border-[#ff5a1f]/30 hover:bg-black/50"
-                      >
-                        <div className="relative h-32 w-24 overflow-hidden rounded-xl border border-white/10 bg-black shrink-0 md:h-36 md:w-28">
-                          <Image src={comic.coverUrl || '/logo.png'} alt={comic.title} fill unoptimized className="object-contain object-center p-1" />
-                        </div>
-                        <div className="min-w-0 flex-1 py-1">
-                          <p className="text-[8px] font-black uppercase tracking-[0.35em] text-[#ffca3a]">
-                            {comic.progressPercent ? `${comic.progressPercent}% Resume` : 'Resume'}
-                          </p>
-                          <h3 className="mt-2 truncate text-sm font-black uppercase tracking-widest text-white group-hover:text-[#ff5a1f] transition-colors">
-                            {comic.title}
-                          </h3>
-                          <p className="mt-2 line-clamp-2 text-[10px] leading-5 text-white/35">
-                            {comic.description}
-                          </p>
-                        </div>
-                      </Link>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {savedBookmarks.length > 0 && (
-                <div className="rounded-[2rem] border border-white/10 bg-white/[0.03] p-6 md:p-8 backdrop-blur-2xl">
-                  <div className="flex items-center justify-between gap-4 mb-6">
-                    <div>
-                      <p className="text-[9px] font-black uppercase tracking-[0.5em] text-[#ff5a1f]">Bookmarks</p>
-                      <h2 className="text-2xl md:text-3xl font-black uppercase tracking-tight mt-2">Saved for later</h2>
-                    </div>
-                    <Link href="/settings" className="text-[9px] font-black uppercase tracking-[0.35em] text-white/40 hover:text-white transition-colors">
-                      Manage
-                    </Link>
-                  </div>
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    {savedBookmarks.slice(0, 4).map((comic) => (
-                      <Link
-                        key={`${comic.source}:${comic.id}`}
-                        href={comic.href}
-                        className="group flex items-center gap-5 rounded-2xl border border-white/5 bg-black/30 p-3 transition-all hover:border-[#ff5a1f]/30 hover:bg-black/50"
-                      >
-                        <div className="relative h-32 w-24 overflow-hidden rounded-xl border border-white/10 bg-black shrink-0 md:h-36 md:w-28">
-                          <Image src={comic.coverUrl || '/logo.png'} alt={comic.title} fill unoptimized className="object-contain object-center p-1" />
-                        </div>
-                        <div className="min-w-0 flex-1 py-1">
-                          <p className="text-[8px] font-black uppercase tracking-[0.35em] text-[#ffca3a]">Bookmark</p>
-                          <h3 className="mt-2 truncate text-sm font-black uppercase tracking-widest text-white group-hover:text-[#ff5a1f] transition-colors">
-                            {comic.title}
-                          </h3>
-                          <p className="mt-2 line-clamp-2 text-[10px] leading-5 text-white/35">
-                            {comic.meta || 'Saved item'}
-                          </p>
-                        </div>
-                      </Link>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          </section>
-        )}
-        {!hasPersonalLibrary && (
-          <section className="relative z-20 container mx-auto px-6 pb-32">
-            <div className="max-w-4xl mx-auto text-center space-y-12">
-              <div className="space-y-4">
-                <h2 className="text-5xl sm:text-7xl font-display text-white">Your Collection</h2>
-                <p className="text-xl text-white/30 max-w-2xl mx-auto">
-                  A dedicated space for your reading journey. Start exploring to build your personal library.
+        {/* --- BROWSE CONTROLS --- */}
+        <section id="browse-categories" className="relative z-20 px-4 pb-12 sm:px-6 md:px-8 lg:pb-16">
+          <div className="mx-auto max-w-7xl rounded-[2.5rem] border border-white/10 bg-white/[0.03] p-5 shadow-[0_24px_80px_rgba(0,0,0,0.35)] backdrop-blur-2xl sm:p-6 lg:p-8">
+            <div className="flex flex-wrap items-end justify-between gap-4 border-b border-white/10 pb-6">
+              <div>
+                <p className="text-[9px] font-black uppercase tracking-[0.5em] text-[#ff5a1f]">
+                  Categories
                 </p>
-              </div>
-              
-              <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
-                <Link href="/library" className="h-20 px-16 rounded-full bg-white text-black text-sm font-black uppercase tracking-widest hover:scale-105 transition-all active:scale-95">
-                  Explore Now
-                </Link>
-                <Link href="/settings" className="h-20 px-16 rounded-full border border-white/10 text-white/40 text-sm font-black uppercase tracking-widest hover:text-white hover:border-white/20 transition-all">
-                  Configure
-                </Link>
-              </div>
-
-              <div className="flex items-center justify-center gap-12 pt-12 border-t border-white/5">
-                {['Live Sync', 'Tracking', 'Bookmarks'].map((tag) => (
-                  <span key={tag} className="text-[10px] font-bold uppercase tracking-[0.4em] text-white/20">{tag}</span>
-                ))}
+                <h2 className="mt-3 text-2xl font-black uppercase tracking-tight text-white sm:text-3xl">
+                  Filter the page
+                </h2>
               </div>
             </div>
-          </section>
-        )}
 
+            <div className="mt-6 grid gap-6 lg:grid-cols-[1.25fr_0.75fr] lg:items-stretch">
+              <motion.div
+                key={activeTab}
+                initial={{ opacity: 0, y: 14 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+                className="relative overflow-hidden rounded-[2rem] bg-black shadow-[0_24px_60px_rgba(0,0,0,0.25)]"
+              >
+                <div className="relative aspect-[16/9] sm:aspect-[18/10]">
+                  <SafeCoverImage
+                    key={getShelfPreviewSrc(activeTab, shelfState, personalRecs)}
+                    src={getShelfPreviewSrc(activeTab, shelfState, personalRecs)}
+                    alt="Selected category preview"
+                    sizes="(max-width: 1024px) 100vw, 720px"
+                    className="object-cover object-center"
+                  />
+                  <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(5,6,10,0.96)_0%,rgba(5,6,10,0.72)_38%,rgba(5,6,10,0.18)_100%)]" />
+                  <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_25%,rgba(255,90,31,0.18),transparent_26%),radial-gradient(circle_at_85%_70%,rgba(255,211,107,0.16),transparent_20%)]" />
+                </div>
 
-        {/* --- EXPLORE SECTION --- */}
-        <section className="relative z-20 -mt-12 container mx-auto px-4 sm:px-6 md:px-8 pb-24 sm:-mt-16 sm:pb-28 lg:-mt-20 lg:pb-32">
+                <div className="absolute inset-0 flex items-end">
+                  <div className="w-full p-5 sm:p-6">
+                    <div className="max-w-xl rounded-[1.5rem] bg-black/55 p-5 backdrop-blur-xl sm:p-6">
+                      <p className="text-[9px] font-black uppercase tracking-[0.45em] text-[#ffca3a]">
+                        {activeTab === 'all' ? 'All shelves' : activeTab.toUpperCase()}
+                      </p>
+                      <h3 className="mt-3 text-3xl font-black uppercase tracking-tight text-white sm:text-4xl">
+                        {activeTab === 'all'
+                          ? 'Everything in one place'
+                          : visibleShelves.find((s) => s.key === activeTab)?.title || 'Selected shelf'}
+                      </h3>
+                      <p className="mt-3 max-w-lg text-sm leading-6 text-white/55">
+                        {activeTab === 'all'
+                          ? 'Browse everything, or choose one shelf to narrow the page instantly.'
+                          : visibleShelves.find((s) => s.key === activeTab)?.subtitle || 'Shelf preview'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
 
-          {/* --- CATEGORY NAVIGATION --- */}
-          <div className="mb-24 flex flex-col gap-16 max-w-6xl mx-auto">
-            <div className="flex flex-wrap items-center justify-center gap-x-12 gap-y-6">
-              {visibleShelves.map((shelf) => (
-                <button
-                  key={shelf.key}
-                  onClick={() => setActiveTab(shelf.key)}
-                  className={`group relative flex flex-col items-center transition-all duration-500 ${
-                    activeTab === shelf.key ? 'scale-110' : 'opacity-30 hover:opacity-100'
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
+                <motion.button
+                  type="button"
+                  whileHover={{ y: -2 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => setActiveTab('all')}
+                  className={`group flex items-center gap-4 rounded-[1.5rem] border p-4 text-left transition-all duration-300 cursor-pointer ${
+                    activeTab === 'all'
+                      ? 'border-[#ff5a1f]/70 bg-[#ff5a1f]/12'
+                      : 'border-white/10 bg-black/20 hover:border-white/20 hover:bg-white/[0.05]'
                   }`}
                 >
-                  <span className={`text-[10px] font-bold uppercase tracking-[0.5em] transition-colors ${
-                    activeTab === shelf.key ? 'text-[#ff5a1f]' : 'text-white'
+                  <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl ${
+                    activeTab === 'all' ? 'bg-[#ff5a1f] text-white' : 'bg-white/[0.06] text-white/70'
                   }`}>
-                    {shelf.title}
-                  </span>
-                  {activeTab === shelf.key && (
-                    <motion.div
-                      layoutId="active-bar"
-                      className="absolute -bottom-4 h-[2px] w-8 bg-[#ff5a1f]"
-                    />
-                  )}
-                </button>
-              ))}
+                    <LayoutGrid size={18} />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center justify-between gap-3">
+                      <h3 className="text-sm font-black uppercase tracking-[0.25em] text-white">
+                        All
+                      </h3>
+                      {activeTab === 'all' && (
+                        <span className="rounded-full border border-white/15 bg-white/10 px-3 py-1 text-[8px] font-black uppercase tracking-[0.35em] text-white">
+                          Active
+                        </span>
+                      )}
+                    </div>
+                    <p className="mt-2 text-[11px] leading-5 text-white/42">
+                      Show every shelf
+                    </p>
+                  </div>
+                </motion.button>
+
+                {visibleShelves.map((shelf) => {
+                  const isActive = activeTab === shelf.key;
+                  return (
+                    <motion.button
+                      key={shelf.key}
+                      type="button"
+                      whileHover={{ y: -2 }}
+                      whileTap={{ scale: 0.98 }}
+                      onClick={() => setActiveTab(shelf.key)}
+                      className={`group flex items-center gap-4 rounded-[1.5rem] border p-4 text-left transition-all duration-300 cursor-pointer ${
+                        isActive
+                          ? 'border-[#ff5a1f]/70 bg-[#ff5a1f]/12'
+                          : 'border-white/10 bg-black/20 hover:border-white/20 hover:bg-white/[0.05]'
+                      }`}
+                    >
+                      <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl ${
+                        isActive ? 'bg-[#ff5a1f] text-white' : 'bg-white/[0.06] text-white/70'
+                      }`}>
+                        {shelf.icon}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center justify-between gap-3">
+                          <h3 className="text-sm font-black uppercase tracking-[0.25em] text-white">
+                            {shelf.title}
+                          </h3>
+                          {isActive && (
+                            <span className="rounded-full border border-white/15 bg-white/10 px-3 py-1 text-[8px] font-black uppercase tracking-[0.35em] text-white">
+                              Active
+                            </span>
+                          )}
+                        </div>
+                        <p className="mt-2 text-[11px] leading-5 text-white/42">
+                          {shelf.subtitle}
+                        </p>
+                      </div>
+                    </motion.button>
+                  );
+                })}
+              </div>
             </div>
 
-            {/* Preference Controls */}
-            <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] items-center gap-12 border-b border-white/5 pb-12">
-              <div className="flex items-center gap-8 overflow-x-auto no-scrollbar">
-                <span className="text-[9px] font-bold uppercase tracking-[0.3em] text-white/20 whitespace-nowrap">Linguistic:</span>
+            <div className="mt-6 grid gap-4 rounded-[1.6rem] border border-white/10 bg-black/20 p-4 lg:grid-cols-[1fr_auto] lg:items-center">
+              <div className="flex items-center gap-3 overflow-x-auto no-scrollbar">
+                <span className="shrink-0 text-[9px] font-black uppercase tracking-[0.35em] text-white/30">
+                  Language
+                </span>
                 {MANGA_LANGUAGE_OPTIONS.filter(o => ['en', 'ru', 'es', 'fr', 'all'].includes(o.value)).map((opt) => (
                   <button
                     key={opt.value}
                     onClick={() => handleLanguageChange(opt.value)}
-                    className={`text-[10px] font-bold uppercase tracking-widest transition-all ${
-                      mangaLanguage === opt.value ? 'text-[#ffca3a]' : 'text-white/20 hover:text-white'
+                    className={`shrink-0 rounded-full px-4 py-2 text-[10px] font-black uppercase tracking-[0.3em] transition-all ${
+                      mangaLanguage === opt.value
+                        ? 'bg-white text-black shadow-lg'
+                        : 'border border-white/10 bg-white/[0.03] text-white/45 hover:border-white/20 hover:text-white'
                     }`}
                   >
                     {opt.value === 'all' ? 'Mixed' : opt.value}
@@ -850,23 +763,24 @@ export default function HomeClient({ initialData, initialAgeVerified = false }: 
                 ))}
               </div>
 
-              <div className="relative min-w-[300px]">
-                <Search className="absolute left-0 top-1/2 -translate-y-1/2 text-white/20" size={16} />
+              <label className="relative min-w-[280px] lg:min-w-[340px]">
+                <Search className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-white/30" size={16} />
                 <input
                   type="text"
-                  placeholder="Find stories..."
+                  placeholder="Search titles..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full bg-transparent pl-8 pr-4 py-2 text-xs font-medium text-white outline-none placeholder:text-white/10 border-b border-white/10 focus:border-[#ff5a1f] transition-colors"
+                  className="w-full rounded-full border border-white/10 bg-white/[0.03] py-3 pl-11 pr-4 text-sm text-white outline-none placeholder:text-white/25 focus:border-[#ff5a1f] transition-colors"
                 />
-              </div>
+              </label>
             </div>
           </div>
+        </section>
 
-
-          {/* Shelves Layout */}
+        {/* Shelves Layout */}
+        <section className="relative z-20 px-4 sm:px-6 md:px-8 pb-24 sm:pb-28 lg:pb-32">
           <div className="space-y-20">
-            {visibleShelves.every(s => shelfState[s.key]?.items.filter(c => c.title.toLowerCase().includes(searchQuery.toLowerCase())).length === 0) &&
+            {renderedShelves.every(s => shelfState[s.key]?.items.filter(c => c.title.toLowerCase().includes(searchQuery.toLowerCase())).length === 0) &&
               searchQuery && (
                 <div className="py-20 text-center">
                   <div className="inline-flex h-20 w-20 items-center justify-center rounded-full bg-white/5 mb-6 text-white/20">
@@ -878,7 +792,7 @@ export default function HomeClient({ initialData, initialAgeVerified = false }: 
               )}
 
             <AnimatePresence>
-              {visibleShelves.map((shelf) => {
+              {renderedShelves.map((shelf) => {
                 const state = shelf.key === 'for-you' ? { items: personalRecs, loading: isRecsLoading } : shelfState[shelf.key];
                 if (!state) return null;
 
@@ -921,7 +835,7 @@ export default function HomeClient({ initialData, initialAgeVerified = false }: 
                           <div key={i} className="aspect-[2/3] animate-pulse rounded-2xl bg-white/5" />
                         ))
                       ) : (
-                        filteredItems.map((comic, i) => {
+                        filteredItems.map((comic) => {
                           const cardKey = `${shelf.key}:${comic.source}:${comic.id}`;
                           const adultContent = isAdultComic(comic);
                           const isPreviewOpen = adultContent && previewCardKey === cardKey;
@@ -945,10 +859,10 @@ export default function HomeClient({ initialData, initialAgeVerified = false }: 
                                 }}
                               >
                                 <div className="relative aspect-[2/3] w-full overflow-hidden rounded-[2rem] border border-white/10 bg-black shadow-2xl transition-all duration-700 group-hover:border-[#ff5a1f]/40 group-hover:shadow-[0_30px_60px_-15px_rgba(255,90,31,0.25)]">
-                                  <Image
+                                  <SafeCoverImage
+                                    key={comic.coverUrl}
                                     src={comic.coverUrl}
                                     alt={comic.title}
-                                    fill
                                     sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 250px"
                                     className={`object-cover transition-all duration-1000 ${
                                       adultContent && !isPreviewOpen ? 'scale-110 blur-[8px]' : 'scale-100'
@@ -1007,8 +921,8 @@ export default function HomeClient({ initialData, initialAgeVerified = false }: 
             <div className="flex items-center gap-4 mb-12">
               <div className="w-1.5 h-8 bg-[#ff4d00] rounded-full" />
               <div>
-                <h2 className="text-3xl font-black uppercase tracking-tight italic">Discover More</h2>
-                <p className="text-white/40 text-[11px] font-black uppercase tracking-[0.3em]">Endless content stream</p>
+                <h2 className="text-3xl font-black uppercase tracking-tight italic">More</h2>
+                <p className="text-white/40 text-[11px] font-black uppercase tracking-[0.3em]">Scroll for more titles</p>
               </div>
             </div>
 
@@ -1038,10 +952,10 @@ export default function HomeClient({ initialData, initialAgeVerified = false }: 
                       }}
                     >
                       <div className="relative aspect-[2/3] overflow-hidden rounded-[1.5rem] border border-white/5 bg-white/[0.02] transition-all duration-700 group-hover:border-[#ff5a1f]/30 group-hover:shadow-[0_25px_50px_rgba(255,90,31,0.15)] group-hover:-translate-y-3">
-                        <Image
+                        <SafeCoverImage
+                          key={comic.coverUrl || '/logo.png'}
                           src={comic.coverUrl || '/logo.png'}
                           alt={comic.title}
-                          fill
                           sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 200px"
                           className={`object-cover transition-all duration-1000 ${
                             adultContent && !isPreviewOpen ? 'scale-110 blur-[10px]' : 'scale-100'
@@ -1089,10 +1003,10 @@ export default function HomeClient({ initialData, initialAgeVerified = false }: 
                       className="absolute inset-4 bg-[#ff4d00]/20 rounded-full"
                     />
                   </div>
-                  <div className="text-[10px] font-black uppercase tracking-[0.5em] text-white/20">Syncing_New_Realities</div>
+                  <div className="text-[10px] font-black uppercase tracking-[0.5em] text-white/20">Loading more</div>
                 </>
               ) : (
-                <div className="text-[10px] font-black uppercase tracking-[0.5em] text-[#ff4d00]">All_Realities_Synchronized</div>
+                <div className="text-[10px] font-black uppercase tracking-[0.5em] text-[#ff4d00]">No more titles</div>
               )}
             </div>
           </div>

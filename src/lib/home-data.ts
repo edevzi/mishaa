@@ -1,5 +1,7 @@
 import { 
   appendMangaDexFilters, 
+  cacheMangaDexIdResolution,
+  resolveMangaDexIdFromTitle,
   pickMangaDexCoverFileName, 
   buildMangaDexCoverUrl, 
   MANGADEX_LONG_STRIP_TAG_ID 
@@ -138,17 +140,29 @@ export async function getHomeData(lang: MangaLanguage = 'en', options: HomeDataO
     loadMangaDex(webtoonsParams, lang, webtoonsFallbackParams),
     loadMangaDex(manhwaParams, lang, manhwaFallbackParams),
     ...adultShelves,
-    fetchTrendingAniListManga(12).then(items => items.map(item => ({
-        id: item.id.toString(),
-        title: item.title.userPreferred || item.title.english || item.title.romaji,
-        description: item.description?.replace(/<[^>]*>?/gm, '').substring(0, 150) || 'Global trending pick',
-        coverUrl: item.coverImage.extraLarge || item.coverImage.large,
-        bannerUrl: item.bannerImage || undefined,
-        source: 'mangadex' as const,
-        href: `/library/mangadex/${item.id}`,
-        meta: `TRENDING #${items.indexOf(item) + 1}`,
-        rating: (item.averageScore / 10).toFixed(1) || '8.5'
-    }))).catch(() => []),
+    fetchTrendingAniListManga(12).then(async (items) => {
+      const resolved = await Promise.all(items.map(async (item, index) => {
+        const title = item.title.userPreferred || item.title.english || item.title.romaji;
+        const mangaDexId = title ? await resolveMangaDexIdFromTitle(title) : null;
+        if (mangaDexId) {
+          cacheMangaDexIdResolution(item.id.toString(), mangaDexId);
+        }
+
+        return {
+          id: mangaDexId || item.id.toString(),
+          title,
+          description: item.description?.replace(/<[^>]*>?/gm, '').substring(0, 150) || 'Global trending pick',
+          coverUrl: item.coverImage.extraLarge || item.coverImage.large,
+          bannerUrl: item.bannerImage || undefined,
+          source: 'mangadex' as const,
+          href: mangaDexId ? `/library/mangadex/${mangaDexId}` : item.siteUrl,
+          meta: `TRENDING #${index + 1}`,
+          rating: (item.averageScore / 10).toFixed(1) || '8.5'
+        };
+      }));
+
+      return resolved;
+    }).catch(() => []),
     loadMangaDex(latestParams, lang, latestFallbackParams)
   ]);
 

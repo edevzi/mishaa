@@ -1,11 +1,35 @@
 export const runtime = "edge";
 import type { Metadata } from 'next';
+import { redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
 import { cache } from 'react';
 import ComicDetailsClient from './ComicDetailsClient';
 import { getComicDetails as getComicDetailsAction, getChapters } from '@/actions/comic';
+import { fetchAniListManga } from '@/lib/anilist';
+import { cacheMangaDexIdResolution, getCachedMangaDexIdResolution, isMangaDexUuid, resolveMangaDexIdFromTitle } from '@/lib/mangadex';
 
 const getComicDetails = cache(getComicDetailsAction);
+
+async function resolveMangaDexRouteId(source: string, id: string) {
+  if (source !== 'mangadex' || isMangaDexUuid(id)) {
+    return id;
+  }
+
+  const cached = getCachedMangaDexIdResolution(id);
+  if (cached) {
+    return cached;
+  }
+
+  const aniList = await fetchAniListManga(id);
+  const title = aniList?.title.userPreferred || aniList?.title.english || aniList?.title.romaji;
+  if (!title) {
+    return id;
+  }
+
+  const resolved = (await resolveMangaDexIdFromTitle(title)) || id;
+  cacheMangaDexIdResolution(id, resolved);
+  return resolved;
+}
 
 type RouteParams = {
   source: string;
@@ -42,7 +66,20 @@ const DEFAULT_DESCRIPTION = 'The ultimate synthesis environment for independent 
 
 export async function generateMetadata({ params }: MetadataProps): Promise<Metadata> {
   const { source, id } = await params;
-  const comic = (await getComicDetails(source, id)) as ComicSeoData | null;
+  const resolvedId = await resolveMangaDexRouteId(source, id);
+  const resolved = source !== 'mangadex' || isMangaDexUuid(id) || resolvedId !== id;
+
+  if (source === 'mangadex' && !resolved) {
+    return {
+      title: 'Manga Library',
+      description: 'Browse the manga catalog and open a title from the library.',
+      alternates: {
+        canonical: `https://icomics.wiki/library/${source}/${id}`,
+      },
+    };
+  }
+
+  const comic = (await getComicDetails(source, resolvedId)) as ComicSeoData | null;
   
   const type = source === 'mangadex' ? 'Manga' : source === 'marvel' ? 'Comic' : 'Webtoon';
   
@@ -80,7 +117,7 @@ export async function generateMetadata({ params }: MetadataProps): Promise<Metad
       images: [image],
     },
     alternates: {
-      canonical: `https://icomics.wiki/library/${source}/${id}`,
+      canonical: `https://icomics.wiki/library/${source}/${resolvedId}`,
     }
   };
 }
@@ -89,12 +126,46 @@ import JsonLd from '@/components/JsonLd';
 
 export default async function Page({ params }: { params: Promise<RouteParams> }) {
   const { source, id } = await params;
+  const resolvedId = await resolveMangaDexRouteId(source, id);
+  const resolved = source !== 'mangadex' || isMangaDexUuid(id) || resolvedId !== id;
+
+  if (source === 'mangadex' && resolvedId !== id && isMangaDexUuid(resolvedId)) {
+    redirect(`/library/${source}/${resolvedId}`);
+  }
+
+  if (source === 'mangadex' && !resolved) {
+    return (
+      <article className="min-h-screen bg-[#05060a] text-white">
+        <div className="mx-auto flex min-h-screen max-w-4xl flex-col items-center justify-center gap-6 px-4 text-center">
+          <div className="text-[10px] font-black uppercase tracking-[0.5em] text-[#ff5a1f]">
+            Legacy MangaDex link
+          </div>
+          <h1 className="text-4xl font-black uppercase tracking-tight sm:text-6xl">
+            We could not resolve this title
+          </h1>
+          <p className="max-w-2xl text-sm leading-7 text-white/60">
+            This MangaDex link uses an old numeric ID that cannot be fetched directly anymore.
+            Open a title from the library to continue reading.
+          </p>
+          <div className="flex flex-wrap justify-center gap-3">
+            <a href="/library" className="rounded-full bg-white px-5 py-3 text-[10px] font-black uppercase tracking-[0.35em] text-black">
+              Browse library
+            </a>
+            <a href="/" className="rounded-full border border-white/10 px-5 py-3 text-[10px] font-black uppercase tracking-[0.35em] text-white">
+              Go home
+            </a>
+          </div>
+        </div>
+      </article>
+    );
+  }
+
   const cookieStore = await cookies();
   const initialAgeVerified = cookieStore.get('age_verified')?.value === 'true';
   
   const [initialComic, initialChapters] = await Promise.all([
-    getComicDetails(source, id),
-    getChapters(source, id)
+    getComicDetails(source, resolvedId),
+    getChapters(source, resolvedId)
   ]);
   const comicData = initialComic as ComicSeoData | null;
 
@@ -145,7 +216,7 @@ export default async function Page({ params }: { params: Promise<RouteParams> })
         "@type": "ListItem",
         "position": 3,
         "name": comicData?.title || "Comic",
-        "item": `https://icomics.wiki/library/${source}/${id}`
+        "item": `https://icomics.wiki/library/${source}/${resolvedId}`
       }
     ]
   };
