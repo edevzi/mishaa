@@ -748,19 +748,19 @@ export default function HomeClient({ initialData, initialAgeVerified = false }: 
                       <Link
                         key={`${comic.source}:${comic.id}`}
                         href={comic.href}
-                        className="group flex items-center gap-4 rounded-2xl border border-white/5 bg-black/30 p-3 transition-all hover:border-[#ff5a1f]/30 hover:bg-black/50"
+                        className="group flex items-center gap-5 rounded-2xl border border-white/5 bg-black/30 p-3 transition-all hover:border-[#ff5a1f]/30 hover:bg-black/50"
                       >
-                        <div className="relative h-24 w-16 overflow-hidden rounded-xl border border-white/10 bg-black shrink-0">
-                          <Image src={comic.coverUrl || '/logo.png'} alt={comic.title} fill unoptimized className="object-cover" />
+                        <div className="relative h-28 w-20 overflow-hidden rounded-xl border border-white/10 bg-black shrink-0">
+                          <Image src={comic.coverUrl || '/logo.png'} alt={comic.title} fill unoptimized className="object-cover object-center" />
                         </div>
-                        <div className="min-w-0 flex-1">
+                        <div className="min-w-0 flex-1 py-1">
                           <p className="text-[8px] font-black uppercase tracking-[0.35em] text-[#ffca3a]">
                             {comic.progressPercent ? `${comic.progressPercent}% Resume` : 'Resume'}
                           </p>
-                          <h3 className="mt-1 truncate text-sm font-black uppercase tracking-widest text-white group-hover:text-[#ff5a1f] transition-colors">
+                          <h3 className="mt-2 truncate text-sm font-black uppercase tracking-widest text-white group-hover:text-[#ff5a1f] transition-colors">
                             {comic.title}
                           </h3>
-                          <p className="mt-1 line-clamp-2 text-[10px] text-white/35">
+                          <p className="mt-2 line-clamp-2 text-[10px] leading-5 text-white/35">
                             {comic.description}
                           </p>
                         </div>
@@ -786,17 +786,17 @@ export default function HomeClient({ initialData, initialAgeVerified = false }: 
                       <Link
                         key={`${comic.source}:${comic.id}`}
                         href={comic.href}
-                        className="group flex items-center gap-4 rounded-2xl border border-white/5 bg-black/30 p-3 transition-all hover:border-[#ff5a1f]/30 hover:bg-black/50"
+                        className="group flex items-center gap-5 rounded-2xl border border-white/5 bg-black/30 p-3 transition-all hover:border-[#ff5a1f]/30 hover:bg-black/50"
                       >
-                        <div className="relative h-24 w-16 overflow-hidden rounded-xl border border-white/10 bg-black shrink-0">
-                          <Image src={comic.coverUrl || '/logo.png'} alt={comic.title} fill unoptimized className="object-cover" />
+                        <div className="relative h-28 w-20 overflow-hidden rounded-xl border border-white/10 bg-black shrink-0">
+                          <Image src={comic.coverUrl || '/logo.png'} alt={comic.title} fill unoptimized className="object-cover object-center" />
                         </div>
-                        <div className="min-w-0 flex-1">
+                        <div className="min-w-0 flex-1 py-1">
                           <p className="text-[8px] font-black uppercase tracking-[0.35em] text-[#ffca3a]">Bookmark</p>
-                          <h3 className="mt-1 truncate text-sm font-black uppercase tracking-widest text-white group-hover:text-[#ff5a1f] transition-colors">
+                          <h3 className="mt-2 truncate text-sm font-black uppercase tracking-widest text-white group-hover:text-[#ff5a1f] transition-colors">
                             {comic.title}
                           </h3>
-                          <p className="mt-1 line-clamp-2 text-[10px] text-white/35">
+                          <p className="mt-2 line-clamp-2 text-[10px] leading-5 text-white/35">
                             {comic.meta || 'Saved item'}
                           </p>
                         </div>
