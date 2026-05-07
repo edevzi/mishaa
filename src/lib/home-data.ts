@@ -11,18 +11,25 @@ import {
   MangaLanguage 
 } from "@/lib/manga-language";
 import { fetchNHentaiRaw } from "@/actions/comic";
-import { getSiteUrl } from "@/lib/site-url";
 
 
 const safeText = (value: unknown, fallback = '') => typeof value === 'string' && value.trim() ? value : fallback;
 
-async function loadMangaDex(params: URLSearchParams, lang: MangaLanguage) {
-  try {
-    const proxyUrl = `${getSiteUrl()}/api/proxy/mangadex?path=${encodeURIComponent(`manga?${params.toString()}`)}`;
-    const res = await fetch(proxyUrl, { next: { revalidate: 3600 } });
+async function loadMangaDex(params: URLSearchParams, lang: MangaLanguage, fallbackParams?: URLSearchParams) {
+  const fetchItems = async (queryParams: URLSearchParams) => {
+    const res = await fetch(`https://api.mangadex.org/manga?${queryParams.toString()}`, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        Accept: 'application/json',
+        'Accept-Language': 'en-US,en;q=0.9',
+      },
+      next: { revalidate: 3600 },
+    });
     if (!res.ok) return [];
+
     const data = await res.json();
     const items = Array.isArray(data?.data) ? data.data : [];
+
     return items.map((item: any) => {
       const coverFileName = pickMangaDexCoverFileName(item.relationships);
       return {
@@ -36,7 +43,16 @@ async function loadMangaDex(params: URLSearchParams, lang: MangaLanguage) {
         rating: (Math.random() * 2 + 3).toFixed(1),
       };
     }).filter((c: any) => c.id && c.title);
-  } catch { return []; }
+  };
+
+  try {
+    const primaryItems = await fetchItems(params);
+    if (primaryItems.length > 0 || !fallbackParams) return primaryItems;
+
+    return fetchItems(fallbackParams);
+  } catch {
+    return [];
+  }
 }
 
 async function loadNHentaiShelf(query: string, limit = 30) {
@@ -72,18 +88,26 @@ export async function getHomeData(lang: MangaLanguage = 'en', options: HomeDataO
   const mangaParams = new URLSearchParams({ limit: '30', offset: '0', 'order[followedCount]': 'desc' });
   mangaParams.append('includes[]', 'cover_art');
   appendMangaDexFilters(mangaParams, { ...filters, originalLanguages: ['ja'] });
+  const mangaFallbackParams = new URLSearchParams(mangaParams);
+  mangaFallbackParams.delete('availableTranslatedLanguage[]');
 
   const webtoonsParams = new URLSearchParams({ limit: '30', offset: '0', 'order[followedCount]': 'desc' });
   webtoonsParams.append('includes[]', 'cover_art');
   appendMangaDexFilters(webtoonsParams, { ...filters, includedTagIds: [MANGADEX_LONG_STRIP_TAG_ID] });
+  const webtoonsFallbackParams = new URLSearchParams(webtoonsParams);
+  webtoonsFallbackParams.delete('availableTranslatedLanguage[]');
 
   const manhwaParams = new URLSearchParams({ limit: '30', offset: '0', 'order[followedCount]': 'desc' });
   manhwaParams.append('includes[]', 'cover_art');
   appendMangaDexFilters(manhwaParams, { ...filters, originalLanguages: ['ko'], excludedTagIds: [MANGADEX_LONG_STRIP_TAG_ID] });
+  const manhwaFallbackParams = new URLSearchParams(manhwaParams);
+  manhwaFallbackParams.delete('availableTranslatedLanguage[]');
 
   const latestParams = new URLSearchParams({ limit: '30', offset: '0', 'order[createdAt]': 'desc' });
   latestParams.append('includes[]', 'cover_art');
   appendMangaDexFilters(latestParams, filters);
+  const latestFallbackParams = new URLSearchParams(latestParams);
+  latestFallbackParams.delete('availableTranslatedLanguage[]');
 
   const adultShelves = includeAdultContent
     ? [
@@ -94,9 +118,9 @@ export async function getHomeData(lang: MangaLanguage = 'en', options: HomeDataO
     : [Promise.resolve([]), Promise.resolve([]), Promise.resolve([])];
 
   const [manga, webtoons, manhwa, doujinshi, milf, ntr, trending, latest] = await Promise.all([
-    loadMangaDex(mangaParams, lang),
-    loadMangaDex(webtoonsParams, lang),
-    loadMangaDex(manhwaParams, lang),
+    loadMangaDex(mangaParams, lang, mangaFallbackParams),
+    loadMangaDex(webtoonsParams, lang, webtoonsFallbackParams),
+    loadMangaDex(manhwaParams, lang, manhwaFallbackParams),
     ...adultShelves,
     fetchTrendingAniListManga(30).then(items => items.map(item => ({
         id: item.id.toString(),
@@ -109,7 +133,7 @@ export async function getHomeData(lang: MangaLanguage = 'en', options: HomeDataO
         meta: `TRENDING #${items.indexOf(item) + 1}`,
         rating: (item.averageScore / 10).toFixed(1) || '8.5'
     }))).catch(() => []),
-    loadMangaDex(latestParams, lang)
+    loadMangaDex(latestParams, lang, latestFallbackParams)
   ]);
 
   return {
