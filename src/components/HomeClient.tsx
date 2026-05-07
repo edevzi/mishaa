@@ -526,6 +526,7 @@ export default function HomeClient({ initialData, initialAgeVerified = false }: 
 
   const hasPersonalLibrary = recentHistory.length > 0 || savedBookmarks.length > 0;
   const activeShelfCount = shelfState[activeTab]?.items.length || 0;
+  const featuredImageSrc = featuredComic?.coverUrl || featuredComic?.bannerUrl || '/logo.png';
 
   const websiteSchema = {
     "@context": "https://schema.org",
@@ -605,7 +606,7 @@ export default function HomeClient({ initialData, initialAgeVerified = false }: 
                 className="relative w-full"
               >
                 <div className="mx-auto max-w-7xl px-4 sm:px-6 md:px-8 pb-16">
-                  <div className="grid gap-8 rounded-[2.5rem] border border-white/10 bg-white/[0.03] p-6 shadow-[0_30px_120px_rgba(0,0,0,0.45)] backdrop-blur-2xl sm:p-8 lg:grid-cols-[1.15fr_0.85fr] lg:p-10">
+                  <div className="grid gap-8 rounded-[2.5rem] border border-white/10 bg-white/[0.03] p-6 shadow-[0_30px_120px_rgba(0,0,0,0.45)] backdrop-blur-2xl sm:p-8 lg:grid-cols-[1.08fr_0.92fr] lg:p-10">
                     {/* Text Info */}
                     <div className="space-y-6 lg:pr-4">
                       <motion.div
@@ -700,16 +701,16 @@ export default function HomeClient({ initialData, initialAgeVerified = false }: 
                         initial={{ x: 50, opacity: 0 }}
                         animate={{ x: 0, opacity: 1 }}
                         transition={{ delay: 0.2 }}
-                        className="perspective-container relative h-full min-h-[540px] w-full"
+                        className="perspective-container relative flex h-full min-h-[540px] w-full items-center justify-center"
                       >
-                        <div className="perspective-card relative h-full w-full overflow-hidden rounded-[2.25rem] border border-white/15 bg-black shadow-2xl">
+                        <div className="perspective-card relative aspect-[3/4] w-full max-w-[380px] overflow-hidden rounded-[2.25rem] border border-white/15 bg-black shadow-2xl">
                           <Image
-                            src={featuredComic.bannerUrl || featuredComic.coverUrl}
+                            src={featuredImageSrc}
                             alt="Cover"
                             fill
                             priority
                             unoptimized
-                            className="object-cover"
+                            className="object-contain bg-black p-4"
                           />
                           <div className="absolute inset-0 bg-gradient-to-t from-[#05060a] via-transparent to-transparent" />
                           <div className="absolute inset-x-0 bottom-0 p-6">
@@ -750,8 +751,8 @@ export default function HomeClient({ initialData, initialAgeVerified = false }: 
                         href={comic.href}
                         className="group flex items-center gap-5 rounded-2xl border border-white/5 bg-black/30 p-3 transition-all hover:border-[#ff5a1f]/30 hover:bg-black/50"
                       >
-                        <div className="relative h-28 w-20 overflow-hidden rounded-xl border border-white/10 bg-black shrink-0">
-                          <Image src={comic.coverUrl || '/logo.png'} alt={comic.title} fill unoptimized className="object-cover object-center" />
+                        <div className="relative h-32 w-24 overflow-hidden rounded-xl border border-white/10 bg-black shrink-0 md:h-36 md:w-28">
+                          <Image src={comic.coverUrl || '/logo.png'} alt={comic.title} fill unoptimized className="object-contain object-center p-1" />
                         </div>
                         <div className="min-w-0 flex-1 py-1">
                           <p className="text-[8px] font-black uppercase tracking-[0.35em] text-[#ffca3a]">
@@ -788,8 +789,8 @@ export default function HomeClient({ initialData, initialAgeVerified = false }: 
                         href={comic.href}
                         className="group flex items-center gap-5 rounded-2xl border border-white/5 bg-black/30 p-3 transition-all hover:border-[#ff5a1f]/30 hover:bg-black/50"
                       >
-                        <div className="relative h-28 w-20 overflow-hidden rounded-xl border border-white/10 bg-black shrink-0">
-                          <Image src={comic.coverUrl || '/logo.png'} alt={comic.title} fill unoptimized className="object-cover object-center" />
+                        <div className="relative h-32 w-24 overflow-hidden rounded-xl border border-white/10 bg-black shrink-0 md:h-36 md:w-28">
+                          <Image src={comic.coverUrl || '/logo.png'} alt={comic.title} fill unoptimized className="object-contain object-center p-1" />
                         </div>
                         <div className="min-w-0 flex-1 py-1">
                           <p className="text-[8px] font-black uppercase tracking-[0.35em] text-[#ffca3a]">Bookmark</p>
