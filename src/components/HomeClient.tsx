@@ -36,7 +36,7 @@ interface LibraryComic {
   coverUrl: string;
   bannerUrl?: string;
   source: ComicSource;
-  href: string;
+  href?: string;
   meta: string;
   rating?: string;
   year?: string;
@@ -65,6 +65,10 @@ const DEFAULT_IMAGE_SRC = '/logo.png';
 
 function resolveImageSrc(src?: string | null) {
   return typeof src === 'string' && src.trim().length > 0 ? src : DEFAULT_IMAGE_SRC;
+}
+
+function resolveComicHref(comic: LibraryComic) {
+  return comic.href || `/library/${comic.source}/${comic.id}`;
 }
 
 function getShelfPreviewSrc(
@@ -186,12 +190,17 @@ import { isAdultComic } from '@/lib/age-verification';
 type HomeClientProps = {
   initialData?: Record<string, LibraryComic[]>;
   initialAgeVerified?: boolean;
+  initialIsTouchDevice?: boolean;
 };
 
-export default function HomeClient({ initialData, initialAgeVerified = false }: HomeClientProps) {
+export default function HomeClient({
+  initialData,
+  initialAgeVerified = false,
+  initialIsTouchDevice = false,
+}: HomeClientProps) {
   const [isAgeVerified, setIsAgeVerified] = useState(() => Boolean(initialAgeVerified));
   const [showAgeGate, setShowAgeGate] = useState(false);
-  const [isTouchDevice, setIsTouchDevice] = useState(false);
+  const [isTouchDevice, setIsTouchDevice] = useState(() => Boolean(initialIsTouchDevice));
   const [previewCardKey, setPreviewCardKey] = useState<string | null>(null);
   const hasCompleteInitialData = SHELVES.every((shelf) => (initialData?.[shelf.key]?.length ?? 0) > 0);
   const visibleShelves = isAgeVerified
@@ -409,6 +418,8 @@ export default function HomeClient({ initialData, initialAgeVerified = false }: 
   }, [hasCompleteInitialData, isAgeVerified, mangaLanguage]);
 
   useEffect(() => {
+    if (isTouchDevice) return;
+
     const loadPersonalRecs = async () => {
       if (typeof window === 'undefined') return;
       setIsRecsLoading(true);
@@ -445,7 +456,7 @@ export default function HomeClient({ initialData, initialAgeVerified = false }: 
       }
     };
     loadPersonalRecs();
-  }, [hasTrendingInitialItems]);
+  }, [hasTrendingInitialItems, isTouchDevice]);
 
   const handleLanguageChange = (newLang: MangaLanguage) => {
     setMangaLanguage(newLang);
@@ -465,6 +476,8 @@ export default function HomeClient({ initialData, initialAgeVerified = false }: 
   const renderedShelves = activeTab === 'all'
     ? visibleShelves
     : visibleShelves.filter((shelf) => shelf.key === activeTab);
+  const shelfCardLimit = isTouchDevice ? 4 : 6;
+  const showInfiniteDiscover = !isTouchDevice;
 
   const websiteSchema = {
     "@context": "https://schema.org",
@@ -546,16 +559,23 @@ export default function HomeClient({ initialData, initialAgeVerified = false }: 
                 <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pb-14 lg:pb-18">
                   <div className="relative overflow-hidden rounded-[2.75rem] bg-black shadow-[0_50px_140px_rgba(0,0,0,0.72)]">
                     <div className="absolute inset-0">
-                      <SafeCoverImage
-                        key={featuredBackgroundSrc}
-                        src={featuredBackgroundSrc}
-                        alt={featuredComic.title}
-                        priority
-                        sizes="100vw"
-                        className="object-cover object-center scale-105 opacity-[0.2] blur-[2px]"
-                      />
-                      <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(5,6,10,0.96)_0%,rgba(5,6,10,0.9)_42%,rgba(5,6,10,0.54)_100%)]" />
-                      <div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_28%,rgba(255,90,31,0.14),transparent_28%),radial-gradient(circle_at_82%_18%,rgba(255,211,107,0.09),transparent_20%),radial-gradient(circle_at_70%_72%,rgba(255,90,31,0.08),transparent_26%)]" />
+                      {!isTouchDevice && (
+                        <>
+                          <SafeCoverImage
+                            key={featuredBackgroundSrc}
+                            src={featuredBackgroundSrc}
+                            alt={featuredComic.title}
+                            priority
+                            sizes="100vw"
+                            className="object-cover object-center scale-105 opacity-[0.2] blur-[2px]"
+                          />
+                          <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(5,6,10,0.96)_0%,rgba(5,6,10,0.9)_42%,rgba(5,6,10,0.54)_100%)]" />
+                          <div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_28%,rgba(255,90,31,0.14),transparent_28%),radial-gradient(circle_at_82%_18%,rgba(255,211,107,0.09),transparent_20%),radial-gradient(circle_at_70%_72%,rgba(255,90,31,0.08),transparent_26%)]" />
+                        </>
+                      )}
+                      {isTouchDevice && (
+                        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,90,31,0.18),transparent_34%),linear-gradient(180deg,rgba(5,6,10,0.98)_0%,rgba(5,6,10,0.92)_100%)]" />
+                      )}
                     </div>
 
                     <div className="relative grid gap-8 px-6 py-8 sm:px-10 sm:py-10 lg:grid-cols-[1.15fr_0.85fr] lg:items-center lg:gap-14 lg:px-12 lg:py-12">
@@ -835,7 +855,7 @@ export default function HomeClient({ initialData, initialAgeVerified = false }: 
                           <div key={i} className="aspect-[2/3] animate-pulse rounded-2xl bg-white/5" />
                         ))
                       ) : (
-                        filteredItems.map((comic) => {
+                        filteredItems.slice(0, shelfCardLimit).map((comic) => {
                           const cardKey = `${shelf.key}:${comic.source}:${comic.id}`;
                           const adultContent = isAdultComic(comic);
                           const isPreviewOpen = adultContent && previewCardKey === cardKey;
@@ -849,7 +869,7 @@ export default function HomeClient({ initialData, initialAgeVerified = false }: 
                               className="group relative cursor-pointer"
                             >
                               <Link
-                                href={comic.href}
+                                href={resolveComicHref(comic)}
                                 onClickCapture={(event) => {
                                   if (!isTouchDevice || !adultContent) return;
                                   if (!isPreviewOpen) {
@@ -915,102 +935,122 @@ export default function HomeClient({ initialData, initialAgeVerified = false }: 
           </div>
         </section>
 
-        {/* Infinite Discover Section */}
-        <section className="py-20 bg-black/40">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6">
-            <div className="flex items-center gap-4 mb-12">
-              <div className="w-1.5 h-8 bg-[#ff4d00] rounded-full" />
-              <div>
-                <h2 className="text-3xl font-black uppercase tracking-tight italic">More</h2>
-                <p className="text-white/40 text-[11px] font-black uppercase tracking-[0.3em]">Scroll for more titles</p>
+        {showInfiniteDiscover ? (
+          <section className="py-20 bg-black/40">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6">
+              <div className="flex items-center gap-4 mb-12">
+                <div className="w-1.5 h-8 bg-[#ff4d00] rounded-full" />
+                <div>
+                  <h2 className="text-3xl font-black uppercase tracking-tight italic">More</h2>
+                  <p className="text-white/40 text-[11px] font-black uppercase tracking-[0.3em]">Scroll for more titles</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-6 md:gap-8">
+                {infiniteItems.map((comic, idx) => {
+                  const cardKey = `discover:${comic.source}:${comic.id}`;
+                  const adultContent = isAdultComic(comic);
+                  const isPreviewOpen = adultContent && previewCardKey === cardKey;
+
+                  return (
+                    <motion.div
+                      key={`${comic.id}-${idx}`}
+                      initial={{ opacity: 0, scale: 0.95 }}
+                      whileInView={{ opacity: 1, scale: 1 }}
+                      viewport={{ once: true }}
+                      transition={{ delay: (idx % 6) * 0.05, duration: 0.6 }}
+                    >
+                      <Link
+                        href={comic.href || `/library/${comic.source}/${comic.id}`}
+                        className="group block"
+                        onClickCapture={(event) => {
+                          if (!isTouchDevice || !adultContent) return;
+                          if (!isPreviewOpen) {
+                            event.preventDefault();
+                            setPreviewCardKey(cardKey);
+                          }
+                        }}
+                      >
+                        <div className="relative aspect-[2/3] overflow-hidden rounded-[1.5rem] border border-white/5 bg-white/[0.02] transition-all duration-700 group-hover:border-[#ff5a1f]/30 group-hover:shadow-[0_25px_50px_rgba(255,90,31,0.15)] group-hover:-translate-y-3">
+                          <SafeCoverImage
+                            key={comic.coverUrl || '/logo.png'}
+                            src={comic.coverUrl || '/logo.png'}
+                            alt={comic.title}
+                            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 200px"
+                            className={`object-cover transition-all duration-1000 ${
+                              adultContent && !isPreviewOpen ? 'scale-110 blur-[10px]' : 'scale-100'
+                            } group-hover:scale-115 group-hover:blur-0`}
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-80" />
+                          
+                          {adultContent && !isPreviewOpen && (
+                            <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/40 backdrop-blur-md opacity-100 transition-opacity duration-700 group-hover:opacity-0">
+                              <div className="rounded-full border border-white/20 bg-white/5 px-3 py-1 text-[7px] font-black uppercase tracking-[0.3em] text-white">
+                                RESTRICTED
+                              </div>
+                            </div>
+                          )}
+                          
+                          <div className="absolute bottom-5 left-5 right-5 translate-y-6 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-700">
+                            <div className="text-[8px] font-black uppercase tracking-[0.3em] text-[#ff5a1f] mb-2">{comic.meta}</div>
+                            <div className="text-[11px] font-black uppercase tracking-tight text-white line-clamp-2 leading-tight">{comic.title}</div>
+                          </div>
+
+                          <div className="absolute right-4 top-4 h-8 w-8 rounded-full border border-white/10 bg-black/40 flex items-center justify-center text-white/40 scale-75 opacity-0 group-hover:scale-100 group-hover:opacity-100 transition-all duration-700 backdrop-blur-xl">
+                            <ArrowRight size={14} />
+                          </div>
+                        </div>
+                      </Link>
+                    </motion.div>
+
+                  );
+                })}
+              </div>
+
+              <div ref={loaderRef} className="py-20 flex flex-col items-center justify-center gap-6">
+                {hasMoreInfinite ? (
+                  <>
+                    <div className="w-12 h-12 relative">
+                      <motion.div
+                        animate={{ rotate: 360 }}
+                        transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                        className="absolute inset-0 border-t-2 border-[#ff4d00] rounded-full"
+                      />
+                      <motion.div
+                        animate={{ scale: [1, 1.2, 1] }}
+                        transition={{ duration: 1, repeat: Infinity }}
+                        className="absolute inset-4 bg-[#ff4d00]/20 rounded-full"
+                      />
+                    </div>
+                    <div className="text-[10px] font-black uppercase tracking-[0.5em] text-white/20">Loading more</div>
+                  </>
+                ) : (
+                  <div className="text-[10px] font-black uppercase tracking-[0.5em] text-[#ff4d00]">No more titles</div>
+                )}
               </div>
             </div>
-
-            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-6 md:gap-8">
-              {infiniteItems.map((comic, idx) => {
-                const cardKey = `discover:${comic.source}:${comic.id}`;
-                const adultContent = isAdultComic(comic);
-                const isPreviewOpen = adultContent && previewCardKey === cardKey;
-
-                return (
-                  <motion.div
-                    key={`${comic.id}-${idx}`}
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    whileInView={{ opacity: 1, scale: 1 }}
-                    viewport={{ once: true }}
-                    transition={{ delay: (idx % 6) * 0.05, duration: 0.6 }}
-                  >
-                    <Link
-                      href={comic.href || `/library/${comic.source}/${comic.id}`}
-                      className="group block"
-                      onClickCapture={(event) => {
-                        if (!isTouchDevice || !adultContent) return;
-                        if (!isPreviewOpen) {
-                          event.preventDefault();
-                          setPreviewCardKey(cardKey);
-                        }
-                      }}
-                    >
-                      <div className="relative aspect-[2/3] overflow-hidden rounded-[1.5rem] border border-white/5 bg-white/[0.02] transition-all duration-700 group-hover:border-[#ff5a1f]/30 group-hover:shadow-[0_25px_50px_rgba(255,90,31,0.15)] group-hover:-translate-y-3">
-                        <SafeCoverImage
-                          key={comic.coverUrl || '/logo.png'}
-                          src={comic.coverUrl || '/logo.png'}
-                          alt={comic.title}
-                          sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 200px"
-                          className={`object-cover transition-all duration-1000 ${
-                            adultContent && !isPreviewOpen ? 'scale-110 blur-[10px]' : 'scale-100'
-                          } group-hover:scale-115 group-hover:blur-0`}
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-80" />
-                        
-                        {adultContent && !isPreviewOpen && (
-                          <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/40 backdrop-blur-md opacity-100 transition-opacity duration-700 group-hover:opacity-0">
-                            <div className="rounded-full border border-white/20 bg-white/5 px-3 py-1 text-[7px] font-black uppercase tracking-[0.3em] text-white">
-                              RESTRICTED
-                            </div>
-                          </div>
-                        )}
-                        
-                        <div className="absolute bottom-5 left-5 right-5 translate-y-6 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-700">
-                          <div className="text-[8px] font-black uppercase tracking-[0.3em] text-[#ff5a1f] mb-2">{comic.meta}</div>
-                          <div className="text-[11px] font-black uppercase tracking-tight text-white line-clamp-2 leading-tight">{comic.title}</div>
-                        </div>
-
-                        {/* Quick View Icon */}
-                        <div className="absolute right-4 top-4 h-8 w-8 rounded-full border border-white/10 bg-black/40 flex items-center justify-center text-white/40 scale-75 opacity-0 group-hover:scale-100 group-hover:opacity-100 transition-all duration-700 backdrop-blur-xl">
-                          <ArrowRight size={14} />
-                        </div>
-                      </div>
-                    </Link>
-                  </motion.div>
-
-                );
-              })}
+          </section>
+        ) : (
+          <section className="py-16 bg-black/30">
+            <div className="mx-auto max-w-7xl px-4 sm:px-6">
+              <div className="rounded-[2rem] border border-white/10 bg-white/[0.04] p-6 sm:p-8">
+                <p className="text-[9px] font-black uppercase tracking-[0.5em] text-[#ff5a1f]">More</p>
+                <h2 className="mt-3 text-3xl font-black uppercase tracking-tight text-white">
+                  Open the full library
+                </h2>
+                <p className="mt-3 max-w-2xl text-sm leading-6 text-white/55">
+                  Mobile users get a lighter homepage first. Jump into the full catalog when you need more titles.
+                </p>
+                <Link
+                  href="/library"
+                  className="mt-6 inline-flex h-12 items-center justify-center rounded-full bg-white px-6 text-[10px] font-black uppercase tracking-[0.4em] text-black transition-transform hover:scale-[1.02] active:scale-95"
+                >
+                  Browse Library
+                </Link>
+              </div>
             </div>
-
-            <div ref={loaderRef} className="py-20 flex flex-col items-center justify-center gap-6">
-              {hasMoreInfinite ? (
-                <>
-                  <div className="w-12 h-12 relative">
-                    <motion.div
-                      animate={{ rotate: 360 }}
-                      transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-                      className="absolute inset-0 border-t-2 border-[#ff4d00] rounded-full"
-                    />
-                    <motion.div
-                      animate={{ scale: [1, 1.2, 1] }}
-                      transition={{ duration: 1, repeat: Infinity }}
-                      className="absolute inset-4 bg-[#ff4d00]/20 rounded-full"
-                    />
-                  </div>
-                  <div className="text-[10px] font-black uppercase tracking-[0.5em] text-white/20">Loading more</div>
-                </>
-              ) : (
-                <div className="text-[10px] font-black uppercase tracking-[0.5em] text-[#ff4d00]">No more titles</div>
-              )}
-            </div>
-          </div>
-        </section>
+          </section>
+        )}
 
       </main>
 

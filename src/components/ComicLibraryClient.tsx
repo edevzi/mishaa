@@ -834,6 +834,13 @@ export default function ComicLibraryClient({ initialAgeVerified = false }: Comic
                 const cardKey = `${comic.source}:${comic.id}`;
                 const adultContent = isAdultComic(comic);
                 const isPreviewOpen = adultContent && previewComicKey === cardKey;
+                const shouldBlur = adultContent && !isAgeVerified && !isPreviewOpen;
+                const coverClassName = `object-cover opacity-100 transition-transform duration-700 ${
+                  shouldBlur ? 'scale-105' : 'scale-100'
+                } group-hover:scale-110`;
+                const coverStyle = shouldBlur
+                  ? { filter: 'blur(6px)' }
+                  : { filter: 'none' };
 
                 return (
                   <motion.div 
@@ -877,9 +884,8 @@ export default function ComicLibraryClient({ initialAgeVerified = false }: Comic
                               src={comic.coverUrl}
                               fill
                               unoptimized
-                              className={`object-cover opacity-100 transition-all duration-700 ${
-                                adultContent && !isPreviewOpen ? 'scale-105 blur-[2px]' : 'scale-100'
-                              } group-hover:scale-110 group-hover:blur-0`}
+                              className={coverClassName}
+                              style={coverStyle}
                               alt={comic.title}
                             />
                           </div>
@@ -905,9 +911,8 @@ export default function ComicLibraryClient({ initialAgeVerified = false }: Comic
                             src={comic.coverUrl || '/logo.png'}
                             fill
                             unoptimized
-                            className={`object-cover opacity-100 transition-all duration-700 ${
-                              adultContent && !isPreviewOpen ? 'scale-105 blur-[2px]' : 'scale-100'
-                            } group-hover:scale-110 group-hover:blur-0`}
+                            className={coverClassName}
+                            style={coverStyle}
                             alt={comic.title}
                           />
                         </div>
@@ -917,14 +922,13 @@ export default function ComicLibraryClient({ initialAgeVerified = false }: Comic
                             src={comic.coverUrl || '/logo.png'}
                             fill
                             unoptimized
-                            className={`object-cover opacity-100 transition-all duration-700 ${
-                              adultContent && !isPreviewOpen ? 'scale-105 blur-[2px]' : 'scale-100'
-                            } group-hover:scale-110 group-hover:blur-0`}
+                            className={coverClassName}
+                            style={coverStyle}
                             alt={comic.title}
                           />
                         </div>
                       )}
-                      {adultContent && !isPreviewOpen && (
+                      {shouldBlur && (
                         <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/20 backdrop-blur-[2px] opacity-100 transition-opacity group-hover:opacity-0">
                           <div className="rounded-full border border-white/15 bg-black/60 px-3 py-1 text-[8px] font-black uppercase tracking-[0.4em] text-white">
                             Tap to reveal

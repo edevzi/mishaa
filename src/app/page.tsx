@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { cookies } from 'next/headers';
+import { cookies, headers } from 'next/headers';
 import HomeClient from '@/components/HomeClient';
 
 export const metadata: Metadata = {
@@ -47,7 +47,10 @@ const normalizeLanguage = (value: string | undefined): MangaLanguage => {
 export default async function Page({ searchParams }: { searchParams: Promise<{ lang?: string }> }) {
   const { lang } = await searchParams;
   const cookieStore = await cookies();
+  const headerList = await headers();
+  const userAgent = headerList.get('user-agent') || '';
   const includeAdultContent = cookieStore.get('age_verified')?.value === 'true';
+  const initialIsTouchDevice = /Android|iPhone|iPad|iPod|Mobile/i.test(userAgent);
   const initialData = await getHomeData(normalizeLanguage(lang), { includeAdultContent });
 
   const organizationSchema = {
@@ -78,7 +81,11 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ l
     <>
       <JsonLd data={organizationSchema} />
       <JsonLd data={websiteSchema} />
-      <HomeClient initialData={initialData} initialAgeVerified={includeAdultContent} />
+      <HomeClient
+        initialData={initialData}
+        initialAgeVerified={includeAdultContent}
+        initialIsTouchDevice={initialIsTouchDevice}
+      />
     </>
   );
 }

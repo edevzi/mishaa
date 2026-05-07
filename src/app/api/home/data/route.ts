@@ -19,7 +19,9 @@ export async function GET(req: Request) {
   const baseShelves = await getHomeData(lang, { includeAdultContent });
 
   try {
-    const marvelPromise = fetch(`${new URL(req.url).origin}/api/marvel/shelf?limit=12`)
+    const marvelPromise = fetch(`${new URL(req.url).origin}/api/marvel/shelf?limit=12`, {
+      signal: AbortSignal.timeout(8000),
+    })
       .then((response) => response.ok ? response.json() : { items: [] })
       .catch(() => ({ items: [] }))
       .then((data) => data.items || []);

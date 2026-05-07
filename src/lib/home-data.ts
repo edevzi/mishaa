@@ -1,6 +1,7 @@
 import { 
   appendMangaDexFilters, 
   cacheMangaDexIdResolution,
+  type MangaDexCoverRelationship,
   resolveMangaDexIdFromTitle,
   pickMangaDexCoverFileName, 
   buildMangaDexCoverUrl, 
@@ -15,6 +16,26 @@ import {
 
 
 const safeText = (value: unknown, fallback = '') => typeof value === 'string' && value.trim() ? value : fallback;
+const FETCH_TIMEOUT_MS = 7000;
+
+type MangaDexApiItem = {
+  id: string;
+  relationships?: MangaDexCoverRelationship[] | null;
+  attributes?: {
+    title?: Record<string, string | undefined> | null;
+    description?: Record<string, string | undefined> | null;
+    status?: string | null;
+  } | null;
+};
+
+type NhentaiGalleryItem = {
+  id?: number | string;
+  gallery_id?: number | string;
+  english_title?: string;
+  title?: { english?: string; japanese?: string };
+  num_pages?: number;
+  thumbnail?: string | { path?: string };
+};
 
 async function loadMangaDex(params: URLSearchParams, lang: MangaLanguage, fallbackParams?: URLSearchParams) {
   const fetchItems = async (queryParams: URLSearchParams) => {
@@ -25,13 +46,14 @@ async function loadMangaDex(params: URLSearchParams, lang: MangaLanguage, fallba
         'Accept-Language': 'en-US,en;q=0.9',
       },
       next: { revalidate: 3600 },
+      signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
     });
     if (!res.ok) return [];
 
     const data = await res.json();
     const items = Array.isArray(data?.data) ? data.data : [];
 
-    return items.map((item: any) => {
+    return items.map((item: MangaDexApiItem) => {
       const coverFileName = pickMangaDexCoverFileName(item.relationships);
       return {
         id: item.id,
@@ -43,7 +65,7 @@ async function loadMangaDex(params: URLSearchParams, lang: MangaLanguage, fallba
         meta: item.attributes?.status?.toUpperCase() || 'MANGA',
         rating: (Math.random() * 2 + 3).toFixed(1),
       };
-    }).filter((c: any) => c.id && c.title);
+    }).filter((c: { id: string; title: string }) => c.id && c.title);
   };
 
   try {
@@ -59,7 +81,7 @@ async function loadMangaDex(params: URLSearchParams, lang: MangaLanguage, fallba
 async function loadNHentaiShelf(query: string, limit = 30) {
   try {
     const mirrors = ['nhentai.net', 'nhentai.xxx', 'nhentai.to'];
-    let results: any[] = [];
+    let results: NhentaiGalleryItem[] = [];
 
     for (const mirror of mirrors) {
       const res = await fetch(`https://${mirror}/api/v2/search?query=${encodeURIComponent(query)}&page=1`, {
@@ -69,6 +91,7 @@ async function loadNHentaiShelf(query: string, limit = 30) {
           Referer: 'https://nhentai.net/',
         },
         next: { revalidate: 3600 },
+        signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
       });
 
       if (!res.ok) continue;
@@ -78,11 +101,16 @@ async function loadNHentaiShelf(query: string, limit = 30) {
       if (results.length > 0) break;
     }
 
-    return results.slice(0, limit).map((item: any) => ({
+    return results.slice(0, limit).map((item: NhentaiGalleryItem) => ({
       id: (item.id || item.gallery_id || "").toString(),
       title: item.english_title || item.title?.english || item.title?.japanese || "Untitled",
       description: `${item.num_pages} pages`,
-      coverUrl: `/api/proxy/nhentai/image?path=${encodeURIComponent(typeof item.thumbnail === 'object' ? item.thumbnail?.path : (item.thumbnail || ''))}`,
+      coverUrl: (() => {
+        const thumbnailPath = typeof item.thumbnail === 'object' ? item.thumbnail?.path : item.thumbnail;
+        return thumbnailPath
+          ? `/api/proxy/nhentai/image?path=${encodeURIComponent(thumbnailPath)}`
+          : '/logo.png';
+      })(),
       source: 'nhentai' as const,
       href: `/library/nhentai/${item.id || item.gallery_id}`,
       meta: '18+',

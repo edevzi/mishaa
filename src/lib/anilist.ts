@@ -1,5 +1,6 @@
 
 const ANILIST_API = 'https://graphql.anilist.co';
+const FETCH_TIMEOUT_MS = 7000;
 
 export interface AniListMedia {
   id: number;
@@ -131,7 +132,8 @@ export async function fetchAniListManga(aniListId: string | number): Promise<Ani
         query: query,
         variables: { id: Number(aniListId) }
       }),
-      next: { revalidate: 86400 } // Cache for 24 hours
+      next: { revalidate: 86400 }, // Cache for 24 hours
+      signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
     });
 
     const data = await response.json();
@@ -182,7 +184,8 @@ export async function fetchTrendingAniListManga(limit = 12): Promise<AniListMedi
         query: trendingQuery,
         variables: { limit }
       }),
-      next: { revalidate: 3600 } // Cache for 1 hour
+      next: { revalidate: 3600 }, // Cache for 1 hour
+      signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
     });
 
     const data = await response.json();

@@ -2,6 +2,7 @@ export const runtime = "edge";
 import { NextResponse } from "next/server";
 
 const MARVEL_API_BASE = "https://marvel.emreparker.com/v1";
+const FETCH_TIMEOUT_MS = 7000;
 
 export async function GET(req: Request) {
   try {
@@ -13,6 +14,7 @@ export async function GET(req: Request) {
     const listRes = await fetch(`${MARVEL_API_BASE}/issues?limit=${limit}&offset=${offset}`, {
       headers: { Accept: "application/json" },
       next: { revalidate: 3600 },
+      signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
     });
 
     if (!listRes.ok) throw new Error("Failed to fetch Marvel list");
@@ -25,7 +27,8 @@ export async function GET(req: Request) {
         try {
           const detailRes = await fetch(`${MARVEL_API_BASE}/issues/${item.id}`, {
             headers: { Accept: "application/json" },
-            cache: 'force-cache'
+            cache: 'force-cache',
+            signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
           });
           if (!detailRes.ok) return null;
           const detail = await detailRes.json();
@@ -65,8 +68,9 @@ export async function GET(req: Request) {
         "Cache-Control": "s-maxage=3600, stale-while-revalidate=86400",
       },
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Unknown Marvel shelf error";
     console.error("Marvel shelf aggregation error:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
