@@ -296,7 +296,7 @@ body.studio-light {
   100% { transform: translate(30%, 30%); }
 }
 
-/* ── THE FOUNDRY MATRIX (REPLACES GALAXY) ─────────────────────────── */
+/* ── EDITORIAL STAGE (REPLACES MATRIX) ─────────────────────────── */
 .ambient-mouse-light {
   background:
     radial-gradient(circle, rgba(255, 77, 0, 0.15) 0%, transparent 44%),
@@ -422,7 +422,7 @@ body.studio-light {
     transparent 52%);
   opacity: 0.15;
   transform: translateZ(250px) rotateX(70deg);
-  animation: matrix-scan 8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  animation: line-scan 8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
 }
 
 .mystic-portal__shard {
@@ -467,7 +467,7 @@ body.studio-light {
   transform: translateZ(50px);
 }
 
-@keyframes matrix-scan {
+@keyframes line-scan {
   0% { transform: translateZ(250px) rotateX(70deg) translateY(-100%); }
   100% { transform: translateZ(250px) rotateX(70deg) translateY(100%); }
 }
@@ -531,7 +531,7 @@ body.studio-light {
   }
 }
 
-/* 🟢 FOUNDRY PROFESSIONAL SCROLLBARS (GLOBAL) */
+/* 🟢 PREMIUM EDITORIAL SCROLLBARS (GLOBAL) */
 * {
   scrollbar-width: thin;
   scrollbar-color: rgba(255, 255, 255, 0.05) transparent;

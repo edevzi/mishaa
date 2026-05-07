@@ -448,7 +448,7 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
     <div className="min-h-screen bg-[#020202] flex items-center justify-center">
       <div className="flex flex-col items-center gap-6">
         <Loader2 className="w-12 h-12 text-[#ff4d00] animate-spin" />
-        <div className="text-[10px] font-black uppercase tracking-[0.5em] text-white/20">Syncing_Neural_Matrix...</div>
+        <div className="text-[10px] font-bold uppercase tracking-[0.5em] text-white/20">Preparing_Narrative...</div>
       </div>
     </div>
   );

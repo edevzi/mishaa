@@ -731,7 +731,7 @@ export default function ComicReaderClient({ initialComic, initialChapters, sourc
       <div className="min-h-screen bg-[#020202] flex items-center justify-center">
         <div className="flex flex-col items-center gap-6">
           <Loader2 className="w-12 h-12 text-[#ff4d00] animate-spin" />
-          <div className="text-[10px] font-black uppercase tracking-[0.5em] text-white/20">Syncing_Neural_Matrix...</div>
+          <div className="text-[10px] font-bold uppercase tracking-[0.5em] text-white/20">Preparing_Narrative...</div>
         </div>
       </div>
     );
@@ -795,7 +795,7 @@ export default function ComicReaderClient({ initialComic, initialChapters, sourc
                  />
               </div>
               <div className="text-center relative z-10 space-y-2">
-                <div className="text-[12px] font-black uppercase tracking-[1.2em] text-white pl-[1.2em]">Syncing_Matrix</div>
+                <div className="text-[12px] font-bold uppercase tracking-[1.2em] text-white pl-[1.2em]">Live_Session</div>
                 <div className="text-[9px] font-bold uppercase tracking-[0.6em] text-[#ff4d00]/50">
                    Unit_{chapters[currentChapterIdx]?.chapterNum || '00'}
                 </div>
@@ -839,7 +839,7 @@ export default function ComicReaderClient({ initialComic, initialChapters, sourc
                 <div className="w-12 h-1.5 bg-white/20 rounded-full mx-auto mb-2" />
                 <div className="flex items-center justify-between border-b border-white/10 pb-4">
                   <div className="flex-1 min-w-0 pr-4">
-                    <div className="text-[10px] font-black uppercase tracking-[0.4em] text-[#ff4d00]">Active_Matrix</div>
+                    <div className="text-[10px] font-bold uppercase tracking-[0.4em] text-[#ff4d00]">Active_View</div>
                     <div className="text-[14px] md:text-[18px] font-black uppercase tracking-tight truncate text-white">{comic.title}</div>
                   </div>
                   <button 
@@ -1023,7 +1023,7 @@ export default function ComicReaderClient({ initialComic, initialChapters, sourc
 
                   {/* View Modes */}
                   <div className="space-y-4">
-                    <div className="text-[10px] font-black uppercase tracking-[0.2em]" style={{ color: READER_THEMES[readerTheme].muted }}>Display Matrix</div>
+                    <div className="text-[10px] font-bold uppercase tracking-[0.2em]" style={{ color: READER_THEMES[readerTheme].muted }}>Layout Settings</div>
                     <div className="grid grid-cols-3 gap-2">
                        <button onClick={() => setViewMode('classic')} className="py-4 text-[9px] font-black uppercase tracking-widest border transition-all" style={viewMode === 'classic'
                          ? { borderColor: READER_THEMES[readerTheme].accent, backgroundColor: READER_THEMES[readerTheme].accentSoft, color: READER_THEMES[readerTheme].text }

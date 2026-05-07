@@ -615,19 +615,15 @@ export default function HomeClient({ initialData, initialAgeVerified = false }: 
                     <div className="absolute -right-20 -bottom-20 h-96 w-96 rounded-full bg-[#ffd36b]/10 blur-[120px] opacity-40 group-hover:opacity-80 transition-opacity duration-1000" />
                     
                     {/* Content Left Side */}
-                    <div className="space-y-6 sm:space-y-8 lg:max-w-[90%] relative z-20">
+                    <div className="space-y-10 lg:pr-12 relative z-20">
                       <motion.div
-                        initial={{ x: -20, opacity: 0 }}
-                        animate={{ x: 0, opacity: 1 }}
-                        transition={{ delay: 0.2 }}
-                        className="flex items-center gap-3"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ duration: 1 }}
+                        className="flex items-center gap-4"
                       >
-                        <div className="flex items-center gap-2 rounded-full border border-[#ff5a1f]/30 bg-[#ff5a1f]/10 px-4 py-1.5 backdrop-blur-md">
-                          <Flame size={12} className="text-[#ff5a1f] animate-pulse" />
-                          <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#ff5a1f]">
-                            Trending Now
-                          </span>
-                        </div>
+                        <div className="h-px w-12 bg-[#ff5a1f]" />
+                        <span className="text-[10px] font-bold uppercase tracking-[0.4em] text-[#ff5a1f]">Featured Selection</span>
                       </motion.div>
 
                       {/* Mobile Image (Visible only on mobile) */}
@@ -653,11 +649,11 @@ export default function HomeClient({ initialData, initialAgeVerified = false }: 
 
                       <div className="space-y-4">
                         <motion.h1
-                          initial={{ y: 30, opacity: 0 }}
+                          initial={{ y: 40, opacity: 0 }}
                           animate={{ y: 0, opacity: 1 }}
-                          transition={{ delay: 0.3, duration: 0.8 }}
+                          transition={{ delay: 0.3, duration: 1, ease: [0.16, 1, 0.3, 1] }}
                         >
-                          <h1 className="text-display text-4xl leading-[1] sm:text-6xl lg:text-7xl xl:text-7xl text-white drop-shadow-2xl">
+                          <h1 className="text-display text-5xl leading-[0.95] sm:text-7xl lg:text-8xl text-white tracking-tightest">
                             {featuredComic.title}
                           </h1>
                         </motion.h1>
@@ -665,8 +661,8 @@ export default function HomeClient({ initialData, initialAgeVerified = false }: 
                         <motion.p
                           initial={{ y: 20, opacity: 0 }}
                           animate={{ y: 0, opacity: 1 }}
-                          transition={{ delay: 0.4 }}
-                          className="max-w-xl text-base leading-relaxed text-white/50 md:text-lg line-clamp-3 font-medium"
+                          transition={{ delay: 0.4, duration: 0.8 }}
+                          className="max-w-xl text-lg sm:text-xl leading-relaxed text-white/50 font-medium"
                         >
                           {featuredComic.description}
                         </motion.p>
@@ -676,32 +672,35 @@ export default function HomeClient({ initialData, initialAgeVerified = false }: 
                         initial={{ y: 20, opacity: 0 }}
                         animate={{ y: 0, opacity: 1 }}
                         transition={{ delay: 0.5 }}
-                        className="flex flex-wrap gap-4 pt-4"
+                        className="flex flex-wrap gap-6 items-center"
                       >
-                        <Link href={featuredComic.href} className="group relative flex items-center gap-4 overflow-hidden rounded-2xl bg-white px-8 py-4 text-[12px] font-black uppercase tracking-[0.2em] text-black transition-all hover:scale-105 active:scale-95">
-                          <span className="relative z-10">Start Reading</span>
-                          <Play size={18} fill="currentColor" className="relative z-10" />
-                          <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-[#ff5a1f] to-[#ffca3a] transition-transform duration-500 group-hover:translate-x-0" />
+                        <Link
+                          href={featuredComic.href}
+                          className="group relative h-16 rounded-full bg-white px-10 flex items-center justify-center overflow-hidden transition-all hover:scale-105 active:scale-95"
+                        >
+                          <span className="relative z-10 text-xs font-black uppercase tracking-widest text-black group-hover:text-white transition-colors duration-500">Begin Narrative</span>
+                          <div className="absolute inset-0 bg-[#ff5a1f] translate-y-full group-hover:translate-y-0 transition-transform duration-500" />
                         </Link>
-                        <button className="group flex items-center gap-4 rounded-2xl border border-white/10 bg-white/5 px-8 py-4 text-[12px] font-black uppercase tracking-[0.2em] text-white backdrop-blur-md transition-all hover:bg-white/10 hover:border-white/20 active:scale-95">
-                          Add to Library
-                          <Heart size={18} className="group-hover:fill-red-500 group-hover:text-red-500 transition-colors" />
+                        
+                        <button className="text-[11px] font-bold uppercase tracking-[0.3em] text-white/30 hover:text-white transition-colors">
+                          Add to Collection +
                         </button>
                       </motion.div>
 
-                      <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 pt-4 sm:pt-6">
+                      <div className="grid gap-8 grid-cols-2 pt-10">
                         {[
-                          { label: 'Status', value: shelfState[activeTab]?.loading ? 'Updating...' : 'Live' },
-                          { label: 'Library', value: `${activeShelfCount} Titles` },
-                          { label: 'Curation', value: activeTab.replace('-', ' '), hideOnMobile: true }
+                          { label: 'Status', value: shelfState[activeTab]?.loading ? 'Updating' : 'Active' },
+                          { label: 'Selection', value: `${activeShelfCount} Narratives` }
                         ].map((stat, i) => (
-                          <div key={i} className={`group rounded-[1.5rem] sm:rounded-[2rem] border border-white/5 bg-white/[0.03] px-4 py-4 sm:px-6 sm:py-5 transition-all hover:bg-white/[0.06] hover:border-white/10 ${stat.hideOnMobile ? 'hidden sm:block' : ''}`}>
-                            <p className="text-[8px] sm:text-[10px] font-black uppercase tracking-[0.3em] sm:tracking-[0.4em] text-white/20 group-hover:text-[#ff5a1f] transition-colors">{stat.label}</p>
-                            <p className="mt-1 sm:mt-2 text-[10px] sm:text-sm font-black uppercase tracking-tight text-white/80">{stat.value}</p>
+                          <div key={i} className="group relative">
+                            <p className="text-[9px] font-bold uppercase tracking-[0.3em] text-white/10 group-hover:text-[#ff5a1f] transition-colors">{stat.label}</p>
+                            <p className="mt-1 text-xs font-black uppercase tracking-widest text-white/50">{stat.value}</p>
+                            <div className="absolute -left-4 top-0 h-full w-[1px] bg-white/5 group-hover:bg-[#ff5a1f] transition-colors" />
                           </div>
                         ))}
                       </div>
                     </div>
+
 
 
                     {/* Featured Image Right Side (Desktop) */}
@@ -835,145 +834,102 @@ export default function HomeClient({ initialData, initialAgeVerified = false }: 
             </div>
           </section>
         )}
-
         {!hasPersonalLibrary && (
-          <section className="relative z-20 container mx-auto px-4 sm:px-6 md:px-8 pb-20">
-            <div className="mx-auto max-w-6xl overflow-hidden rounded-[3.5rem] border border-white/10 bg-gradient-to-br from-white/[0.03] to-transparent p-1 shadow-[0_40px_100px_rgba(0,0,0,0.4)] backdrop-blur-xl sm:backdrop-blur-3xl">
-              <div className="relative overflow-hidden rounded-[3.4rem] bg-[#0a0c14]/60 p-8 sm:p-12 md:p-16">
-                
-                {/* Background Pattern */}
-                <div className="absolute inset-0 opacity-[0.03] pointer-events-none" 
-                     style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)', backgroundSize: '32px 32px' }} />
-                
-                <div className="relative z-10 grid gap-8 sm:gap-12 lg:grid-cols-[1fr_400px] lg:items-center">
-                  <div className="space-y-6 sm:space-y-8">
-                    <div className="flex items-center gap-3 sm:gap-4">
-                      <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-xl sm:rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-[#ff5a1f]">
-                        <Sparkles size={20} className="sm:w-6 sm:h-6" />
-                      </div>
-                      <div>
-                        <h2 className="text-3xl font-black uppercase tracking-tighter leading-[1] sm:text-6xl md:text-7xl text-white">
-                          Your Library <br /> <span className="text-white/20 text-2xl sm:text-5xl md:text-6xl">Awaits Discovery</span>
-                        </h2>
-                      </div>
-                    </div>
-                    
-                    <p className="max-w-2xl text-sm sm:text-lg leading-relaxed text-white/40 font-medium">
-                      Unlock a personalized sanctuary for your narrative journey. Start reading any title to automatically track progress, sync bookmarks across devices, and receive AI-curated recommendations tailored to your taste.
-                    </p>
-                    
-                    <div className="flex flex-wrap gap-4 sm:gap-6 pt-2 sm:pt-4">
-                      <div className="flex items-center gap-2 sm:gap-3">
-                        <div className="h-1.5 w-1.5 sm:h-2 sm:w-2 rounded-full bg-[#ffca3a] shadow-[0_0_10px_#ffca3a]" />
-                        <span className="text-[9px] sm:text-[11px] font-black uppercase tracking-widest text-white/60">Live Sync</span>
-                      </div>
-                      <div className="flex items-center gap-2 sm:gap-3">
-                        <div className="h-1.5 w-1.5 sm:h-2 sm:w-2 rounded-full bg-green-500 shadow-[0_0_10px_#22c55e]" />
-                        <span className="text-[9px] sm:text-[11px] font-black uppercase tracking-widest text-white/60">Tracking</span>
-                      </div>
-                      <div className="flex items-center gap-2 sm:gap-3">
-                        <div className="h-1.5 w-1.5 sm:h-2 sm:w-2 rounded-full bg-cyan-500 shadow-[0_0_10px_#06b6d4]" />
-                        <span className="text-[9px] sm:text-[11px] font-black uppercase tracking-widest text-white/60">Bookmarks</span>
-                      </div>
-                    </div>
+          <section className="relative z-20 container mx-auto px-6 sm:px-8 pb-32">
+            <div className="mx-auto max-w-6xl border-t border-white/5 pt-20">
+              <div className="relative z-10 grid gap-16 lg:grid-cols-[1fr_380px]">
+                <div className="space-y-10">
+                  <div className="space-y-4">
+                    <span className="text-[10px] font-bold uppercase tracking-[0.5em] text-[#ff5a1f]">Personal Collection</span>
+                    <h2 className="text-4xl sm:text-6xl md:text-8xl font-display text-white leading-tight">
+                      Your Gallery <br /> <span className="text-white/10 italic">In Formation</span>
+                    </h2>
                   </div>
-
-                  <div className="grid gap-3 sm:gap-4 sm:grid-cols-2 lg:grid-cols-1">
-                    <Link href="/library" className="group block relative overflow-hidden rounded-2xl sm:rounded-3xl border border-[#ff5a1f]/40 bg-[#ff5a1f] p-6 sm:p-8 text-center transition-all hover:scale-[1.02] active:scale-95 shadow-[0_20px_40px_rgba(255,90,31,0.2)]">
-                      <div className="relative z-10">
-                        <div className="text-[9px] sm:text-[11px] font-black uppercase tracking-[0.4em] sm:tracking-[0.5em] text-white/60 group-hover:text-white transition-colors">Phase One</div>
-                        <div className="mt-2 sm:mt-3 text-lg sm:text-2xl font-black uppercase tracking-widest text-white">Explore Library</div>
+                  
+                  <p className="max-w-xl text-lg sm:text-xl leading-relaxed text-white/30 font-medium">
+                    Create a singular space for the stories that matter. Track your progression through narratives and curated collections.
+                  </p>
+                  
+                  <div className="flex flex-wrap gap-8 pt-4">
+                    {['Live Sync', 'Tracking', 'Bookmarks'].map((tag) => (
+                      <div key={tag} className="flex items-center gap-3">
+                        <div className="h-px w-4 bg-white/20" />
+                        <span className="text-[10px] font-bold uppercase tracking-widest text-white/40">{tag}</span>
                       </div>
-                      <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
-                    </Link>
-
-                    <Link href="/settings" className="group block rounded-2xl sm:rounded-3xl border border-white/5 bg-white/5 p-6 sm:p-8 text-center transition-all hover:bg-white/10 hover:border-white/20 active:scale-95">
-                      <div className="text-[9px] sm:text-[11px] font-black uppercase tracking-[0.4em] sm:tracking-[0.5em] text-white/30 group-hover:text-white/50 transition-colors">Phase Two</div>
-                      <div className="mt-2 sm:mt-3 text-lg sm:text-2xl font-black uppercase tracking-widest text-white/70 group-hover:text-white transition-colors">Preferences</div>
-                    </Link>
+                    ))}
                   </div>
                 </div>
 
+                <div className="flex flex-col gap-4 justify-center">
+                  <Link href="/library" className="group h-20 rounded-full border border-white/10 bg-white flex items-center justify-center transition-all hover:scale-[1.02] active:scale-95 shadow-2xl">
+                    <span className="text-xs font-black uppercase tracking-widest text-black">Explore All Archives</span>
+                  </Link>
+
+                  <Link href="/settings" className="group h-20 rounded-full border border-white/5 bg-white/5 flex items-center justify-center transition-all hover:bg-white/10 hover:border-white/20 active:scale-95">
+                    <span className="text-xs font-black uppercase tracking-widest text-white/40 group-hover:text-white transition-colors">Configure View</span>
+                  </Link>
+                </div>
               </div>
             </div>
           </section>
         )}
 
+
         {/* --- EXPLORE SECTION --- */}
         <section className="relative z-20 -mt-12 container mx-auto px-4 sm:px-6 md:px-8 pb-24 sm:-mt-16 sm:pb-28 lg:-mt-20 lg:pb-32">
 
-          {/* --- EXPLORE & DISCOVERY CONTROLS --- */}
-          <div className="mb-16 flex flex-col gap-12 max-w-6xl mx-auto sm:mb-20">
+          {/* --- CATEGORY NAVIGATION --- */}
+          <div className="mb-24 flex flex-col gap-16 max-w-6xl mx-auto">
+            <div className="flex flex-wrap items-center justify-center gap-x-12 gap-y-6">
+              {visibleShelves.map((shelf) => (
+                <button
+                  key={shelf.key}
+                  onClick={() => setActiveTab(shelf.key)}
+                  className={`group relative flex flex-col items-center transition-all duration-500 ${
+                    activeTab === shelf.key ? 'scale-110' : 'opacity-30 hover:opacity-100'
+                  }`}
+                >
+                  <span className={`text-[10px] font-bold uppercase tracking-[0.5em] transition-colors ${
+                    activeTab === shelf.key ? 'text-[#ff5a1f]' : 'text-white'
+                  }`}>
+                    {shelf.title}
+                  </span>
+                  {activeTab === shelf.key && (
+                    <motion.div
+                      layoutId="active-bar"
+                      className="absolute -bottom-4 h-[2px] w-8 bg-[#ff5a1f]"
+                    />
+                  )}
+                </button>
+              ))}
+            </div>
 
-            {/* 1. Category Navigation Layer */}
-            <div className="flex flex-col gap-6">
-              <div className="flex items-center gap-3 p-2 bg-white/[0.02] border border-white/5 rounded-[3rem] backdrop-blur-3xl overflow-x-auto no-scrollbar shadow-2xl">
-                {visibleShelves.map((shelf) => (
+            {/* Preference Controls */}
+            <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] items-center gap-12 border-b border-white/5 pb-12">
+              <div className="flex items-center gap-8 overflow-x-auto no-scrollbar">
+                <span className="text-[9px] font-bold uppercase tracking-[0.3em] text-white/20 whitespace-nowrap">Linguistic:</span>
+                {MANGA_LANGUAGE_OPTIONS.filter(o => ['en', 'ru', 'es', 'fr', 'all'].includes(o.value)).map((opt) => (
                   <button
-                    key={shelf.key}
-                    onClick={() => setActiveTab(shelf.key)}
-                    className={`relative flex items-center gap-4 rounded-full px-8 py-5 transition-all duration-700 whitespace-nowrap group ${activeTab === shelf.key
-                      ? 'bg-white text-black shadow-[0_20px_40px_rgba(255,255,255,0.1)] scale-[1.02]'
-                      : 'text-white/30 hover:text-white hover:bg-white/5'
-                      }`}
+                    key={opt.value}
+                    onClick={() => handleLanguageChange(opt.value)}
+                    className={`text-[10px] font-bold uppercase tracking-widest transition-all ${
+                      mangaLanguage === opt.value ? 'text-[#ffca3a]' : 'text-white/20 hover:text-white'
+                    }`}
                   >
-                    <div className={`transition-all duration-700 ${activeTab === shelf.key ? 'text-[#ff5a1f] scale-110' : 'text-white/10 group-hover:text-[#ff5a1f]/60'}`}>
-                      {shelf.icon}
-                    </div>
-                    <div className="flex flex-col items-start">
-                      <span className="text-[11px] font-black uppercase tracking-widest">{shelf.title}</span>
-                      <span className={`text-[7px] font-black uppercase tracking-[0.2em] opacity-40 ${activeTab === shelf.key ? 'text-black/60' : 'text-white/30'}`}>
-                        {shelf.subtitle.split(' ').slice(0, 2).join(' ')}
-                      </span>
-                    </div>
-                    {activeTab === shelf.key && (
-                      <motion.div layoutId="active-nav-bg" className="absolute inset-0 bg-white rounded-full -z-10" />
-                    )}
+                    {opt.value === 'all' ? 'Mixed' : opt.value}
                   </button>
                 ))}
               </div>
-            </div>
 
-            {/* 2. Reading Preference Layer */}
-            <div className="flex flex-col gap-6">
-              <div className="grid grid-cols-1 lg:grid-cols-[1fr_400px] gap-6">
-                <div className="group relative overflow-hidden rounded-[2.5rem] border border-white/5 bg-white/[0.02] p-2 backdrop-blur-2xl transition-all hover:bg-white/[0.04] hover:border-white/10 shadow-xl">
-                  <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-2">
-                    <div className="flex items-center gap-4 pl-6">
-                      <div className="flex flex-col">
-                        <span className="text-[10px] font-black uppercase tracking-widest text-[#ffca3a]">Localization</span>
-                        <span className="text-[7px] font-bold uppercase tracking-[0.3em] text-white/20">Target Language</span>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-1.5 p-1.5 bg-black/40 rounded-2xl border border-white/5 w-full sm:w-auto">
-                      {MANGA_LANGUAGE_OPTIONS.filter(o => ['en', 'ru', 'es', 'fr', 'all'].includes(o.value)).map((opt) => (
-                        <button
-                          key={opt.value}
-                          onClick={() => handleLanguageChange(opt.value)}
-                          className={`flex-1 sm:flex-none px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-500 ${mangaLanguage === opt.value ? 'bg-[#ff5a1f] text-white shadow-[0_10px_20px_rgba(255,90,31,0.3)]' : 'text-white/20 hover:text-white hover:bg-white/5'}`}
-                        >
-                          {opt.value === 'all' ? 'MIX' : opt.value}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="relative group">
-                  <div className="absolute inset-y-0 left-8 flex items-center pointer-events-none">
-                    <Search className="text-white/10 transition-all duration-700 group-focus-within:text-[#ff5a1f] group-focus-within:scale-110" size={22} />
-                  </div>
-                  <input
-                    type="text"
-                    placeholder="Search Archive Matrix..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full h-full min-h-[84px] rounded-[2.5rem] border border-white/10 bg-white/[0.02] pl-20 pr-10 text-[12px] font-black uppercase tracking-[0.2em] outline-none backdrop-blur-2xl transition-all duration-700 focus:border-[#ff5a1f]/40 focus:bg-black/60 focus:shadow-[0_20px_50px_rgba(0,0,0,0.4)] placeholder:text-white/10"
-                  />
-                  <div className="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none hidden sm:block">
-                    <div className="px-3 py-1 rounded-lg border border-white/5 bg-white/5 text-[8px] font-black text-white/20">CTRL + K</div>
-                  </div>
-                </div>
+              <div className="relative min-w-[300px]">
+                <Search className="absolute left-0 top-1/2 -translate-y-1/2 text-white/20" size={16} />
+                <input
+                  type="text"
+                  placeholder="Find stories..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full bg-transparent pl-8 pr-4 py-2 text-xs font-medium text-white outline-none placeholder:text-white/10 border-b border-white/10 focus:border-[#ff5a1f] transition-colors"
+                />
               </div>
             </div>
           </div>

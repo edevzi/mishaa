@@ -504,7 +504,7 @@ export function CharacterForgeModal({ isOpen, initialData, onClose, onSave, t }:
                  disabled={!name}
                  className="px-16 py-6 bg-white text-black text-[12px] font-black uppercase tracking-[0.5em] hover:bg-[var(--accent)] hover:text-white transition-all shadow-[8px_8px_0_black] active:translate-x-1 active:translate-y-1 active:shadow-none disabled:opacity-10"
                >
-                  {initialData ? 'Update_Matrix' : 'Finalize_Casting'}
+                  {initialData ? 'Update_Selection' : 'Finalize_Cast'}
                </button>
             </div>
           </motion.div>
