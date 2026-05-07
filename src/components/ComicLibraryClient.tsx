@@ -140,8 +140,6 @@ export default function ComicLibraryClient({ initialAgeVerified = false }: Comic
   const [isAgeVerified, setIsAgeVerified] = useState(() => Boolean(initialAgeVerified));
   const [nsfwEnabled, setNsfwEnabled] = useState(() => Boolean(initialAgeVerified));
   const [showAgeGate, setShowAgeGate] = useState(false);
-  const [isTouchDevice, setIsTouchDevice] = useState(false);
-  const [previewComicKey, setPreviewComicKey] = useState<string | null>(null);
   const [activeCategory, setActiveCategory] = useState(initialCategory);
   const [offset, setOffset] = useState(0);
   const [hasMore, setHasMore] = useState(true);
@@ -169,6 +167,7 @@ export default function ComicLibraryClient({ initialAgeVerified = false }: Comic
   const skipNextOffsetFetchRef = useRef(false);
   const readerRef = useRef<HTMLDivElement>(null);
   const observer = useRef<IntersectionObserver | null>(null);
+  const searchBoxRef = useRef<HTMLDivElement | null>(null);
   const searchQuery = categoryQueries[activeCategory] ?? '';
   const bookmarkedKeys = useMemo(() => new Set(bookmarks.map((bookmark) => `${bookmark.source}:${bookmark.id}`)), [bookmarks]);
   const visibleComics = useMemo(() => {
@@ -201,17 +200,6 @@ export default function ComicLibraryClient({ initialAgeVerified = false }: Comic
     if (verified) persistAgeVerification();
     return () => window.clearTimeout(timer);
   }, [initialAgeVerified]);
-
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-
-    const media = window.matchMedia('(hover: none), (pointer: coarse)');
-    const update = () => setIsTouchDevice(media.matches);
-
-    update();
-    media.addEventListener('change', update);
-    return () => media.removeEventListener('change', update);
-  }, []);
 
   useEffect(() => {
     persistStoredMangaLanguage(mangaLanguage);
@@ -303,6 +291,11 @@ export default function ComicLibraryClient({ initialAgeVerified = false }: Comic
     }));
     updateLibraryUrl(activeCategory, value, 'replace');
   }, [activeCategory, updateLibraryUrl]);
+
+  const closeSearchDropdown = useCallback(() => {
+    setShowDropdown(false);
+    setIsSearching(false);
+  }, []);
 
   const handleNsfwToggle = useCallback(() => {
     if (!isAgeVerified) {
@@ -596,6 +589,27 @@ export default function ComicLibraryClient({ initialAgeVerified = false }: Comic
     }
   }, [offset, loadData]);
 
+  useEffect(() => {
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') closeSearchDropdown();
+    };
+
+    const handlePointerDown = (event: PointerEvent) => {
+      if (!showDropdown) return;
+      if (!searchBoxRef.current) return;
+      if (searchBoxRef.current.contains(event.target as Node)) return;
+      closeSearchDropdown();
+    };
+
+    window.addEventListener('keydown', handleEscape);
+    window.addEventListener('pointerdown', handlePointerDown, true);
+
+    return () => {
+      window.removeEventListener('keydown', handleEscape);
+      window.removeEventListener('pointerdown', handlePointerDown, true);
+    };
+  }, [closeSearchDropdown, showDropdown]);
+
 
 
   // Keyboard navigation
@@ -659,7 +673,7 @@ export default function ComicLibraryClient({ initialAgeVerified = false }: Comic
                 }} className="h-12 w-full flex items-center justify-center border border-white/10 text-white/20 hover:bg-[#ff4d00] hover:text-white transition-all md:h-16 md:w-16">
                   <Shuffle size={20} />
                 </button>
-                <div className="relative flex-1 md:w-96">
+                <div ref={searchBoxRef} className="relative flex-1 md:w-96">
                   <input 
                     type="text" 
                     placeholder="SEARCH_GLOBAL_ARCHIVES..." 
@@ -681,7 +695,16 @@ export default function ComicLibraryClient({ initialAgeVerified = false }: Comic
                       >
                         <div className="p-2 border-b border-white/5 flex items-center justify-between">
                           <span className="text-[8px] font-black uppercase tracking-[0.4em] text-white/20 px-2">Instant_Results</span>
-                          <button onClick={() => setShowDropdown(false)}><X size={12} className="text-white/20 hover:text-white" /></button>
+                          <button
+                            type="button"
+                            onClick={(event) => {
+                              event.preventDefault();
+                              event.stopPropagation();
+                              closeSearchDropdown();
+                            }}
+                          >
+                            <X size={12} className="text-white/20 hover:text-white" />
+                          </button>
                         </div>
                         <div className="max-h-[400px] overflow-y-auto custom-scrollbar">
                           {isSearching ? (
@@ -696,7 +719,7 @@ export default function ComicLibraryClient({ initialAgeVerified = false }: Comic
                               <button 
                                 key={comic.id}
                                 onClick={() => {
-                                  setShowDropdown(false);
+                                  closeSearchDropdown();
                                   router.push(`/library/${comic.source}/${comic.id}`);
                                 }}
                                 className="w-full p-3 flex items-center gap-4 hover:bg-white/5 border-b border-white/5 transition-all text-left group"
@@ -831,10 +854,8 @@ export default function ComicLibraryClient({ initialAgeVerified = false }: Comic
           ) : (
             <div className="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-x-4 gap-y-10 md:gap-x-10 md:gap-y-20">
               {visibleComics.map((comic, index) => {
-                const cardKey = `${comic.source}:${comic.id}`;
                 const adultContent = isAdultComic(comic);
-                const isPreviewOpen = adultContent && previewComicKey === cardKey;
-                const shouldBlur = adultContent && !isAgeVerified && !isPreviewOpen;
+                const shouldBlur = adultContent && !isAgeVerified;
                 const coverClassName = `object-cover opacity-100 transition-transform duration-700 ${
                   shouldBlur ? 'scale-105' : 'scale-100'
                 } group-hover:scale-110`;
@@ -862,12 +883,6 @@ export default function ComicLibraryClient({ initialAgeVerified = false }: Comic
                       if (adultContent && !isAgeVerified) {
                         event.preventDefault();
                         setShowAgeGate(true);
-                        return;
-                      }
-
-                      if (isTouchDevice && adultContent && !isPreviewOpen) {
-                        event.preventDefault();
-                        setPreviewComicKey(cardKey);
                         return;
                       }
 
@@ -929,7 +944,7 @@ export default function ComicLibraryClient({ initialAgeVerified = false }: Comic
                         </div>
                       )}
                       {shouldBlur && (
-                        <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/20 backdrop-blur-[2px] opacity-100 transition-opacity group-hover:opacity-0">
+                        <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/20 backdrop-blur-[2px] opacity-100">
                           <div className="rounded-full border border-white/15 bg-black/60 px-3 py-1 text-[8px] font-black uppercase tracking-[0.4em] text-white">
                             Tap to reveal
                           </div>

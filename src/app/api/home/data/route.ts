@@ -33,7 +33,7 @@ export async function GET(req: Request) {
         description: item.description?.replace(/<[^>]*>?/gm, '').substring(0, 150) || 'Global trending pick',
         coverUrl: item.coverImage.extraLarge || item.coverImage.large,
         source: 'mangadex',
-        href: `/library/mangadex/${item.id}`,
+        href: item.siteUrl || '/library',
         meta: `TRENDING #${index + 1}`,
         rating: (item.averageScore / 10).toFixed(1) || '8.5',
       })))

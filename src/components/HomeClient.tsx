@@ -71,26 +71,6 @@ function resolveComicHref(comic: LibraryComic) {
   return comic.href || `/library/${comic.source}/${comic.id}`;
 }
 
-function getShelfPreviewSrc(
-  shelfKey: ShelfKey,
-  shelfState: Record<string, { items: LibraryComic[]; loading: boolean }>,
-  personalRecs: LibraryComic[],
-) {
-  if (shelfKey === 'all') {
-    return (
-      personalRecs[0]?.coverUrl ||
-      shelfState.trending?.items?.[0]?.coverUrl ||
-      DEFAULT_IMAGE_SRC
-    );
-  }
-
-  if (shelfKey === 'for-you') {
-    return personalRecs[0]?.coverUrl || DEFAULT_IMAGE_SRC;
-  }
-
-  return shelfState[shelfKey]?.items?.[0]?.coverUrl || DEFAULT_IMAGE_SRC;
-}
-
 type SafeCoverImageProps = {
   src?: string | null;
   alt: string;
@@ -639,56 +619,19 @@ export default function HomeClient({
             <div className="flex flex-wrap items-end justify-between gap-4 border-b border-white/10 pb-6">
               <div>
                 <p className="text-[9px] font-black uppercase tracking-[0.5em] text-[#ff5a1f]">
-                  Categories
+                  Browse
                 </p>
                 <h2 className="mt-3 text-2xl font-black uppercase tracking-tight text-white sm:text-3xl">
-                  Filter the page
+                  Browse categories
                 </h2>
+                <p className="mt-3 max-w-2xl text-sm leading-6 text-white/45">
+                  Pick a category to refine the experience. The section stays clean and category-first, without showing a manga preview.
+                </p>
               </div>
             </div>
 
-            <div className="mt-6 grid gap-6 lg:grid-cols-[1.25fr_0.75fr] lg:items-stretch">
-              <motion.div
-                key={activeTab}
-                initial={{ opacity: 0, y: 14 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-                className="relative overflow-hidden rounded-[2rem] bg-black shadow-[0_24px_60px_rgba(0,0,0,0.25)]"
-              >
-                <div className="relative aspect-[16/9] sm:aspect-[18/10]">
-                  <SafeCoverImage
-                    key={getShelfPreviewSrc(activeTab, shelfState, personalRecs)}
-                    src={getShelfPreviewSrc(activeTab, shelfState, personalRecs)}
-                    alt="Selected category preview"
-                    sizes="(max-width: 1024px) 100vw, 720px"
-                    className="object-cover object-center"
-                  />
-                  <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(5,6,10,0.96)_0%,rgba(5,6,10,0.72)_38%,rgba(5,6,10,0.18)_100%)]" />
-                  <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_25%,rgba(255,90,31,0.18),transparent_26%),radial-gradient(circle_at_85%_70%,rgba(255,211,107,0.16),transparent_20%)]" />
-                </div>
-
-                <div className="absolute inset-0 flex items-end">
-                  <div className="w-full p-5 sm:p-6">
-                    <div className="max-w-xl rounded-[1.5rem] bg-black/55 p-5 backdrop-blur-xl sm:p-6">
-                      <p className="text-[9px] font-black uppercase tracking-[0.45em] text-[#ffca3a]">
-                        {activeTab === 'all' ? 'All shelves' : activeTab.toUpperCase()}
-                      </p>
-                      <h3 className="mt-3 text-3xl font-black uppercase tracking-tight text-white sm:text-4xl">
-                        {activeTab === 'all'
-                          ? 'Everything in one place'
-                          : visibleShelves.find((s) => s.key === activeTab)?.title || 'Selected shelf'}
-                      </h3>
-                      <p className="mt-3 max-w-lg text-sm leading-6 text-white/55">
-                        {activeTab === 'all'
-                          ? 'Browse everything, or choose one shelf to narrow the page instantly.'
-                          : visibleShelves.find((s) => s.key === activeTab)?.subtitle || 'Shelf preview'}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </motion.div>
-
-              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
+            <div className="mt-6">
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 <motion.button
                   type="button"
                   whileHover={{ y: -2 }}
@@ -708,7 +651,7 @@ export default function HomeClient({
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center justify-between gap-3">
                       <h3 className="text-sm font-black uppercase tracking-[0.25em] text-white">
-                        All
+                        All categories
                       </h3>
                       {activeTab === 'all' && (
                         <span className="rounded-full border border-white/15 bg-white/10 px-3 py-1 text-[8px] font-black uppercase tracking-[0.35em] text-white">
@@ -717,7 +660,7 @@ export default function HomeClient({
                       )}
                     </div>
                     <p className="mt-2 text-[11px] leading-5 text-white/42">
-                      Show every shelf
+                      Show all categories
                     </p>
                   </div>
                 </motion.button>
@@ -761,38 +704,38 @@ export default function HomeClient({
                   );
                 })}
               </div>
-            </div>
 
-            <div className="mt-6 grid gap-4 rounded-[1.6rem] border border-white/10 bg-black/20 p-4 lg:grid-cols-[1fr_auto] lg:items-center">
-              <div className="flex items-center gap-3 overflow-x-auto no-scrollbar">
-                <span className="shrink-0 text-[9px] font-black uppercase tracking-[0.35em] text-white/30">
-                  Language
-                </span>
-                {MANGA_LANGUAGE_OPTIONS.filter(o => ['en', 'ru', 'es', 'fr', 'all'].includes(o.value)).map((opt) => (
-                  <button
-                    key={opt.value}
-                    onClick={() => handleLanguageChange(opt.value)}
-                    className={`shrink-0 rounded-full px-4 py-2 text-[10px] font-black uppercase tracking-[0.3em] transition-all ${
-                      mangaLanguage === opt.value
-                        ? 'bg-white text-black shadow-lg'
-                        : 'border border-white/10 bg-white/[0.03] text-white/45 hover:border-white/20 hover:text-white'
-                    }`}
-                  >
-                    {opt.value === 'all' ? 'Mixed' : opt.value}
-                  </button>
-                ))}
+              <div className="mt-6 grid gap-4 rounded-[1.6rem] border border-white/10 bg-black/20 p-4 lg:grid-cols-[1fr_auto] lg:items-center">
+                <div className="flex items-center gap-3 overflow-x-auto no-scrollbar">
+                  <span className="shrink-0 text-[9px] font-black uppercase tracking-[0.35em] text-white/30">
+                    Language
+                  </span>
+                  {MANGA_LANGUAGE_OPTIONS.filter(o => ['en', 'ru', 'es', 'fr', 'all'].includes(o.value)).map((opt) => (
+                    <button
+                      key={opt.value}
+                      onClick={() => handleLanguageChange(opt.value)}
+                      className={`shrink-0 rounded-full px-4 py-2 text-[10px] font-black uppercase tracking-[0.3em] transition-all ${
+                        mangaLanguage === opt.value
+                          ? 'bg-white text-black shadow-lg'
+                          : 'border border-white/10 bg-white/[0.03] text-white/45 hover:border-white/20 hover:text-white'
+                      }`}
+                    >
+                      {opt.value === 'all' ? 'Mixed' : opt.value}
+                    </button>
+                  ))}
+                </div>
+
+                <label className="relative min-w-[280px] lg:min-w-[340px]">
+                  <Search className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-white/30" size={16} />
+                  <input
+                    type="text"
+                    placeholder="Search titles..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full rounded-full border border-white/10 bg-white/[0.03] py-3 pl-11 pr-4 text-sm text-white outline-none placeholder:text-white/25 focus:border-[#ff5a1f] transition-colors"
+                  />
+                </label>
               </div>
-
-              <label className="relative min-w-[280px] lg:min-w-[340px]">
-                <Search className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-white/30" size={16} />
-                <input
-                  type="text"
-                  placeholder="Search titles..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full rounded-full border border-white/10 bg-white/[0.03] py-3 pl-11 pr-4 text-sm text-white outline-none placeholder:text-white/25 focus:border-[#ff5a1f] transition-colors"
-                />
-              </label>
             </div>
           </div>
         </section>
@@ -859,6 +802,7 @@ export default function HomeClient({
                           const cardKey = `${shelf.key}:${comic.source}:${comic.id}`;
                           const adultContent = isAdultComic(comic);
                           const isPreviewOpen = adultContent && previewCardKey === cardKey;
+                          const shouldBlur = adultContent && !isAgeVerified;
 
                           return (
                             <motion.article
@@ -885,15 +829,15 @@ export default function HomeClient({
                                     alt={comic.title}
                                     sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 250px"
                                     className={`object-cover transition-all duration-1000 ${
-                                      adultContent && !isPreviewOpen ? 'scale-110 blur-[8px]' : 'scale-100'
-                                    } group-hover:scale-115 group-hover:blur-0`}
+                                      shouldBlur ? 'scale-110 blur-[8px]' : 'scale-100'
+                                    } group-hover:scale-115`}
                                   />
                                   
                                   {/* Glassy Gradient Overlay */}
                                   <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent opacity-60 transition-opacity duration-700 group-hover:opacity-100" />
 
-                                  {adultContent && !isPreviewOpen && (
-                                    <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-black/40 backdrop-blur-md opacity-100 transition-opacity duration-700 group-hover:opacity-0">
+                                  {shouldBlur && (
+                                    <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-black/40 backdrop-blur-md opacity-100">
                                       <Zap size={24} className="text-[#ffca3a] mb-3 animate-pulse" />
                                       <div className="rounded-full border border-white/20 bg-white/5 px-4 py-1.5 text-[9px] font-black uppercase tracking-[0.3em] text-white backdrop-blur-xl">
                                         RESTRICTED
@@ -902,7 +846,7 @@ export default function HomeClient({
                                   )}
 
                                   <div className={`absolute inset-x-0 bottom-0 p-5 space-y-2 transition-all duration-700 ${
-                                    adultContent && !isPreviewOpen
+                                    shouldBlur
                                       ? 'translate-y-8 opacity-0 group-hover:translate-y-0 group-hover:opacity-100'
                                       : 'translate-y-4 opacity-0 group-hover:translate-y-0 group-hover:opacity-100'
                                   } ${isPreviewOpen ? '!translate-y-0 !opacity-100' : ''}`}>
@@ -951,6 +895,7 @@ export default function HomeClient({
                   const cardKey = `discover:${comic.source}:${comic.id}`;
                   const adultContent = isAdultComic(comic);
                   const isPreviewOpen = adultContent && previewCardKey === cardKey;
+                  const shouldBlur = adultContent && !isAgeVerified;
 
                   return (
                     <motion.div
@@ -978,13 +923,13 @@ export default function HomeClient({
                             alt={comic.title}
                             sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 200px"
                             className={`object-cover transition-all duration-1000 ${
-                              adultContent && !isPreviewOpen ? 'scale-110 blur-[10px]' : 'scale-100'
-                            } group-hover:scale-115 group-hover:blur-0`}
+                              shouldBlur ? 'scale-110 blur-[10px]' : 'scale-100'
+                            } group-hover:scale-115`}
                           />
                           <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-80" />
                           
-                          {adultContent && !isPreviewOpen && (
-                            <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/40 backdrop-blur-md opacity-100 transition-opacity duration-700 group-hover:opacity-0">
+                          {shouldBlur && (
+                            <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/40 backdrop-blur-md opacity-100">
                               <div className="rounded-full border border-white/20 bg-white/5 px-3 py-1 text-[7px] font-black uppercase tracking-[0.3em] text-white">
                                 RESTRICTED
                               </div>

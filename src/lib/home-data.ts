@@ -183,7 +183,7 @@ export async function getHomeData(lang: MangaLanguage = 'en', options: HomeDataO
           coverUrl: item.coverImage.extraLarge || item.coverImage.large,
           bannerUrl: item.bannerImage || undefined,
           source: 'mangadex' as const,
-          href: mangaDexId ? `/library/mangadex/${mangaDexId}` : item.siteUrl,
+          href: mangaDexId ? `/library/mangadex/${mangaDexId}` : item.siteUrl || '/library',
           meta: `TRENDING #${index + 1}`,
           rating: (item.averageScore / 10).toFixed(1) || '8.5'
         };
