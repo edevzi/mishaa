@@ -131,6 +131,7 @@ type HomeClientProps = {
 export default function HomeClient({ initialData, initialAgeVerified = false }: HomeClientProps) {
   const [isAgeVerified, setIsAgeVerified] = useState(() => Boolean(initialAgeVerified));
   const [showAgeGate, setShowAgeGate] = useState(false);
+  const hasCompleteInitialData = SHELVES.every((shelf) => (initialData?.[shelf.key]?.length ?? 0) > 0);
   const visibleShelves = isAgeVerified
     ? SHELVES
     : SHELVES.filter((shelf) => !['doujinshi', 'milf', 'ntr'].includes(shelf.key));
@@ -138,9 +139,9 @@ export default function HomeClient({ initialData, initialAgeVerified = false }: 
   const [shelfState, setShelfState] = useState<Record<string, { items: LibraryComic[]; loading: boolean }>>(() => {
     const base = {} as Record<string, { items: LibraryComic[]; loading: boolean }>;
     SHELVES.forEach(s => {
-      base[s.key] = { items: initialData?.[s.key] || [], loading: !initialData?.[s.key] };
+      base[s.key] = { items: initialData?.[s.key] || [], loading: !(initialData?.[s.key]?.length) };
     });
-    base['trending'] = { items: initialData?.['trending'] || [], loading: !initialData?.['trending'] };
+    base['trending'] = { items: initialData?.['trending'] || [], loading: !(initialData?.['trending']?.length) };
     return base;
   });
   const [searchQuery, setSearchQuery] = useState('');
@@ -449,7 +450,7 @@ export default function HomeClient({ initialData, initialAgeVerified = false }: 
 
   const isFirstMount = useRef(true);
   useEffect(() => {
-    if (isFirstMount.current && initialData) {
+    if (isFirstMount.current && hasCompleteInitialData) {
       isFirstMount.current = false;
       return;
     }
@@ -457,7 +458,7 @@ export default function HomeClient({ initialData, initialAgeVerified = false }: 
       void fetchShelves(mangaLanguage);
     }, 0);
     return () => clearTimeout(t);
-  }, [isAgeVerified, initialData, mangaLanguage]);
+  }, [hasCompleteInitialData, isAgeVerified, mangaLanguage]);
 
   useEffect(() => {
     const loadPersonalRecs = async () => {
