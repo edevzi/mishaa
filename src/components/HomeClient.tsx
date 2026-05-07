@@ -606,147 +606,88 @@ export default function HomeClient({ initialData, initialAgeVerified = false }: 
                 transition={{ duration: 1, ease: [0.22, 1, 0.36, 1] }}
                 className="relative w-full"
               >
-                <div className="mx-auto max-w-7xl px-4 sm:px-6 md:px-8 pb-20">
-                  {/* Glass Backdrop Container - Reduced blur on mobile for performance */}
-                  <div className="relative group overflow-hidden rounded-[3rem] border border-white/10 bg-[#0a0c14]/40 p-6 shadow-[0_40px_120px_-20px_rgba(0,0,0,0.7)] backdrop-blur-xl sm:backdrop-blur-[60px] sm:p-10 lg:grid-cols-[minmax(0,1fr)_420px] lg:grid lg:items-center lg:gap-12 lg:p-14">
-                    
-                    {/* Atmospheric Glows */}
-                    <div className="absolute -left-20 -top-20 h-96 w-96 rounded-full bg-[#ff5a1f]/15 blur-[120px] opacity-60 group-hover:opacity-100 transition-opacity duration-1000" />
-                    <div className="absolute -right-20 -bottom-20 h-96 w-96 rounded-full bg-[#ffd36b]/10 blur-[120px] opacity-40 group-hover:opacity-80 transition-opacity duration-1000" />
+                <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pb-32">
+                  <div className="grid grid-cols-1 lg:grid-cols-[1.1fr_1fr] gap-16 items-center">
                     
                     {/* Content Left Side */}
-                    <div className="space-y-10 lg:pr-12 relative z-20">
-                      <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        transition={{ duration: 1 }}
-                        className="flex items-center gap-4"
-                      >
-                        <div className="h-px w-12 bg-[#ff5a1f]" />
-                        <span className="text-[10px] font-bold uppercase tracking-[0.4em] text-[#ff5a1f]">Featured Selection</span>
-                      </motion.div>
-
-                      {/* Mobile Image (Visible only on mobile) */}
-                      <motion.div
-                        initial={{ scale: 0.9, opacity: 0 }}
-                        animate={{ scale: 1, opacity: 1 }}
-                        transition={{ delay: 0.1 }}
-                        className="relative mx-auto w-full max-w-[400px] lg:hidden"
-                      >
-                        <div className="relative aspect-[4/5] w-full overflow-hidden rounded-[2.5rem] border border-white/15 bg-black shadow-2xl">
-                          <Image
-                            src={featuredImageSrc}
-                            alt={featuredComic.title}
-                            fill
-                            priority={true}
-                            sizes="(max-width: 1024px) 100vw, 400px"
-                            unoptimized
-                            className={featuredHasBanner ? 'object-cover' : 'object-contain bg-black p-6'}
-                          />
-                          <div className="absolute inset-0 bg-gradient-to-t from-[#05060a] via-transparent to-transparent opacity-80" />
-                        </div>
-                      </motion.div>
-
-                      <div className="space-y-4">
-                        <motion.h1
-                          initial={{ y: 40, opacity: 0 }}
-                          animate={{ y: 0, opacity: 1 }}
-                          transition={{ delay: 0.3, duration: 1, ease: [0.16, 1, 0.3, 1] }}
+                    <div className="space-y-12 relative z-20 order-2 lg:order-1">
+                      <div className="space-y-6">
+                        <motion.div
+                          initial={{ opacity: 0, x: -20 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          className="flex items-center gap-4 text-[#ff5a1f]"
                         >
-                          <h1 className="text-display text-5xl leading-[0.95] sm:text-7xl lg:text-8xl text-white tracking-tightest">
-                            {featuredComic.title}
-                          </h1>
+                          <div className="h-px w-10 bg-current" />
+                          <span className="text-[10px] font-bold uppercase tracking-[0.4em]">Featured Story</span>
+                        </motion.div>
+
+                        <motion.h1
+                          initial={{ opacity: 0, y: 30 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: 0.1, duration: 0.8 }}
+                          className="text-display text-4xl sm:text-6xl xl:text-7xl text-white leading-[1.1]"
+                        >
+                          {featuredComic.title}
                         </motion.h1>
 
                         <motion.p
-                          initial={{ y: 20, opacity: 0 }}
-                          animate={{ y: 0, opacity: 1 }}
-                          transition={{ delay: 0.4, duration: 0.8 }}
-                          className="max-w-xl text-lg sm:text-xl leading-relaxed text-white/50 font-medium"
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: 0.2, duration: 0.8 }}
+                          className="max-w-xl text-lg sm:text-xl leading-relaxed text-white/40 font-medium"
                         >
                           {featuredComic.description}
                         </motion.p>
                       </div>
 
                       <motion.div
-                        initial={{ y: 20, opacity: 0 }}
-                        animate={{ y: 0, opacity: 1 }}
-                        transition={{ delay: 0.5 }}
-                        className="flex flex-wrap gap-6 items-center"
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.3 }}
+                        className="flex flex-wrap items-center gap-6"
                       >
                         <Link
                           href={featuredComic.href}
-                          className="group relative h-16 rounded-full bg-white px-10 flex items-center justify-center overflow-hidden transition-all hover:scale-105 active:scale-95"
+                          className="h-20 px-12 rounded-full bg-white text-black text-xs font-black uppercase tracking-widest flex items-center justify-center transition-all hover:scale-105 active:scale-95 shadow-2xl"
                         >
-                          <span className="relative z-10 text-xs font-black uppercase tracking-widest text-black group-hover:text-white transition-colors duration-500">Begin Narrative</span>
-                          <div className="absolute inset-0 bg-[#ff5a1f] translate-y-full group-hover:translate-y-0 transition-transform duration-500" />
+                          Begin Narrative
                         </Link>
                         
-                        <button className="text-[11px] font-bold uppercase tracking-[0.3em] text-white/30 hover:text-white transition-colors">
+                        <button className="text-[10px] font-bold uppercase tracking-[0.3em] text-white/20 hover:text-white transition-colors">
                           Add to Collection +
                         </button>
                       </motion.div>
-
-                      <div className="grid gap-8 grid-cols-2 pt-10">
-                        {[
-                          { label: 'Status', value: shelfState[activeTab]?.loading ? 'Updating' : 'Active' },
-                          { label: 'Selection', value: `${activeShelfCount} Narratives` }
-                        ].map((stat, i) => (
-                          <div key={i} className="group relative">
-                            <p className="text-[9px] font-bold uppercase tracking-[0.3em] text-white/10 group-hover:text-[#ff5a1f] transition-colors">{stat.label}</p>
-                            <p className="mt-1 text-xs font-black uppercase tracking-widest text-white/50">{stat.value}</p>
-                            <div className="absolute -left-4 top-0 h-full w-[1px] bg-white/5 group-hover:bg-[#ff5a1f] transition-colors" />
-                          </div>
-                        ))}
-                      </div>
                     </div>
 
-
-
-                    {/* Featured Image Right Side (Desktop) */}
-                    <div className="hidden lg:block relative perspective-container">
-                      <motion.div
-                        initial={{ x: 60, opacity: 0, rotateY: -15 }}
-                        animate={{ x: 0, opacity: 1, rotateY: 0 }}
-                        transition={{ delay: 0.4, duration: 1 }}
-                        className="relative z-20 group/card"
-                      >
-                        <div className="relative aspect-[3.5/5] w-full overflow-hidden rounded-[3rem] border border-white/20 bg-black shadow-[0_50px_100px_-20px_rgba(0,0,0,0.8)] transition-all duration-700 group-hover/card:scale-[1.02] group-hover/card:rotate-1 group-hover/card:border-white/40">
-                          <Image
-                            src={featuredImageSrc}
-                            alt="Cover"
-                            fill
-                            priority
-                            unoptimized
-                            className={`transition-transform duration-1000 group-hover/card:scale-110 ${featuredHasBanner ? 'object-cover' : 'object-contain bg-black p-8'}`}
-                          />
-                          
-                          {/* Card Overlay Content */}
-                          <div className="absolute inset-0 bg-gradient-to-t from-[#05060a] via-transparent to-transparent opacity-90 transition-opacity duration-500 group-hover/card:opacity-100" />
-                          <div className="absolute inset-x-0 bottom-0 p-8 transform transition-transform duration-500 translate-y-4 group-hover/card:translate-y-0">
-                            <div className="rounded-[2.5rem] border border-white/10 bg-black/60 p-6 backdrop-blur-2xl shadow-2xl">
-                              <div className="flex items-center gap-3 mb-3">
-                                <div className="h-1 w-8 bg-[#ff5a1f] rounded-full" />
-                                <p className="text-[10px] font-black uppercase tracking-[0.5em] text-[#ffca3a]">Collector Pick</p>
-                              </div>
-                              <p className="text-xl font-black uppercase tracking-tight text-white line-clamp-1 group-hover/card:text-[#ff5a1f] transition-colors">{featuredComic.title}</p>
-                              <div className="mt-4 flex items-center justify-between">
-                                <span className="text-[10px] font-bold text-white/40 uppercase tracking-widest">Premium Access</span>
-                                <div className="h-8 w-8 rounded-full bg-white/10 flex items-center justify-center group-hover/card:bg-white group-hover/card:text-black transition-all">
-                                  <ArrowRight size={14} />
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                          
-                          {/* Animated Scan Line */}
-                          <div className="absolute inset-0 w-full h-[2px] bg-gradient-to-r from-transparent via-[#ff5a1f]/40 to-transparent top-0 animate-[matrix-scan_4s_linear_infinite]" />
-                        </div>
+                    {/* Right Side: Large Visual */}
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.9 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ delay: 0.2, duration: 1 }}
+                      className="relative z-10 order-1 lg:order-2"
+                    >
+                      <div className="relative aspect-[4/5] sm:aspect-square w-full rounded-[4rem] overflow-hidden border border-white/5 shadow-2xl">
+                        <Image
+                          src={featuredImageSrc}
+                          alt={featuredComic.title}
+                          fill
+                          priority
+                          sizes="(max-width: 1024px) 100vw, 600px"
+                          unoptimized
+                          className="object-cover object-center transition-transform duration-1000"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-60" />
                         
-                        {/* Shadow/Glow behind card */}
-                        <div className="absolute -inset-10 -z-10 bg-[#ff5a1f]/10 blur-[80px] opacity-0 group-hover/card:opacity-100 transition-opacity duration-1000" />
-                      </motion.div>
-                    </div>
+                        <div className="absolute bottom-12 left-12 right-12">
+                          <p className="text-[10px] font-bold uppercase tracking-[0.5em] text-white/40 mb-2">Primary Feature</p>
+                          <h3 className="text-3xl font-black text-white">{featuredComic.title}</h3>
+                        </div>
+                      </div>
+                      
+                      {/* Atmospheric Glow */}
+                      <div className="absolute -inset-20 -z-10 bg-[#ff5a1f]/10 blur-[120px] rounded-full" />
+                    </motion.div>
+
                   </div>
                 </div>
               </motion.div>
@@ -835,40 +776,28 @@ export default function HomeClient({ initialData, initialAgeVerified = false }: 
           </section>
         )}
         {!hasPersonalLibrary && (
-          <section className="relative z-20 container mx-auto px-6 sm:px-8 pb-32">
-            <div className="mx-auto max-w-6xl border-t border-white/5 pt-20">
-              <div className="relative z-10 grid gap-16 lg:grid-cols-[1fr_380px]">
-                <div className="space-y-10">
-                  <div className="space-y-4">
-                    <span className="text-[10px] font-bold uppercase tracking-[0.5em] text-[#ff5a1f]">Personal Collection</span>
-                    <h2 className="text-4xl sm:text-6xl md:text-8xl font-display text-white leading-tight">
-                      Your Gallery <br /> <span className="text-white/10 italic">In Formation</span>
-                    </h2>
-                  </div>
-                  
-                  <p className="max-w-xl text-lg sm:text-xl leading-relaxed text-white/30 font-medium">
-                    Create a singular space for the stories that matter. Track your progression through narratives and curated collections.
-                  </p>
-                  
-                  <div className="flex flex-wrap gap-8 pt-4">
-                    {['Live Sync', 'Tracking', 'Bookmarks'].map((tag) => (
-                      <div key={tag} className="flex items-center gap-3">
-                        <div className="h-px w-4 bg-white/20" />
-                        <span className="text-[10px] font-bold uppercase tracking-widest text-white/40">{tag}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
+          <section className="relative z-20 container mx-auto px-6 pb-32">
+            <div className="max-w-4xl mx-auto text-center space-y-12">
+              <div className="space-y-4">
+                <h2 className="text-5xl sm:text-7xl font-display text-white">Your Studio</h2>
+                <p className="text-xl text-white/30 max-w-2xl mx-auto">
+                  A dedicated space for your reading journey. Start exploring to build your personal archive.
+                </p>
+              </div>
+              
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
+                <Link href="/library" className="h-20 px-16 rounded-full bg-white text-black text-sm font-black uppercase tracking-widest hover:scale-105 transition-all active:scale-95">
+                  Explore Now
+                </Link>
+                <Link href="/settings" className="h-20 px-16 rounded-full border border-white/10 text-white/40 text-sm font-black uppercase tracking-widest hover:text-white hover:border-white/20 transition-all">
+                  Configure
+                </Link>
+              </div>
 
-                <div className="flex flex-col gap-4 justify-center">
-                  <Link href="/library" className="group h-20 rounded-full border border-white/10 bg-white flex items-center justify-center transition-all hover:scale-[1.02] active:scale-95 shadow-2xl">
-                    <span className="text-xs font-black uppercase tracking-widest text-black">Explore All Archives</span>
-                  </Link>
-
-                  <Link href="/settings" className="group h-20 rounded-full border border-white/5 bg-white/5 flex items-center justify-center transition-all hover:bg-white/10 hover:border-white/20 active:scale-95">
-                    <span className="text-xs font-black uppercase tracking-widest text-white/40 group-hover:text-white transition-colors">Configure View</span>
-                  </Link>
-                </div>
+              <div className="flex items-center justify-center gap-12 pt-12 border-t border-white/5">
+                {['Live Sync', 'Tracking', 'Bookmarks'].map((tag) => (
+                  <span key={tag} className="text-[10px] font-bold uppercase tracking-[0.4em] text-white/20">{tag}</span>
+                ))}
               </div>
             </div>
           </section>
