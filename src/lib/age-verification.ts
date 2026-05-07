@@ -61,6 +61,14 @@ export const persistAgeVerification = () => {
   } catch {
     // If cookies are blocked, we still keep the session alive in-memory.
   }
+
+  void fetch('/api/age/verification', {
+    method: 'POST',
+    cache: 'no-store',
+    credentials: 'same-origin',
+  }).catch(() => {
+    // Browser cookie or localStorage may still keep the verification alive.
+  });
 };
 
 export const clearAgeVerification = () => {
@@ -78,4 +86,12 @@ export const clearAgeVerification = () => {
   } catch {
     // Ignore cookie failures.
   }
+
+  void fetch('/api/age/verification', {
+    method: 'DELETE',
+    cache: 'no-store',
+    credentials: 'same-origin',
+  }).catch(() => {
+    // Ignore server sync failures.
+  });
 };

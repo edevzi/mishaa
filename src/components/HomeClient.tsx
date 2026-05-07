@@ -167,7 +167,14 @@ export default function HomeClient({ initialData, initialAgeVerified = false }: 
     try {
       const page = Math.floor(infiniteOffset / 25) + 1;
       const res = await fetch(`/api/proxy/nhentai?path=${encodeURIComponent(`galleries?page=${page}`)}`);
-      if (!res.ok) throw new Error('Search failed');
+      if (!res.ok) {
+        if (res.status === 403) {
+          setShowAgeGate(true);
+          setHasMoreInfinite(false);
+          return;
+        }
+        throw new Error('Search failed');
+      }
       const data = await res.json();
       const results = Array.isArray(data?.result) ? data.result : [];
 
@@ -199,7 +206,7 @@ export default function HomeClient({ initialData, initialAgeVerified = false }: 
       }
     } catch (e) {
       console.error(e);
-      setHasMoreInfinite(true);
+      setHasMoreInfinite(false);
     } finally {
       setInfiniteLoading(false);
     }
@@ -254,6 +261,7 @@ export default function HomeClient({ initialData, initialAgeVerified = false }: 
   }, [isAgeVerified]);
 
   const handleVerify = () => {
+    persistAgeVerification();
     setIsAgeVerified(true);
     setShowAgeGate(false);
   };
