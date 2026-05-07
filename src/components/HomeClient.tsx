@@ -578,7 +578,7 @@ export default function HomeClient({
                         </div>
 
                         <Link
-                          href={featuredComic.href}
+                          href={resolveComicHref(featuredComic)}
                           className="mt-10 inline-flex h-12 items-center justify-center rounded-full bg-white px-6 text-[10px] font-black uppercase tracking-[0.4em] text-black transition-transform hover:scale-[1.02] active:scale-95"
                         >
                           Read
