@@ -46,8 +46,21 @@ export const metadata: Metadata = {
     default: "iComics.wiki",
     template: "%s | iComics.wiki",
   },
-  description: "AI-powered comic creation and a digital comic library for manga, manhwa, Marvel, and webtoon readers.",
-  keywords: ["comics", "AI comics", "comic creation", "manga", "webtoon", "digital art", "iComics.wiki", "storytelling", "visual narrative", "AI art"],
+  description:
+    "Read manga, manhwa, comics, and adult hentai online. Free library for readers: webtoons, Marvel, indie series, and multi-source chapters. Optional AI comic studio for creators.",
+  keywords: [
+    "read manga online",
+    "manga reader",
+    "manhwa",
+    "webtoon",
+    "comics",
+    "hentai",
+    "adult manga",
+    "digital comic library",
+    "free comic reader",
+    "Marvel comics",
+    "iComics.wiki",
+  ],
   authors: [{ name: "iComics.wiki Team", url: "https://icomics.wiki" }],
   creator: "iComics.wiki",
   publisher: "iComics.wiki",
@@ -63,7 +76,8 @@ export const metadata: Metadata = {
   },
   openGraph: {
     title: "iComics.wiki",
-    description: "AI-powered comic creation and a digital comic library for manga, manhwa, Marvel, and webtoon readers.",
+    description:
+      "Online manga, manhwa, comic, and hentai reader. Browse and read chapters free. Webtoons, Marvel, and more—plus optional AI tools for creators.",
     url: "https://icomics.wiki",
     siteName: "iComics.wiki",
     locale: "en_US",
@@ -71,9 +85,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "iComics.wiki",
-    description: "AI-powered comic creation and a digital comic library for manga, manhwa, Marvel, and webtoon readers.",
-    creator: "@icomics_studio",
+    title: "iComics.wiki — Manga, Manhwa & Comic Reader",
+    description:
+      "Read manga, manhwa, comics, and adult titles online. A reader-first library with webtoons, Marvel, and hentai-capable catalog.",
   },
   robots: {
     index: true,
@@ -91,14 +105,14 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
-      { url: '/logo.png' },
-      { url: '/logo.png', sizes: '32x32', type: 'image/png' },
-      { url: '/logo.png', sizes: '16x16', type: 'image/png' },
+      { url: '/icon.png' },
+      { url: '/icon.png', sizes: '32x32', type: 'image/png' },
+      { url: '/icon.png', sizes: '16x16', type: 'image/png' },
     ],
     apple: [
-      { url: '/logo.png', sizes: '180x180', type: 'image/png' },
+      { url: '/icon.png', sizes: '180x180', type: 'image/png' },
     ],
-    shortcut: '/logo.png',
+    shortcut: '/icon.png',
   },
   other: {
     "dns-prefetch": [

@@ -19,6 +19,7 @@ const safeText = (value: unknown, fallback = '') => typeof value === 'string' &&
 const FETCH_TIMEOUT_MS = 7000;
 export const MANGADEX_ROMANCE_TAG_ID = '423e2eae-a7a2-4a8b-ac03-a8351462d71d';
 export const MANGADEX_FANTASY_TAG_ID = 'cdc58593-87dd-415e-bbc0-2ec27bf404cc';
+export const MANGADEX_DRAMA_TAG_ID = 'b9af3a63-f058-46de-a9a0-e0c13906197a';
 
 type MangaDexApiItem = {
   id: string;
@@ -110,21 +111,34 @@ async function loadNHentaiShelf(query: string, limit = 30) {
       if (results.length > 0) break;
     }
 
-    return results.slice(0, limit).map((item: NhentaiGalleryItem) => ({
-      id: (item.id || item.gallery_id || "").toString(),
-      title: item.english_title || item.title?.english || item.title?.japanese || "Untitled",
-      description: `${item.num_pages} pages`,
-      coverUrl: (() => {
-        const thumbnailPath = typeof item.thumbnail === 'object' ? item.thumbnail?.path : item.thumbnail;
-        return thumbnailPath
+    const seenIds = new Set<string>();
+    return results.slice(0, limit).map((item: NhentaiGalleryItem) => {
+      const galleryIdRaw = item.id ?? item.gallery_id;
+      const galleryId =
+        galleryIdRaw !== undefined && galleryIdRaw !== null && String(galleryIdRaw).trim() !== ''
+          ? String(galleryIdRaw).trim()
+          : '';
+
+      const thumbnailPath = typeof item.thumbnail === 'object' ? item.thumbnail?.path : item.thumbnail;
+
+      return {
+        id: galleryId,
+        title: item.english_title || item.title?.english || item.title?.japanese || "Untitled",
+        description: `${item.num_pages} pages`,
+        coverUrl: thumbnailPath
           ? `/api/proxy/nhentai/image?path=${encodeURIComponent(thumbnailPath)}`
-          : '/logo.png';
-      })(),
-      source: 'nhentai' as const,
-      href: `/library/nhentai/${item.id || item.gallery_id}`,
-      meta: '18+',
-      rating: '5.0',
-    }));
+          : '/logo.png',
+        source: 'nhentai' as const,
+        href: galleryId ? `/library/nhentai/${galleryId}` : '/library',
+        meta: '18+',
+        rating: '5.0',
+      };
+    }).filter((row) => {
+      if (!row.id || !row.title) return false;
+      if (seenIds.has(row.id)) return false;
+      seenIds.add(row.id);
+      return true;
+    });
   } catch { return []; }
 }
 
@@ -188,6 +202,10 @@ export async function getHomeFeed(lang: MangaLanguage = 'en', options: HomeFeedO
     ...filters,
     includedTagIds: [MANGADEX_FANTASY_TAG_ID],
   });
+  const dramaParams = createMangaDexParams(8, offset, page % 2 === 0 ? 'popular' : 'latest', {
+    ...filters,
+    includedTagIds: [MANGADEX_DRAMA_TAG_ID],
+  });
   const popularParams = createMangaDexParams(8, offset, 'popular', filters);
   const latestParams = createMangaDexParams(8, offset, 'latest', filters);
 
@@ -195,9 +213,10 @@ export async function getHomeFeed(lang: MangaLanguage = 'en', options: HomeFeedO
     ? loadNHentaiShelf(page % 2 === 0 ? 'romance' : 'fantasy', 8)
     : Promise.resolve([]);
 
-  const [romance, fantasy, popular, latest, adult] = await Promise.all([
+  const [romance, fantasy, drama, popular, latest, adult] = await Promise.all([
     loadMangaDex(romanceParams, lang, withoutTranslatedLanguage(romanceParams)),
     loadMangaDex(fantasyParams, lang, withoutTranslatedLanguage(fantasyParams)),
+    loadMangaDex(dramaParams, lang, withoutTranslatedLanguage(dramaParams)),
     loadMangaDex(popularParams, lang, withoutTranslatedLanguage(popularParams)),
     loadMangaDex(latestParams, lang, withoutTranslatedLanguage(latestParams)),
     adultPromise,
@@ -206,6 +225,7 @@ export async function getHomeFeed(lang: MangaLanguage = 'en', options: HomeFeedO
   const safeItems = dedupeBySourceId([
     ...romance,
     ...fantasy,
+    ...drama,
     ...popular,
     ...latest,
   ]).slice(0, includeAdultContent && page >= 2 ? 20 : 28);
@@ -260,6 +280,12 @@ export async function getHomeData(lang: MangaLanguage = 'en', options: HomeDataO
   const fantasyFallbackParams = new URLSearchParams(fantasyParams);
   fantasyFallbackParams.delete('availableTranslatedLanguage[]');
 
+  const dramaParams = new URLSearchParams({ limit: '12', offset: '0', 'order[followedCount]': 'desc' });
+  dramaParams.append('includes[]', 'cover_art');
+  appendMangaDexFilters(dramaParams, { ...filters, includedTagIds: [MANGADEX_DRAMA_TAG_ID] });
+  const dramaFallbackParams = new URLSearchParams(dramaParams);
+  dramaFallbackParams.delete('availableTranslatedLanguage[]');
+
   const adultShelves = includeAdultContent
     ? [
         loadNHentaiShelf('doujinshi', 12),
@@ -268,9 +294,10 @@ export async function getHomeData(lang: MangaLanguage = 'en', options: HomeDataO
       ]
     : [Promise.resolve([]), Promise.resolve([]), Promise.resolve([])];
 
-  const [romance, fantasy, manga, webtoons, manhwa, doujinshi, milf, ntr, trending, latest] = await Promise.all([
+  const [romance, fantasy, drama, manga, webtoons, manhwa, doujinshi, milf, ntr, trending, latest] = await Promise.all([
     loadMangaDex(romanceParams, lang, romanceFallbackParams),
     loadMangaDex(fantasyParams, lang, fantasyFallbackParams),
+    loadMangaDex(dramaParams, lang, dramaFallbackParams),
     loadMangaDex(mangaParams, lang, mangaFallbackParams),
     loadMangaDex(webtoonsParams, lang, webtoonsFallbackParams),
     loadMangaDex(manhwaParams, lang, manhwaFallbackParams),
@@ -305,12 +332,13 @@ export async function getHomeData(lang: MangaLanguage = 'en', options: HomeDataO
     'trending': trending,
     'romance': romance,
     'fantasy': fantasy,
+    'drama': drama,
     'manga-hub': manga,
     'new': latest,
+    'webtoons': webtoons,
+    'manhwa': manhwa,
     'doujinshi': doujinshi,
     'milf': milf,
     'ntr': ntr,
-    'webtoons': webtoons,
-    'manhwa': manhwa,
   };
 }

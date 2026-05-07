@@ -175,8 +175,8 @@ export default function SuperheroesDashboard() {
                 <Zap size={14} className="text-[#ff4d00] animate-pulse" />
                 <span className="text-[10px] font-black uppercase tracking-[0.3em] text-[#ff4d00]">Global Database</span>
              </div>
-             <h1 className="text-4xl md:text-6xl font-black italic uppercase tracking-tighter">Superhero_Nexus</h1>
-             <p className="text-white/40 text-sm font-bold uppercase tracking-widest max-w-xl mx-auto">Explore, battle, and assemble the ultimate team from the universal registry of heroes and villains.</p>
+             <h1 className="text-4xl md:text-6xl font-black italic uppercase tracking-tighter">Superhero hub</h1>
+             <p className="text-white/40 text-sm font-bold uppercase tracking-widest max-w-xl mx-auto">Browse popular heroes, duel in the arena, then save a dream team for your next comic.</p>
           </div>
 
           {/* Navigation */}
@@ -213,7 +213,7 @@ export default function SuperheroesDashboard() {
                          <div className="aspect-[4/5] bg-white/5 border border-white/10 flex items-center justify-center">Failed to load.</div>
                        )}
                        <button onClick={fetchRandomHero} disabled={loadingRandom} className="w-full py-4 bg-white/5 hover:bg-white/10 border border-white/10 text-[10px] font-black uppercase tracking-widest transition-all flex justify-center items-center gap-2">
-                         <RefreshCw size={14} className={loadingRandom ? "animate-spin" : ""} /> Reroll_Target
+                         <RefreshCw size={14} className={loadingRandom ? "animate-spin" : ""} /> New random pick
                        </button>
                     </div>
                     <div className="bg-[#0a0a0a] border border-white/10 p-8 space-y-6">

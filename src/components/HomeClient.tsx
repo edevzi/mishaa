@@ -15,6 +15,7 @@ import {
   Heart,
   Zap,
   BookOpen,
+  Theater,
 } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import {
@@ -36,12 +37,13 @@ import {
   persistHomePreferenceProfile,
   rankComicsForHome,
   readHomePreferenceProfile,
+  seededUnit,
   type HomePreferenceProfile,
 } from '@/lib/home-personalization';
 
 // --- Types ---
 type ComicSource = 'mangadex' | 'marvel' | 'nhentai';
-type ShelfKey = 'all' | 'featured' | 'romance' | 'fantasy' | 'manga-hub' | 'webtoons' | 'manhwa' | 'marvel' | 'trending' | 'for-you' | 'new' | 'doujinshi' | 'milf' | 'ntr';
+type ShelfKey = 'all' | 'featured' | 'romance' | 'fantasy' | 'drama' | 'manga-hub' | 'webtoons' | 'manhwa' | 'marvel' | 'trending' | 'for-you' | 'new' | 'doujinshi' | 'milf' | 'ntr';
 
 interface LibraryComic {
   id: string;
@@ -75,6 +77,54 @@ function resolveImageSrc(src?: string | null) {
 
 function resolveComicHref(comic: LibraryComic) {
   return comic.href || `/library/${comic.source}/${comic.id}`;
+}
+
+/** MangaDex age/maturity flags — not a user score; UI must not label these as “star rating”. */
+const MANGADEX_CONTENT_RATINGS = new Set(['safe', 'suggestive', 'erotica', 'pornographic']);
+
+function getHeroRatingPresentation(comic: LibraryComic): {
+  showBlock: boolean;
+  label: string;
+  value: string;
+  badge: string | null;
+} {
+  const raw = String(comic.rating || '').trim();
+  const lower = raw.toLowerCase();
+
+  if (MANGADEX_CONTENT_RATINGS.has(lower)) {
+    if (lower === 'safe') {
+      const meta = String(comic.meta || '').trim();
+      if (meta && !/^\d+(\.\d+)?$/.test(meta)) {
+        return { showBlock: true, label: 'Status', value: meta.toUpperCase(), badge: null };
+      }
+      if (comic.genres?.length) {
+        return {
+          showBlock: true,
+          label: 'Genres',
+          value: comic.genres.slice(0, 2).join(' · '),
+          badge: null,
+        };
+      }
+      return { showBlock: false, label: '', value: '', badge: null };
+    }
+    const contentLabels: Record<string, string> = {
+      suggestive: 'Suggestive',
+      erotica: 'Mature',
+      pornographic: 'Adult',
+    };
+    const labelText = contentLabels[lower] || raw;
+    return { showBlock: true, label: 'Content', value: labelText, badge: labelText };
+  }
+
+  if (/^\d+(\.\d+)?$/.test(raw)) {
+    return { showBlock: true, label: 'Score', value: raw, badge: raw };
+  }
+
+  if (!raw) {
+    return { showBlock: false, label: '', value: '', badge: null };
+  }
+
+  return { showBlock: true, label: 'Rating', value: raw, badge: raw };
 }
 
 type SafeCoverImageProps = {
@@ -126,6 +176,12 @@ const SHELVES: ShelfDefinition[] = [
     icon: <BookOpen className="text-emerald-400" size={18} />,
   },
   {
+    key: 'drama',
+    title: 'Drama',
+    subtitle: 'Emotional storytelling',
+    icon: <Theater className="text-indigo-400" size={18} />,
+  },
+  {
     key: 'trending',
     title: 'Trending',
     subtitle: 'Popular now',
@@ -150,6 +206,18 @@ const SHELVES: ShelfDefinition[] = [
     icon: <Clock className="text-green-500" size={18} />,
   },
   {
+    key: 'manhwa',
+    title: 'Manhwa',
+    subtitle: 'Korean comics',
+    icon: <TrendingUp className="text-cyan-500" size={18} />,
+  },
+  {
+    key: 'webtoons',
+    title: 'Webtoons',
+    subtitle: 'Vertical reads',
+    icon: <Clock className="text-amber-500" size={18} />,
+  },
+  {
     key: 'doujinshi',
     title: 'Doujinshi',
     subtitle: 'Fan comics',
@@ -166,18 +234,6 @@ const SHELVES: ShelfDefinition[] = [
     title: 'NTR',
     subtitle: 'Drama-focused',
     icon: <Zap className="text-purple-500" size={18} />,
-  },
-  {
-    key: 'manhwa',
-    title: 'Manhwa',
-    subtitle: 'Korean comics',
-    icon: <TrendingUp className="text-cyan-500" size={18} />,
-  },
-  {
-    key: 'webtoons',
-    title: 'Webtoons',
-    subtitle: 'Vertical reads',
-    icon: <Clock className="text-amber-500" size={18} />,
   },
 ];
 
@@ -199,6 +255,9 @@ export default function HomeClient({
   const [isAgeVerified, setIsAgeVerified] = useState(() => Boolean(initialAgeVerified));
   const [showAgeGate, setShowAgeGate] = useState(false);
   const [isTouchDevice, setIsTouchDevice] = useState(() => Boolean(initialIsTouchDevice));
+  /** Desktop-style hover + motion (exclude touch / coarse pointer and reduced-motion). */
+  const [useRichMotion, setUseRichMotion] = useState(true);
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
   const [previewCardKey, setPreviewCardKey] = useState<string | null>(null);
   const [preferenceProfile, setPreferenceProfile] = useState<HomePreferenceProfile>(() => createDefaultHomeProfile('initial'));
   const hasCompleteInitialData = SHELVES
@@ -231,7 +290,9 @@ export default function HomeClient({
   const loaderRef = useRef<HTMLDivElement>(null);
   const autoCarouselRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const carouselPausedRef = useRef(false);
+  const heroCarouselPausedRef = useRef(false);
   const seenHomeKeysRef = useRef<Set<string>>(new Set());
+  const [heroSlideIndex, setHeroSlideIndex] = useState(0);
 
   const loadMoreInfinite = useCallback(async () => {
     if (infiniteLoading || !hasMoreInfinite) return;
@@ -378,6 +439,25 @@ export default function HomeClient({
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
+    const fineHover = window.matchMedia('(hover: hover) and (pointer: fine)');
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const syncRichMotion = () => {
+      setPrefersReducedMotion(reduceMotion.matches);
+      setUseRichMotion(fineHover.matches && !reduceMotion.matches);
+    };
+
+    syncRichMotion();
+    fineHover.addEventListener('change', syncRichMotion);
+    reduceMotion.addEventListener('change', syncRichMotion);
+    return () => {
+      fineHover.removeEventListener('change', syncRichMotion);
+      reduceMotion.removeEventListener('change', syncRichMotion);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
     const media = window.matchMedia('(hover: none), (pointer: coarse)');
     const update = () => setIsTouchDevice(media.matches);
 
@@ -403,6 +483,7 @@ export default function HomeClient({
           'trending': { items: data.shelves['trending'] || [], loading: false },
           'romance': { items: data.shelves['romance'] || [], loading: false },
           'fantasy': { items: data.shelves['fantasy'] || [], loading: false },
+          drama: { items: data.shelves['drama'] || [], loading: false },
           'manga-hub': { items: data.shelves['manga-hub'] || [], loading: false },
           'new': { items: data.shelves['new'] || [], loading: false },
           webtoons: { items: data.shelves['webtoons'] || [], loading: false },
@@ -455,18 +536,53 @@ export default function HomeClient({
     return () => window.clearTimeout(timer);
   }, [isAgeVerified, preferenceProfile, shelfState]);
 
-  const featuredComic = useMemo(() => {
+  const featuredCandidates = useMemo(() => {
     const pool = activeTab === 'all'
       ? (personalRecs.length > 0 ? personalRecs : shelfState.trending?.items || [])
       : (activeTab === 'for-you' ? personalRecs : (shelfState[activeTab]?.items || []));
-    if (!pool.length) return null;
-    return rankComicsForHome(pool, {
+    if (!pool.length) return [];
+    const ranked = rankComicsForHome(pool, {
       profile: preferenceProfile,
       ageVerified: isAgeVerified,
       shelfKey: activeTab,
       adultPenalty: -16,
-    })[0] || null;
+    });
+    const cap = 10;
+    if (ranked.length <= cap) return ranked;
+    const head = ranked.slice(0, cap - 3);
+    const tailPick = ranked.slice(cap - 3);
+    const shuffledTail = [...tailPick].sort(
+      (a, b) =>
+        seededUnit(preferenceProfile.seed + 17, comicKey(a)) -
+        seededUnit(preferenceProfile.seed + 17, comicKey(b)),
+    );
+    return dedupeComics([...head, ...shuffledTail]).slice(0, cap);
   }, [activeTab, isAgeVerified, preferenceProfile, shelfState, personalRecs]);
+
+  const featuredCandidateKey = useMemo(
+    () => featuredCandidates.map((c) => comicKey(c)).join(','),
+    [featuredCandidates],
+  );
+
+  useEffect(() => {
+    setHeroSlideIndex(0);
+  }, [featuredCandidateKey]);
+
+  useEffect(() => {
+    if (featuredCandidates.length <= 1 || prefersReducedMotion) return;
+
+    const id = window.setInterval(() => {
+      if (heroCarouselPausedRef.current) return;
+      setHeroSlideIndex((i) => (i + 1) % featuredCandidates.length);
+    }, 8200);
+
+    return () => window.clearInterval(id);
+  }, [featuredCandidates.length, featuredCandidateKey, prefersReducedMotion]);
+
+  const featuredComic =
+    featuredCandidates[heroSlideIndex] || featuredCandidates[0] || null;
+
+  const heroRating = featuredComic ? getHeroRatingPresentation(featuredComic) : null;
 
   const featuredBackgroundSrc = featuredComic?.bannerUrl || featuredComic?.coverUrl || DEFAULT_IMAGE_SRC;
   const featuredPosterSrc = featuredComic?.coverUrl || featuredComic?.bannerUrl || DEFAULT_IMAGE_SRC;
@@ -486,7 +602,7 @@ export default function HomeClient({
   }, [isAgeVerified, mangaLanguage, preferenceProfile.seed]);
 
   useEffect(() => {
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    if (!useRichMotion) return;
 
     const interval = window.setInterval(() => {
       if (carouselPausedRef.current) return;
@@ -499,10 +615,10 @@ export default function HomeClient({
           behavior: 'smooth',
         });
       });
-    }, 4800);
+    }, 6200);
 
     return () => window.clearInterval(interval);
-  }, [renderedShelves.length, isTouchDevice]);
+  }, [useRichMotion, renderedShelves.length]);
 
   const websiteSchema = {
     "@context": "https://schema.org",
@@ -568,12 +684,18 @@ export default function HomeClient({
               </motion.div>
             ) : featuredComic ? (
               <motion.div
-                key={featuredComic.id}
+                key={comicKey(featuredComic)}
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 transition={{ duration: 1, ease: [0.22, 1, 0.36, 1] }}
                 className="relative w-full"
+                onPointerEnter={() => {
+                  heroCarouselPausedRef.current = true;
+                }}
+                onPointerLeave={() => {
+                  heroCarouselPausedRef.current = false;
+                }}
               >
                 <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pb-14 lg:pb-18">
                   <div className="relative overflow-hidden bg-black shadow-[0_50px_140px_rgba(0,0,0,0.72)]">
@@ -606,14 +728,16 @@ export default function HomeClient({
                           {featuredComic.title}
                         </h1>
 
-                        <div className="mt-8 flex items-baseline gap-4">
-                          <span className="text-[9px] font-black uppercase tracking-[0.55em] text-white/32">
-                            Rating
-                          </span>
-                          <span className="text-2xl font-black uppercase tracking-[0.18em] text-white">
-                            {featuredComic.rating || '8.5'}
-                          </span>
-                        </div>
+                        {heroRating?.showBlock ? (
+                          <div className="mt-8 flex flex-wrap items-baseline gap-x-4 gap-y-2">
+                            <span className="text-[9px] font-black uppercase tracking-[0.55em] text-white/32">
+                              {heroRating.label}
+                            </span>
+                            <span className="text-2xl font-black uppercase tracking-[0.12em] text-white">
+                              {heroRating.value}
+                            </span>
+                          </div>
+                        ) : null}
 
                         <Link
                           href={resolveComicHref(featuredComic)}
@@ -624,9 +748,9 @@ export default function HomeClient({
                       </div>
 
                       <motion.div
-                        initial={{ opacity: 0, scale: 0.96, y: 12 }}
+                        initial={useRichMotion ? { opacity: 0, scale: 0.96, y: 12 } : false}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
-                        transition={{ delay: 0.06, duration: 0.75 }}
+                        transition={useRichMotion ? { delay: 0.06, duration: 0.75 } : { duration: 0.2 }}
                         className="relative z-20 mx-auto w-full max-w-[26rem] lg:mx-0 lg:ml-auto lg:translate-y-2"
                       >
                         <div className="relative aspect-[3/4] overflow-hidden rounded-[1.25rem] bg-black shadow-[0_35px_110px_rgba(0,0,0,0.62)]">
@@ -639,9 +763,11 @@ export default function HomeClient({
                             className="object-cover object-center"
                           />
                           <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,0.02)_0%,rgba(0,0,0,0.12)_58%,rgba(0,0,0,0.58)_100%)]" />
-                          <div className="absolute right-4 top-4 rounded-full border border-white/10 bg-black/55 px-4 py-2 text-[9px] font-black uppercase tracking-[0.35em] text-white/70 backdrop-blur-xl">
-                            {featuredComic.rating || '8.5'}
-                          </div>
+                          {heroRating?.badge ? (
+                            <div className="absolute right-4 top-4 rounded-full border border-white/10 bg-black/55 px-4 py-2 text-[9px] font-black uppercase tracking-[0.35em] text-white/70 backdrop-blur-xl">
+                              {heroRating.badge}
+                            </div>
+                          ) : null}
                         </div>
                       </motion.div>
                     </div>
@@ -727,7 +853,7 @@ export default function HomeClient({
                           carouselPausedRef.current = false;
                         }, 1200);
                       }}
-                      className="-mx-4 flex snap-x gap-4 overflow-x-auto px-4 pb-3 [scrollbar-width:none] sm:-mx-6 sm:px-6 md:-mx-8 md:px-8 [&::-webkit-scrollbar]:hidden"
+                      className="-mx-4 flex snap-x snap-mandatory touch-pan-x gap-4 overflow-x-auto overscroll-x-contain px-4 pb-3 [scrollbar-width:none] sm:-mx-6 sm:px-6 md:-mx-8 md:px-8 [&::-webkit-scrollbar]:hidden"
                     >
                       {state.loading ? (
                         Array.from({ length: 6 }).map((_, i) => (
@@ -742,11 +868,11 @@ export default function HomeClient({
 
                           return (
                             <motion.article
-                              key={comic.id}
+                              key={comicKey(comic)}
                               initial={false}
-                              whileHover={{ y: -12 }}
-                              transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-                              className="group relative w-[42vw] max-w-[12rem] shrink-0 snap-start cursor-pointer sm:w-[12rem] lg:w-[13rem]"
+                              whileHover={useRichMotion ? { y: -10 } : undefined}
+                              transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+                              className="group relative w-[42vw] max-w-[12rem] shrink-0 snap-start snap-always cursor-pointer sm:w-[12rem] lg:w-[13rem]"
                             >
                               <Link
                                 href={resolveComicHref(comic)}
@@ -758,19 +884,21 @@ export default function HomeClient({
                                   }
                                 }}
                               >
-                                <div className="relative aspect-[2/3] w-full overflow-hidden rounded-[2rem] border border-white/10 bg-black shadow-2xl transition-all duration-700 group-hover:border-[#ff5a1f]/40 group-hover:shadow-[0_30px_60px_-15px_rgba(255,90,31,0.25)]">
+                                <div className={`relative aspect-[2/3] w-full overflow-hidden rounded-[2rem] border border-white/10 bg-black shadow-2xl transition-all duration-500 ${
+                                  useRichMotion ? 'duration-700 group-hover:border-[#ff5a1f]/40 group-hover:shadow-[0_30px_60px_-15px_rgba(255,90,31,0.25)]' : ''
+                                }`}>
                                   <SafeCoverImage
-                                    key={comic.coverUrl}
+                                    key={comicKey(comic)}
                                     src={comic.coverUrl}
                                     alt={comic.title}
                                     sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 250px"
-                                    className={`object-cover transition-all duration-1000 ${
+                                    className={`object-cover transition-transform duration-500 ${
                                       shouldBlur ? 'scale-110 blur-[8px]' : 'scale-100'
-                                    } group-hover:scale-115`}
+                                    } ${useRichMotion ? 'duration-1000 group-hover:scale-105' : ''}`}
                                   />
                                   
                                   {/* Glassy Gradient Overlay */}
-                                  <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent opacity-60 transition-opacity duration-700 group-hover:opacity-100" />
+                                  <div className={`absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent opacity-60 transition-opacity duration-500 ${useRichMotion ? 'duration-700 group-hover:opacity-100' : 'opacity-75'}`} />
 
                                   {shouldBlur && (
                                     <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-black/40 backdrop-blur-md opacity-100">
@@ -781,11 +909,19 @@ export default function HomeClient({
                                     </div>
                                   )}
 
-                                  <div className={`absolute inset-x-0 bottom-0 p-5 space-y-2 transition-all duration-700 ${
-                                    shouldBlur
-                                      ? 'translate-y-8 opacity-0 group-hover:translate-y-0 group-hover:opacity-100'
-                                      : 'translate-y-4 opacity-0 group-hover:translate-y-0 group-hover:opacity-100'
-                                  } ${isPreviewOpen ? '!translate-y-0 !opacity-100' : ''}`}>
+                                  <div
+                                    className={`absolute inset-x-0 bottom-0 p-5 space-y-2 transition-all duration-500 ${
+                                      shouldBlur
+                                        ? useRichMotion
+                                          ? 'translate-y-8 opacity-0 group-hover:translate-y-0 group-hover:opacity-100'
+                                          : isPreviewOpen
+                                            ? '!translate-y-0 !opacity-100'
+                                            : 'pointer-events-none translate-y-6 opacity-0'
+                                        : useRichMotion
+                                          ? 'translate-y-4 opacity-0 group-hover:translate-y-0 group-hover:opacity-100'
+                                          : 'translate-y-0 opacity-100'
+                                    } ${isPreviewOpen ? '!translate-y-0 !opacity-100' : ''}`}
+                                  >
                                     <div className="flex items-center gap-2">
                                       <div className="flex items-center gap-1 rounded-md bg-[#ffca3a] px-1.5 py-0.5 text-[8px] font-black text-black">
                                         <Star size={8} fill="currentColor" />
@@ -797,7 +933,17 @@ export default function HomeClient({
                                   </div>
 
                                   {/* Status Chip */}
-                                  <div className={`absolute right-4 top-4 rounded-xl border border-white/20 bg-black/40 px-3 py-1.5 text-[8px] font-black uppercase tracking-widest text-white backdrop-blur-xl transition-all duration-700 scale-90 opacity-0 group-hover:scale-100 group-hover:opacity-100 ${isPreviewOpen ? 'scale-100 opacity-100' : ''}`}>
+                                  <div
+                                    className={`absolute right-4 top-4 rounded-xl border border-white/20 bg-black/40 px-3 py-1.5 text-[8px] font-black uppercase tracking-widest text-white backdrop-blur-xl transition-all duration-500 ${
+                                      useRichMotion
+                                        ? `scale-90 opacity-0 group-hover:scale-100 group-hover:opacity-100 ${isPreviewOpen ? '!scale-100 !opacity-100' : ''}`
+                                        : shouldBlur
+                                          ? isPreviewOpen
+                                            ? 'scale-100 opacity-100'
+                                            : 'scale-95 opacity-0'
+                                          : 'scale-100 opacity-100'
+                                    }`}
+                                  >
                                     READ
                                   </div>
                                 </div>
@@ -834,11 +980,15 @@ export default function HomeClient({
 
                   return (
                     <motion.div
-                      key={`${comic.id}-${idx}`}
-                      initial={{ opacity: 0, scale: 0.95 }}
+                      key={`${comicKey(comic)}:${idx}`}
+                      initial={useRichMotion ? { opacity: 0, scale: 0.97 } : false}
                       whileInView={{ opacity: 1, scale: 1 }}
-                      viewport={{ once: true }}
-                      transition={{ delay: (idx % 6) * 0.05, duration: 0.6 }}
+                      viewport={{ once: true, margin: '-40px' }}
+                      transition={{
+                        delay: useRichMotion ? (idx % 6) * 0.04 : 0,
+                        duration: useRichMotion ? 0.45 : 0.15,
+                        ease: useRichMotion ? [0.22, 1, 0.36, 1] : 'linear',
+                      }}
                     >
                       <Link
                         href={comic.href || `/library/${comic.source}/${comic.id}`}
@@ -851,17 +1001,21 @@ export default function HomeClient({
                           }
                         }}
                       >
-                        <div className="relative aspect-[2/3] overflow-hidden rounded-[1.5rem] border border-white/5 bg-white/[0.02] transition-all duration-700 group-hover:border-[#ff5a1f]/30 group-hover:shadow-[0_25px_50px_rgba(255,90,31,0.15)] group-hover:-translate-y-3">
+                        <div className={`relative aspect-[2/3] overflow-hidden rounded-[1.5rem] border border-white/5 bg-white/[0.02] transition-all duration-500 ${
+                          useRichMotion
+                            ? 'duration-700 group-hover:border-[#ff5a1f]/30 group-hover:shadow-[0_25px_50px_rgba(255,90,31,0.15)] group-hover:-translate-y-3'
+                            : ''
+                        }`}>
                           <SafeCoverImage
                             key={comic.coverUrl || '/logo.png'}
                             src={comic.coverUrl || '/logo.png'}
                             alt={comic.title}
                             sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 200px"
-                            className={`object-cover transition-all duration-1000 ${
+                            className={`object-cover transition-transform duration-500 ${
                               shouldBlur ? 'scale-110 blur-[10px]' : 'scale-100'
-                            } group-hover:scale-115`}
+                            } ${useRichMotion ? 'duration-1000 group-hover:scale-105' : ''}`}
                           />
-                          <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-80" />
+                          <div className={`absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent ${useRichMotion ? 'opacity-80' : 'opacity-90'}`} />
                           
                           {shouldBlur && (
                             <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/40 backdrop-blur-md opacity-100">
@@ -871,12 +1025,24 @@ export default function HomeClient({
                             </div>
                           )}
                           
-                          <div className="absolute bottom-5 left-5 right-5 translate-y-6 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-700">
+                          <div
+                            className={`absolute bottom-5 left-5 right-5 transition-all duration-500 ${
+                              useRichMotion
+                                ? 'translate-y-6 opacity-0 group-hover:translate-y-0 group-hover:opacity-100'
+                                : 'translate-y-0 opacity-100'
+                            }`}
+                          >
                             <div className="text-[8px] font-black uppercase tracking-[0.3em] text-[#ff5a1f] mb-2">{comic.meta}</div>
                             <div className="text-[11px] font-black uppercase tracking-tight text-white line-clamp-2 leading-tight">{comic.title}</div>
                           </div>
 
-                          <div className="absolute right-4 top-4 h-8 w-8 rounded-full border border-white/10 bg-black/40 flex items-center justify-center text-white/40 scale-75 opacity-0 group-hover:scale-100 group-hover:opacity-100 transition-all duration-700 backdrop-blur-xl">
+                          <div
+                            className={`absolute right-4 top-4 h-8 w-8 rounded-full border border-white/10 bg-black/40 flex items-center justify-center text-white/40 transition-all duration-500 backdrop-blur-xl ${
+                              useRichMotion
+                                ? 'scale-75 opacity-0 group-hover:scale-100 group-hover:opacity-100'
+                                : 'scale-100 opacity-80'
+                            }`}
+                          >
                             <ArrowRight size={14} />
                           </div>
                         </div>
@@ -891,16 +1057,24 @@ export default function HomeClient({
                 {hasMoreInfinite ? (
                   <>
                     <div className="w-12 h-12 relative">
-                      <motion.div
-                        animate={{ rotate: 360 }}
-                        transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-                        className="absolute inset-0 border-t-2 border-[#ff4d00] rounded-full"
-                      />
-                      <motion.div
-                        animate={{ scale: [1, 1.2, 1] }}
-                        transition={{ duration: 1, repeat: Infinity }}
-                        className="absolute inset-4 bg-[#ff4d00]/20 rounded-full"
-                      />
+                      {useRichMotion ? (
+                        <>
+                          <motion.div
+                            animate={{ rotate: 360 }}
+                            transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                            className="absolute inset-0 border-t-2 border-[#ff4d00] rounded-full"
+                          />
+                          <motion.div
+                            animate={{ scale: [1, 1.2, 1] }}
+                            transition={{ duration: 1, repeat: Infinity }}
+                            className="absolute inset-4 bg-[#ff4d00]/20 rounded-full"
+                          />
+                        </>
+                      ) : prefersReducedMotion ? (
+                        <div className="absolute inset-0 border-2 border-[#ff4d00]/40 rounded-full" />
+                      ) : (
+                        <div className="absolute inset-0 border-2 border-white/10 border-t-[#ff4d00] rounded-full animate-spin" style={{ animationDuration: '1.2s' }} />
+                      )}
                     </div>
                     <div className="text-[10px] font-black uppercase tracking-[0.5em] text-white/20">Loading more</div>
                   </>

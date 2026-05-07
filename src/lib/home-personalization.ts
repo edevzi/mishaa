@@ -27,7 +27,7 @@ export type HomePreferenceProfile = {
 
 export const HOME_PROFILE_STORAGE_KEY = 'home_preference_profile';
 export const HOME_PROFILE_MAX_AGE_MS = 1000 * 60 * 60 * 24 * 45;
-export const PREFERRED_HOME_GENRES = ['romance', 'fantasy'];
+export const PREFERRED_HOME_GENRES = ['romance', 'fantasy', 'drama'];
 
 const ADULT_SOURCE_SET = new Set(['nhentai', 'e621', 'danbooru', 'gelbooru', 'rule34']);
 
@@ -69,6 +69,7 @@ export const createDefaultHomeProfile = (sessionId = createAnonymousSessionId())
   genreWeights: {
     romance: 3.4,
     fantasy: 3.1,
+    drama: 2.9,
   },
   viewedKeys: [],
   skippedKeys: [],

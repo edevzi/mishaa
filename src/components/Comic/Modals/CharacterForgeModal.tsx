@@ -213,7 +213,7 @@ export function CharacterForgeModal({ isOpen, initialData, onClose, onSave, t }:
                          <User className="text-black" size={32} />
                       </div>
                        <div>
-                         <h2 className="text-2xl font-black uppercase tracking-[0.2em] text-white italic">Identity_Forge</h2>
+                         <h2 className="text-2xl font-black uppercase tracking-[0.2em] text-white italic">Character builder</h2>
                          <p className="text-[10px] font-bold text-white/30 uppercase tracking-[0.4em]">{t('visual_signature')}</p>
                       </div>
                    </div>
@@ -223,7 +223,7 @@ export function CharacterForgeModal({ isOpen, initialData, onClose, onSave, t }:
                         onClick={() => setActiveTab('custom')}
                         className={`px-6 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'custom' ? 'bg-[var(--accent)] text-white shadow-lg' : 'text-white/40 hover:text-white'}`}
                       >
-                        Custom_Build
+                        Custom
                       </button>
                       <button 
                         onClick={() => {
@@ -232,7 +232,7 @@ export function CharacterForgeModal({ isOpen, initialData, onClose, onSave, t }:
                         }}
                         className={`px-6 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'marvel' ? 'bg-rose-600 text-white shadow-lg' : 'text-white/40 hover:text-white'}`}
                       >
-                        Marvel_Registry
+                        Marvel
                       </button>
                       <button 
                         onClick={() => {
@@ -241,7 +241,7 @@ export function CharacterForgeModal({ isOpen, initialData, onClose, onSave, t }:
                         }}
                         className={`px-6 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'superhero' ? 'bg-[#ff4d00] text-white shadow-lg' : 'text-white/40 hover:text-white'}`}
                       >
-                        Superhero_DB
+                        Hero database
                       </button>
                    </div>
                 </div>
@@ -265,7 +265,7 @@ export function CharacterForgeModal({ isOpen, initialData, onClose, onSave, t }:
                                 <div className="w-16 h-16 rounded-full border border-white/10 flex items-center justify-center">
                                    <Camera size={32} />
                                 </div>
-                                <span className="text-[10px] font-black uppercase tracking-widest">Input_Source</span>
+                                <span className="text-[10px] font-black uppercase tracking-widest">Add photo</span>
                                 <input type="file" className="hidden" onChange={handleImageUpload} accept="image/*" />
                              </label>
                           )}
@@ -281,7 +281,7 @@ export function CharacterForgeModal({ isOpen, initialData, onClose, onSave, t }:
                          className="w-full py-5 bg-black text-[var(--accent)] border-2 border-[var(--accent)] text-[10px] font-black uppercase tracking-[0.3em] hover:bg-[var(--accent)] hover:text-white transition-all flex items-center justify-center gap-3 disabled:opacity-10 shadow-[6px_6px_0_rgba(255,77,0,0.2)]"
                        >
                           {isGenerating ? <RefreshCw className="animate-spin" size={14} /> : <Sparkles size={14} />}
-                          Reverse_Engineer
+                          Describe from photo
                        </button>
                     </div>
 
@@ -289,40 +289,40 @@ export function CharacterForgeModal({ isOpen, initialData, onClose, onSave, t }:
                     <div className="flex-1 space-y-8">
                        <div className="grid grid-cols-2 gap-8">
                           <div className="space-y-3">
-                             <label className="text-[10px] font-black text-white/40 uppercase tracking-[0.3em]">Alias_System</label>
+                             <label className="text-[10px] font-black text-white/40 uppercase tracking-[0.3em]">Name</label>
                              <input 
                                 value={name} onChange={e => setName(e.target.value)}
-                                placeholder="DESIGNATION_X"
+                                placeholder="Character name"
                                 className="w-full bg-[#111] border-b-4 border-white/5 p-5 text-sm font-black text-white uppercase outline-none focus:border-[var(--accent)] transition-all placeholder:opacity-20"
                              />
                           </div>
                           <div className="space-y-3">
-                             <label className="text-[10px] font-black text-white/40 uppercase tracking-[0.3em]">Operational_Role</label>
+                             <label className="text-[10px] font-black text-white/40 uppercase tracking-[0.3em]">Role</label>
                              <select 
                                 value={role} onChange={e => setRole(e.target.value)}
                                 className="w-full bg-[#111] border-b-4 border-white/5 p-5 text-sm font-black text-white uppercase outline-none appearance-none cursor-pointer focus:border-[var(--accent)] transition-all"
                              >
                                 <option>Protagonist</option>
                                 <option>Antagonist</option>
-                                <option>Tactical_Support</option>
+                                <option>Support</option>
                                 <option>Anomaly</option>
                              </select>
                           </div>
                        </div>
 
                        <div className="space-y-3">
-                          <label className="text-[10px] font-black text-white/40 uppercase tracking-[0.3em]">Visual_Signature (Narrative Description)</label>
+                          <label className="text-[10px] font-black text-white/40 uppercase tracking-[0.3em]">Look & personality</label>
                           <div className="relative">
                              <textarea 
                                 value={description} onChange={e => setDescription(e.target.value)}
-                                placeholder="LOG VISUAL PARAMETERS..."
+                                placeholder="Hair, costume, vibe, scars — anything readers should picture…"
                                 className="w-full bg-[#111] border border-white/5 p-6 text-xs font-bold font-mono text-white outline-none focus:border-[var(--accent)] transition-all resize-none leading-relaxed min-h-[140px]"
                              />
                           </div>
                        </div>
 
                        <div className="space-y-3">
-                          <label className="text-[10px] font-black text-white/40 uppercase tracking-[0.3em]">AI_Core_Signature (LoRA / Identity String)</label>
+                          <label className="text-[10px] font-black text-white/40 uppercase tracking-[0.3em]">Model keywords (LoRA / trigger tokens)</label>
                           <div className="relative">
                              <input 
                                 value={promptBase} onChange={e => setPromptBase(e.target.value)}
@@ -346,7 +346,7 @@ export function CharacterForgeModal({ isOpen, initialData, onClose, onSave, t }:
                             value={marvelSearch}
                             onChange={(e) => setMarvelSearch(e.target.value)}
                             onKeyDown={(e) => e.key === 'Enter' && searchMarvel()}
-                            placeholder="SEARCH MARVEL ARCHIVES (e.g. Spider-Man, Wolverine)..."
+                            placeholder="Search Marvel characters (e.g. Spider-Man)…"
                             className="w-full bg-black border-2 border-white/5 p-6 pl-16 text-sm font-black text-white uppercase outline-none focus:border-rose-600 transition-all placeholder:opacity-10"
                           />
                        </div>
@@ -356,7 +356,7 @@ export function CharacterForgeModal({ isOpen, initialData, onClose, onSave, t }:
                          className="px-10 bg-rose-600 text-white text-[10px] font-black uppercase tracking-widest hover:bg-rose-500 transition-all flex items-center gap-3"
                        >
                           {isSearchingMarvel ? <RefreshCw className="animate-spin" size={16} /> : <Search size={16} />}
-                          Initialize_Search
+                          Search
                        </button>
                     </div>
 
@@ -367,7 +367,7 @@ export function CharacterForgeModal({ isOpen, initialData, onClose, onSave, t }:
                                <X size={32} />
                             </div>
                             <div className="space-y-2">
-                               <h4 className="text-[14px] font-black uppercase text-rose-600 tracking-widest">External_Service_Failure</h4>
+                               <h4 className="text-[14px] font-black uppercase text-rose-600 tracking-widest">Couldn&apos;t reach Marvel</h4>
                                <p className="text-[10px] font-bold text-white/40 uppercase leading-relaxed max-w-md">
                                   {marvelError}
                                </p>
@@ -376,7 +376,7 @@ export function CharacterForgeModal({ isOpen, initialData, onClose, onSave, t }:
                               onClick={() => setActiveTab('custom')}
                               className="px-8 py-3 bg-white/5 border border-white/10 text-[9px] font-black uppercase tracking-widest hover:bg-white hover:text-black transition-all"
                             >
-                               Use_Custom_Build_Instead
+                               Use custom character instead
                             </button>
                          </div>
                        ) : marvelResults.length > 0 ? (
@@ -396,7 +396,7 @@ export function CharacterForgeModal({ isOpen, initialData, onClose, onSave, t }:
                                  <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-60" />
                                  <div className="absolute bottom-3 left-3 flex items-center gap-2">
                                     <ShieldCheck size={12} className="text-rose-600" />
-                                    <span className="text-[8px] font-black uppercase text-white/60">Marvel_Official</span>
+                                    <span className="text-[8px] font-black uppercase text-white/60">Marvel</span>
                                  </div>
                               </div>
                               <div className="flex flex-col">
@@ -408,7 +408,7 @@ export function CharacterForgeModal({ isOpen, initialData, onClose, onSave, t }:
                        ) : (
                          <div className="col-span-3 flex flex-col items-center justify-center py-24 opacity-20 gap-6">
                             <BookOpen size={64} />
-                            <p className="text-[10px] font-black uppercase tracking-[0.5em]">Waiting_For_Input...</p>
+                            <p className="text-[10px] font-black uppercase tracking-[0.5em]">Search to see results</p>
                          </div>
                        )}
                     </div>
@@ -422,7 +422,7 @@ export function CharacterForgeModal({ isOpen, initialData, onClose, onSave, t }:
                             value={superheroSearch}
                             onChange={(e) => setSuperheroSearch(e.target.value)}
                             onKeyDown={(e) => e.key === 'Enter' && searchSuperhero()}
-                            placeholder="SEARCH SUPERHERO DATABASE (e.g. Batman, Superman)..."
+                            placeholder="Search heroes (Batman, Storm…)…"
                             className="w-full bg-black border-2 border-white/5 p-6 pl-16 text-sm font-black text-white uppercase outline-none focus:border-[#ff4d00] transition-all placeholder:opacity-10"
                           />
                        </div>
@@ -432,7 +432,7 @@ export function CharacterForgeModal({ isOpen, initialData, onClose, onSave, t }:
                          className="px-10 bg-[#ff4d00] text-white text-[10px] font-black uppercase tracking-widest hover:bg-[#ff4d00]/80 transition-all flex items-center gap-3"
                        >
                           {isSearchingSuperhero ? <RefreshCw className="animate-spin" size={16} /> : <Search size={16} />}
-                          Initialize_Search
+                          Search
                        </button>
                     </div>
 
@@ -443,7 +443,7 @@ export function CharacterForgeModal({ isOpen, initialData, onClose, onSave, t }:
                                <X size={32} />
                             </div>
                             <div className="space-y-2">
-                               <h4 className="text-[14px] font-black uppercase text-[#ff4d00] tracking-widest">External_Service_Failure</h4>
+                               <h4 className="text-[14px] font-black uppercase text-[#ff4d00] tracking-widest">Hero search failed</h4>
                                <p className="text-[10px] font-bold text-white/40 uppercase leading-relaxed max-w-md">
                                   {superheroError}
                                </p>
@@ -452,7 +452,7 @@ export function CharacterForgeModal({ isOpen, initialData, onClose, onSave, t }:
                               onClick={() => setActiveTab('custom')}
                               className="px-8 py-3 bg-white/5 border border-white/10 text-[9px] font-black uppercase tracking-widest hover:bg-white hover:text-black transition-all"
                             >
-                               Use_Custom_Build_Instead
+                               Use custom character instead
                             </button>
                          </div>
                        ) : superheroResults.length > 0 ? (
@@ -484,7 +484,7 @@ export function CharacterForgeModal({ isOpen, initialData, onClose, onSave, t }:
                        ) : (
                          <div className="col-span-3 flex flex-col items-center justify-center py-24 opacity-20 gap-6">
                             <BookOpen size={64} />
-                            <p className="text-[10px] font-black uppercase tracking-[0.5em]">Waiting_For_Input...</p>
+                            <p className="text-[10px] font-black uppercase tracking-[0.5em]">Search to see results</p>
                          </div>
                        )}
                     </div>
@@ -496,15 +496,15 @@ export function CharacterForgeModal({ isOpen, initialData, onClose, onSave, t }:
             <div className="p-10 bg-black border-t-2 border-white/5 flex justify-end items-center gap-8">
                <div className="flex-1 flex items-center gap-4">
                   <div className="h-[2px] flex-1 bg-white/5" />
-                  <span className="text-[8px] font-black text-white/10 tracking-[1em] uppercase">Auth_Identity</span>
+                  <span className="text-[8px] font-black text-white/10 tracking-[1em] uppercase">Signed in</span>
                </div>
-               <button onClick={onClose} className="text-[10px] font-black uppercase tracking-widest text-white/30 hover:text-white transition-all">Abort</button>
+               <button onClick={onClose} className="text-[10px] font-black uppercase tracking-widest text-white/30 hover:text-white transition-all">Cancel</button>
                <button 
                  onClick={handleSave}
                  disabled={!name}
                  className="px-16 py-6 bg-white text-black text-[12px] font-black uppercase tracking-[0.5em] hover:bg-[var(--accent)] hover:text-white transition-all shadow-[8px_8px_0_black] active:translate-x-1 active:translate-y-1 active:shadow-none disabled:opacity-10"
                >
-                  {initialData ? 'Update_Selection' : 'Finalize_Cast'}
+                  {initialData ? 'Save changes' : 'Save character'}
                </button>
             </div>
           </motion.div>

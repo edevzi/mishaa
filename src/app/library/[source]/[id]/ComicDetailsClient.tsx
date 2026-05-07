@@ -448,7 +448,7 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
     <div className="min-h-screen bg-[#020202] flex items-center justify-center">
       <div className="flex flex-col items-center gap-6">
         <Loader2 className="w-12 h-12 text-[#ff4d00] animate-spin" />
-        <div className="text-[10px] font-bold uppercase tracking-[0.5em] text-white/20">Preparing_Narrative...</div>
+        <div className="text-[10px] font-bold uppercase tracking-[0.5em] text-white/20">Loading comic...</div>
       </div>
     </div>
   );
@@ -480,7 +480,7 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
       <div className="min-h-screen bg-[#020202] flex items-center justify-center">
         <div className="flex flex-col items-center gap-6">
           <Loader2 className="w-12 h-12 text-[#ff4d00] animate-spin" />
-          <div className="text-[10px] font-black uppercase tracking-[0.5em] text-white/20">Loading_Marvel_Metadata...</div>
+          <div className="text-[10px] font-black uppercase tracking-[0.5em] text-white/20">Loading issue...</div>
         </div>
       </div>
     );
@@ -509,7 +509,7 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
             className="mb-10 flex items-center gap-3 text-[10px] font-black uppercase tracking-widest text-white/40 hover:text-[#ff4d00] transition-all group"
           >
             <ChevronLeft size={16} className="group-hover:-translate-x-1 transition-transform" />
-            Back_To_Marvel
+            Back
           </motion.button>
 
           <div className="grid grid-cols-1 lg:grid-cols-[360px_1fr] gap-12 lg:gap-20 items-start">
@@ -547,18 +547,18 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
                   rel="noreferrer"
                   className="py-4 px-4 bg-white text-black text-[10px] font-black uppercase tracking-[0.25em] hover:bg-[#ff4d00] hover:text-white transition-all text-center"
                 >
-                  Open_Official
+                  Official site
                 </a>
                 <button
                   onClick={() => router.push('/library')}
                   className="py-4 px-4 bg-white/5 border border-white/10 text-white/60 text-[10px] font-black uppercase tracking-[0.25em] hover:bg-white/10 hover:text-white transition-all"
                 >
-                  Back_To_Library
+                  Library
                 </button>
               </div>
 
               <div className="bg-white/5 border border-white/10 p-5 space-y-3">
-                <div className="text-[9px] font-black uppercase tracking-[0.35em] text-white/30">Issue_Metadata</div>
+                <div className="text-[9px] font-black uppercase tracking-[0.35em] text-white/30">Issue details</div>
                 <div className="grid grid-cols-2 gap-3 text-[10px] uppercase tracking-[0.2em] text-white/55">
                   <div>
                     <div className="text-white/25">Series</div>
@@ -590,7 +590,7 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
               {marvelCharacters.length > 0 && (
                 <div className="bg-white/5 border border-white/10 p-5 space-y-4">
                   <div className="flex items-center justify-between gap-3">
-                    <div className="text-[9px] font-black uppercase tracking-[0.35em] text-white/30">Character_Registry</div>
+                    <div className="text-[9px] font-black uppercase tracking-[0.35em] text-white/30">Featured characters</div>
                     <Sparkles className="text-[#ff4d00]" size={16} />
                   </div>
                   <div className="flex flex-wrap gap-2">
@@ -624,7 +624,7 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
               <div className="space-y-6">
                 <div className="flex flex-wrap items-center gap-3">
                   <span className="px-4 py-2 bg-[#ff4d00] text-white text-[10px] font-black uppercase tracking-[0.3em]">
-                    Marvel_Metadata
+                    Marvel Comics
                   </span>
                   <span className="px-4 py-2 bg-white/5 border border-white/10 text-white/45 text-[10px] font-black uppercase tracking-[0.3em]">
                     Issue #{marvelIssue.issueNumber || '?'}
@@ -727,8 +727,8 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
                 <div className="bg-[#0a0a0a] border border-white/10 p-6 md:p-8 space-y-6">
                   <div className="flex items-center justify-between gap-4">
                     <div>
-                      <div className="text-[9px] uppercase tracking-[0.35em] text-white/25">Series Endpoint</div>
-                      <h2 className="mt-2 text-2xl font-black uppercase tracking-tight">Series Intel</h2>
+                      <div className="text-[9px] uppercase tracking-[0.35em] text-white/25">Series</div>
+                      <h2 className="mt-2 text-2xl font-black uppercase tracking-tight">About this series</h2>
                     </div>
                     <Globe className="text-[#ff4d00]" />
                   </div>
@@ -749,7 +749,7 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
                           {marvelSeries.title || marvelIssue.seriesName}
                         </div>
                         <p className="mt-3 max-w-3xl text-white/55 text-base leading-relaxed">
-                          {trimText(marvelSeries.description, 300) || 'Series metadata fetched directly from the Marvel series endpoint.'}
+                          {trimText(marvelSeries.description, 300) || 'Series description from Marvel.'}
                         </p>
                       </div>
 
@@ -784,15 +784,12 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
 
   const titleLength = comic.title.trim().length;
   const titleSizeClass = titleLength > 80
-    ? 'text-[clamp(2rem,3.8vw,4.4rem)]'
+    ? 'text-[clamp(1.35rem,2.4vw+0.6rem,2.65rem)]'
     : titleLength > 55
-      ? 'text-[clamp(2.3rem,4.2vw,5rem)]'
+      ? 'text-[clamp(1.6rem,2.8vw+0.65rem,3.15rem)]'
       : titleLength > 35
-        ? 'text-[clamp(2.7rem,5vw,6rem)]'
-        : 'text-[clamp(3rem,5.4vw,6.8rem)]';
-  const titleWidthClass = titleLength > 55
-    ? 'max-w-[12ch] 2xl:max-w-[14ch]'
-    : 'max-w-[14ch] 2xl:max-w-[16ch]';
+        ? 'text-[clamp(1.85rem,3.2vw+0.7rem,3.85rem)]'
+        : 'text-[clamp(2rem,3.8vw+0.5rem,4.5rem)]';
   const pageBackdropStyle = {
     backgroundImage: `
       radial-gradient(circle at 18% 18%, rgba(${dominantColor}, 0.15), transparent 30%),
@@ -826,7 +823,7 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowShareModal(false)} className="absolute inset-0 bg-black/80 backdrop-blur-sm" />
             <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} className="relative bg-[#0a0a0a] border border-white/10 w-full max-w-sm p-8 space-y-6">
               <button onClick={() => setShowShareModal(false)} className="absolute top-4 right-4 text-white/50 hover:text-white"><X size={20} /></button>
-              <h3 className="text-sm font-black uppercase tracking-[0.3em]">Share_Archive</h3>
+              <h3 className="text-sm font-black uppercase tracking-[0.3em]">Share</h3>
               <div className="grid grid-cols-2 gap-3">
                 <button onClick={shareToTelegram} className="p-4 bg-[#24A1DE]/10 border border-[#24A1DE]/30 text-[#24A1DE] flex flex-col items-center justify-center gap-2 hover:bg-[#24A1DE] hover:text-white transition-all"><Send size={24} /><span className="text-[9px] font-black uppercase tracking-widest">Telegram</span></button>
                 <button onClick={shareToTwitter} className="p-4 bg-[#1DA1F2]/10 border border-[#1DA1F2]/30 text-[#1DA1F2] flex flex-col items-center justify-center gap-2 hover:bg-[#1DA1F2] hover:text-white transition-all"><X size={24} /><span className="text-[9px] font-black uppercase tracking-widest">X / Twitter</span></button>
@@ -849,33 +846,31 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0%,rgba(0,0,0,0.2)_58%,rgba(0,0,0,0.6)_100%)]" />
       </div>
 
-      <main className="relative z-10 pt-24 pb-24 px-4 sm:px-6 md:px-20 max-w-7xl mx-auto">
-        <motion.button initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} onClick={() => router.push('/library')} className="mb-12 flex items-center gap-3 text-[10px] font-black uppercase tracking-widest text-white/40 hover:text-[#ff4d00] transition-all group">
-          <ChevronLeft size={16} className="group-hover:-translate-x-1 transition-transform" /> Neural_Backtrack
+      <main className="relative z-10 mx-auto max-w-[min(100%,88rem)] px-4 pb-28 pt-20 sm:px-6 lg:px-10">
+        <motion.button initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }} onClick={() => router.push('/library')} className="mb-10 flex items-center gap-3 text-xs font-semibold tracking-wide text-zinc-500 hover:text-[#ff4d00] transition-colors group">
+          <ChevronLeft size={18} className="group-hover:-translate-x-0.5 transition-transform" /> Back to library
         </motion.button>
 
-        <div 
-          itemScope 
+        <article
+          itemScope
           itemType="https://schema.org/ComicStory"
-          className="rounded-[2rem] border border-white/8 bg-white/[0.03] backdrop-blur-xl shadow-[0_40px_140px_rgba(0,0,0,0.45)] overflow-hidden"
+          className="space-y-14 lg:space-y-20"
         >
-          <div className="grid grid-cols-1 lg:grid-cols-[380px_1fr] gap-10 lg:gap-24 items-start p-4 sm:p-6 md:p-10 lg:p-12">
-          {/* Side Info */}
-          <motion.div initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} className="space-y-10 lg:sticky lg:top-32">
-            <div className="group relative aspect-[2/3] w-full bg-[#0a0a0a] border border-white/10 shadow-[0_50px_100px_rgba(0,0,0,0.9)] overflow-hidden">
-               <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent z-10 opacity-0 group-hover:opacity-100 transition-opacity" />
+          <section className="flex flex-col gap-10 lg:flex-row lg:items-start lg:gap-12 xl:gap-16">
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mx-auto w-full max-w-[14rem] shrink-0 sm:max-w-[15rem] lg:mx-0 lg:max-w-[15.5rem] xl:max-w-[16.5rem] lg:sticky lg:top-24">
+            <div className="relative aspect-[2/3] w-full overflow-hidden rounded-2xl border border-white/12 bg-zinc-950 shadow-[0_24px_60px_rgba(0,0,0,0.55)] ring-1 ring-white/[0.06]">
                <Image 
                  src={comic.coverUrl} 
                  fill
-                 className="object-cover group-hover:scale-105 transition-transform duration-700" 
+                 className="object-cover"
                  alt={`Read ${comic.title} online - Cover Art`} 
                  itemProp="image"
+                 sizes="(max-width: 1024px) 256px, 288px"
                  unoptimized
                />
-               <div className="absolute top-4 left-4 z-20 px-3 py-1 bg-[#ff4d00] text-white text-[9px] font-black uppercase italic shadow-lg">HQ_Asset</div>
             </div>
             
-            <div className="grid grid-cols-1 gap-4">
+            <div className="mt-6 grid grid-cols-1 gap-3">
                {comic.source !== 'superhero' && (
                  <motion.button 
                    onClick={startReading} 
@@ -902,7 +897,7 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
                    onClick={() => router.push(`/library/${source}/${id}/read/${lastReadChapter.id}`)}
                    className="w-full py-4 bg-white/5 border border-white/20 text-white flex flex-col items-center justify-center gap-1 font-black uppercase tracking-widest text-[9px] hover:bg-white/10 transition-all overflow-hidden"
                  >
-                   <span className="text-[#ff4d00]">Continue_Reading</span>
+                   <span className="text-[#ff4d00]">Continue reading</span>
                    <span className="text-white/40 opacity-70 truncate px-4 w-full text-center">{lastReadChapter.title}</span>
                    {typeof lastReadChapter.progressPercent === 'number' && (
                      <span className="text-[8px] font-black uppercase tracking-[0.35em] text-white/25">
@@ -914,7 +909,7 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
                {comic.source === 'superhero' && (
                  <button onClick={() => router.push('/studio')} className="group relative py-6 bg-[#ff4d00] text-white flex items-center justify-center gap-3 font-black uppercase tracking-widest text-[11px] overflow-hidden transition-all hover:bg-white hover:text-black">
                    <div className="absolute left-0 top-0 bottom-0 w-0 bg-black group-hover:w-full transition-all duration-500 z-0 opacity-10" />
-                   <span className="relative z-10 flex items-center gap-3"><Sparkles fill="currentColor" size={16} /> Forge_Character</span>
+                   <span className="relative z-10 flex items-center gap-3"><Sparkles fill="currentColor" size={16} /> Comic studio</span>
                  </button>
                )}
               <div className="grid grid-cols-2 gap-4">
@@ -945,9 +940,10 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
             </div>
           </motion.div>
 
+          <div className="flex min-w-0 flex-1 flex-col gap-10 lg:gap-12">
           {/* Main Info */}
-          <motion.div initial={{ opacity: 0, x: 40 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 }} className="space-y-16">
-            <div className="space-y-8">
+          <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }} className="min-w-0 space-y-6">
+            <div className="min-w-0 space-y-5">
               <div className="flex flex-wrap items-center gap-4">
                  <div className="flex items-center gap-2 px-4 py-2 bg-white/5 border border-white/10 rounded-full">
                     <Star size={12} className="text-[#ff4d00]" fill="#ff4d00" /><span className="text-[12px] font-black tracking-tighter">{comic.rating}</span>
@@ -966,7 +962,7 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
               
                 <h1 
                   itemProp="name"
-                  className={`${titleSizeClass} ${titleWidthClass} font-black italic uppercase tracking-tighter leading-[0.92] text-balance break-words`}
+                  className={`${titleSizeClass} w-full min-w-0 max-w-full font-black italic uppercase tracking-tight md:tracking-tighter leading-[1.05] text-balance wrap-anywhere`}
                 >
                   {comic.title}
                 </h1>
@@ -979,16 +975,17 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
                 ))}
               </div>
             </div>
+          </motion.div>
 
-            <div className="space-y-8">
-               <div className="space-y-8">
-                  <div className="flex items-center gap-4 border-b border-white/10 pb-4">
-                     <h3 className="text-[11px] font-black uppercase tracking-[0.5em] text-[#ff4d00]">Story_Archive_Log</h3>
+            <div className="min-w-0 space-y-12 lg:space-y-14">
+            <section className="space-y-4">
+                  <div className="flex items-center gap-3 border-b border-white/10 pb-3">
+                     <h2 className="text-sm font-semibold text-[#ff4d00]">Synopsis</h2>
                      <div className="h-px flex-1 bg-gradient-to-r from-white/10 to-transparent" />
                   </div>
                   <div 
                     itemProp="description"
-                    className="max-w-4xl rounded-2xl border border-white/10 bg-white/[0.02] p-5 md:p-6 text-base md:text-lg text-white/65 italic leading-relaxed description-content max-h-[44vh] overflow-y-auto pr-3"
+                    className="description-content max-h-[min(70vh,48rem)] overflow-y-auto rounded-xl border border-white/10 bg-zinc-950/50 p-5 text-[0.95rem] leading-relaxed text-zinc-300 md:p-6 md:text-[1.02rem]"
                   >
                     <RichTextContent
                       content={String(comic.description || "")
@@ -998,82 +995,81 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
                         .replace(/\[\/i\]/g, '')}
                     />
                   </div>
-               </div>
+            </section>
 
-               {/* RELATED COUNCILS / MORE LIKE THIS */}
                {comic.related && comic.related.length > 0 && (
-                 <div className="space-y-8 pt-10">
-                   <div className="flex items-center justify-between gap-4 border-b border-white/10 pb-4">
-                      <div className="flex items-center gap-3">
-                        <Sparkles className="text-[#ff4d00]" size={16} />
-                        <h3 className="text-[11px] font-black uppercase tracking-[0.5em] text-white">Neural_Recognition</h3>
+                 <section className="space-y-4 rounded-xl border border-white/[0.07] bg-zinc-950/35 p-4 md:p-5">
+                   <div className="flex flex-wrap items-end justify-between gap-3">
+                      <div className="flex items-center gap-2">
+                        <Sparkles className="text-[#ff4d00]" size={15} />
+                        <h2 className="text-sm font-semibold text-white">More like this</h2>
                       </div>
-                      <div className="h-px flex-1 bg-gradient-to-r from-white/10 to-transparent" />
-                      <span className="text-[9px] font-black uppercase tracking-widest text-white/20">More_Like_This</span>
+                      <span className="text-[10px] font-medium uppercase tracking-widest text-zinc-500">Similar titles</span>
                    </div>
 
-                   <div className="flex gap-6 overflow-x-auto pb-8 scrollbar-none snap-x">
+                   <div className="flex gap-3 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden snap-x snap-mandatory">
                      {comic.related.map((item) => (
-                       <motion.div
+                       <motion.button
+                         type="button"
                          key={item.id}
-                         whileHover={{ y: -10, scale: 1.05 }}
+                         whileHover={{ y: -3 }}
+                         transition={{ type: 'spring', stiffness: 420, damping: 28 }}
                          onClick={() => router.push(`/library/${item.source}/${item.id}`)}
-                         className="min-w-[180px] md:min-w-[220px] snap-start group cursor-pointer"
+                         className="group/rail w-[6.75rem] shrink-0 snap-start text-left sm:w-[7.25rem]"
                        >
-                         <div className="aspect-[2/3] relative border border-white/10 bg-[#0a0a0a] overflow-hidden shadow-2xl">
-                           <Image
-                             src={item.coverUrl}
-                             fill
-                             className="object-cover group-hover:scale-110 transition-transform duration-700"
-                             alt={item.title}
-                             unoptimized
-                           />
-                           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                           <div className="absolute bottom-3 left-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                              <div className="text-[8px] font-black uppercase tracking-widest text-[#ff4d00]">Source: {item.source}</div>
+                         <div className="overflow-hidden rounded-lg border border-white/10 bg-zinc-900 shadow-md transition-colors group-hover/rail:border-[#ff4d00]/40">
+                           <div className="relative h-[7.5rem] w-full sm:h-[8rem]">
+                             <Image
+                               src={item.coverUrl}
+                               fill
+                               sizes="116px"
+                               className="object-cover"
+                               alt={item.title}
+                               unoptimized
+                             />
                            </div>
                          </div>
-                         <h4 className="mt-4 text-[9px] font-black uppercase tracking-widest text-white/30 group-hover:text-white truncate">
-                           {item.title}
-                         </h4>
-                       </motion.div>
+                         <p className="mt-2 line-clamp-2 px-0.5 text-[9px] font-medium uppercase leading-snug tracking-tight text-zinc-500 group-hover/rail:text-zinc-200">
+                             {item.title}
+                         </p>
+                       </motion.button>
                      ))}
                    </div>
-                 </div>
+                 </section>
                )}
 
                 {/* Big Data - Characters & Actors Section */}
                 {comic.aniListData?.characters?.edges?.length > 0 && (
-                  <div className="space-y-10 pt-16">
-                    <div className="flex items-center justify-between gap-4 border-b border-white/10 pb-4">
-                      <div className="flex items-center gap-3">
-                        <Sparkles className="text-[#ff4d00]" size={16} />
-                        <h3 className="text-[11px] font-black uppercase tracking-[0.5em] text-white">Protagonists_&_Actors</h3>
+                  <div className="space-y-6 pt-2">
+                    <div className="flex items-center justify-between gap-4 border-b border-white/10 pb-3">
+                      <div className="flex items-center gap-2">
+                        <Sparkles className="text-[#ff4d00]" size={15} />
+                        <h2 className="text-sm font-semibold text-white">Characters & cast</h2>
                       </div>
-                      <div className="h-px flex-1 bg-gradient-to-r from-white/10 to-transparent" />
                     </div>
                     
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-6">
+                    <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-8">
                       {comic.aniListData.characters.edges.map((edge: any) => (
                         <div key={edge.node.id} className="group cursor-default">
-                          <div className="aspect-[3/4] bg-white/5 border border-white/10 overflow-hidden relative">
+                          <div className="relative aspect-[3/4] overflow-hidden rounded-lg border border-white/10 bg-zinc-900">
                             <Image 
                               src={edge.node.image?.large || '/logo.png'} 
                               alt={edge.node.name.full}
                               fill
-                              className="object-cover group-hover:scale-110 transition-transform duration-500"
+                              sizes="80px"
+                              className="object-cover object-top"
                               unoptimized
                             />
                             <div className="absolute top-2 right-2 px-1.5 py-0.5 bg-black/60 backdrop-blur-md text-[6px] font-black uppercase tracking-widest text-white/80 border border-white/10">
                               {edge.role}
                             </div>
                           </div>
-                          <div className="mt-4 space-y-1">
-                            <div className="text-[10px] font-black uppercase tracking-widest text-white group-hover:text-[#ff4d00] transition-colors truncate">
+                          <div className="mt-2 space-y-0.5">
+                            <div className="truncate text-[9px] font-medium uppercase tracking-wide text-zinc-400">
                               {edge.node.name.userPreferred}
                             </div>
-                            <div className="text-[8px] font-bold uppercase tracking-[0.2em] text-white/25">
-                              {edge.role === 'MAIN' ? 'Protagonist' : 'Supporting'}
+                            <div className="text-[8px] font-medium uppercase tracking-wider text-zinc-600">
+                              {edge.role === 'MAIN' ? 'Main' : 'Support'}
                             </div>
                           </div>
                         </div>
@@ -1084,9 +1080,9 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
 
                 {/* Advanced Metadata Stats */}
                 {(comic.aniListData || comic.jikanData) && (
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4 pt-16">
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4">
                     <div className="bg-white/5 border border-white/10 p-4 md:p-6 space-y-3 min-w-0">
-                      <div className="text-[8px] md:text-[9px] font-black uppercase tracking-widest text-white/20">Global_Rating</div>
+                      <div className="text-[8px] md:text-[9px] font-black uppercase tracking-widest text-white/20">Community score</div>
                       <div className="flex items-baseline gap-1.5 flex-wrap">
                         <div className="text-2xl md:text-4xl lg:text-5xl font-black text-[#ff4d00] italic leading-none">
                           {Math.round(Number(comic.aniListData?.averageScore || (comic.jikanData?.score ? (comic.jikanData.score * 10) : 85)))}
@@ -1099,7 +1095,7 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
                     </div>
                     
                     <div className="bg-white/5 border border-white/10 p-4 md:p-6 space-y-3 min-w-0">
-                      <div className="text-[8px] md:text-[9px] font-black uppercase tracking-widest text-white/20">Popularity_Rank</div>
+                      <div className="text-[8px] md:text-[9px] font-black uppercase tracking-widest text-white/20">Trending rank</div>
                       <div className="flex items-baseline gap-1.5 flex-wrap">
                         <div className="text-2xl md:text-4xl lg:text-5xl font-black text-white italic leading-none">
                           #{comic.aniListData?.trending || comic.jikanData?.rank || '42'}
@@ -1112,7 +1108,7 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
                     </div>
 
                     <div className="bg-white/5 border border-white/10 p-4 md:p-6 space-y-3 min-w-0">
-                      <div className="text-[8px] md:text-[9px] font-black uppercase tracking-widest text-white/20">Status_Intel</div>
+                      <div className="text-[8px] md:text-[9px] font-black uppercase tracking-widest text-white/20">Series status</div>
                       <div className="flex items-baseline gap-2 overflow-hidden">
                         <div className="text-lg md:text-xl lg:text-2xl font-black uppercase text-white italic leading-none truncate">
                           {comic.status}
@@ -1131,7 +1127,7 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
                <div className="space-y-10">
                   <div className="space-y-6">
                      <div className="flex items-center justify-between border-b border-white/10 pb-4">
-                        <h3 className="text-[11px] font-black uppercase tracking-[0.5em] text-[#ff4d00]">Power_Metrics</h3>
+                        <h3 className="text-[11px] font-black uppercase tracking-[0.5em] text-[#ff4d00]">Power stats</h3>
                      </div>
                      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                         {Object.entries((comic as any).superheroData.powerstats || {}).map(([stat, val]) => (
@@ -1154,7 +1150,7 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
                         </div>
                      </div>
                      <div className="space-y-4">
-                        <div className="text-[10px] font-black uppercase tracking-[0.4em] text-white/50 border-b border-white/10 pb-2">Work_&_Base</div>
+                        <div className="text-[10px] font-black uppercase tracking-[0.4em] text-white/50 border-b border-white/10 pb-2">Work & base</div>
                         <div className="space-y-2 text-xs font-bold text-white/70 uppercase tracking-widest leading-relaxed">
                            <p><span className="text-[#ff4d00]">Occupation:</span> {(comic as any).superheroData.work?.occupation}</p>
                            <p><span className="text-[#ff4d00]">Base:</span> {(comic as any).superheroData.work?.base}</p>
@@ -1173,10 +1169,10 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
             ) : (
               <div id="chapters-section" className="space-y-8">
                  <div className="flex items-center justify-between border-b border-white/10 pb-4">
-                    <h3 className="text-[11px] font-black uppercase tracking-[0.5em] text-white/40">Synchronized_Chapters</h3>
-                    <span className="text-[10px] font-black text-[#ff4d00] uppercase tracking-widest">{chapters.length} FOUND</span>
+                    <h3 className="text-[11px] font-black uppercase tracking-[0.5em] text-white/40">Chapters</h3>
+                    <span className="text-[10px] font-black text-[#ff4d00] uppercase tracking-widest">{chapters.length} total</span>
                  </div>
-                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[600px] overflow-y-auto custom-scrollbar pr-4">
+                 <div className="grid grid-cols-1 gap-3 max-h-[min(70vh,44rem)] overflow-y-auto custom-scrollbar pr-2 md:pr-4 md:gap-4">
                     {chapters.length > 0 ? (
                       chapters.map((ch) => (
                         <button
@@ -1188,26 +1184,28 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
                               router.push(`/library/${source}/${id}/read/${ch.id}`);
                             }
                           }}
-                          className="group relative flex items-center justify-between p-6 transition-all text-left border bg-white/5 border-white/5 hover:border-[#ff4d00]/50 overflow-hidden"
+                          className="group relative flex w-full items-center gap-4 p-5 text-left transition-all border border-white/5 bg-white/5 hover:border-[#ff4d00]/45 hover:bg-[#ff4d00]/10 md:p-6"
                         >
-                           {/* Hover Glow */}
-                           <div className="absolute inset-0 bg-gradient-to-r from-[#ff4d00]/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                           
-                           <div className="relative z-10 space-y-1">
-                              <div className="flex items-center gap-2">
-                                <div className="text-[10px] font-black uppercase tracking-[0.3em] text-[#ff4d00]">Vol.{ch.volume || '0'} Ch.{ch.chapterNum}</div>
+                           <div className="absolute inset-0 bg-gradient-to-r from-[#ff4d00]/5 to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
+                           <div className="relative z-10 min-w-0 flex-1 space-y-1.5">
+                              <div className="flex flex-wrap items-center gap-2">
+                                <div className="text-[10px] font-black uppercase tracking-[0.28em] text-[#ff4d00]">
+                                  Vol.{ch.volume || '0'} Ch.{ch.chapterNum}
+                                </div>
                                 {ch.externalUrl && (
-                                  <div className="px-2 py-0.5 bg-blue-500/10 border border-blue-500/30 text-blue-500 text-[7px] font-black uppercase tracking-widest rounded-sm">External</div>
+                                  <div className="rounded-sm border border-blue-500/30 bg-blue-500/10 px-2 py-0.5 text-[7px] font-black uppercase tracking-widest text-blue-500">
+                                    External
+                                  </div>
                                 )}
                               </div>
-                              <div className="text-[14px] font-black uppercase tracking-tight group-hover:text-white transition-colors break-words line-clamp-1">
+                              <div className="text-[13px] font-black uppercase leading-snug tracking-tight text-white/90 transition-colors group-hover:text-white md:text-[15px] wrap-anywhere line-clamp-2">
                                 {ch.title || `Chapter ${ch.chapterNum}`}
                               </div>
                            </div>
                            {ch.externalUrl ? (
-                             <ExternalLink size={18} className="text-white/10 group-hover:text-blue-500 transition-all" />
+                             <ExternalLink size={20} className="relative z-10 shrink-0 text-white/20 transition-all group-hover:text-blue-400" />
                            ) : (
-                             <ChevronRight size={18} className="text-white/10 group-hover:text-[#ff4d00] group-hover:translate-x-1 transition-all" />
+                             <ChevronRight size={20} className="relative z-10 shrink-0 text-white/15 transition-all group-hover:translate-x-0.5 group-hover:text-[#ff4d00]" />
                            )}
                         </button>
                       ))
@@ -1216,21 +1214,21 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
                          <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mb-6">
                             <BookOpen className="text-white/20" size={32} />
                          </div>
-                         <h4 className="text-[11px] font-black uppercase tracking-[0.5em] text-white mb-3">Sync_Failure_Detected</h4>
+                         <h4 className="text-[11px] font-black uppercase tracking-[0.5em] text-white mb-3">No chapters for this language</h4>
                          <p className="text-sm text-white/30 max-w-sm leading-relaxed mb-8">
-                            No chapters were found for the <b>{mangaLanguage.toUpperCase()}</b> protocol. MangaDex might only have chapters in other languages for this title.
+                            We didn&apos;t find any <b>{mangaLanguage.toUpperCase()}</b> chapters. This title might only have releases in other languages on MangaDex.
                          </p>
                          <div className="flex flex-wrap justify-center gap-3">
-                            <span className="text-[9px] font-black uppercase tracking-widest text-[#ff4d00]">Suggestion: Change_Language_Protocol_In_Header</span>
+                            <span className="text-[9px] font-black uppercase tracking-widest text-[#ff4d00]">Try another language from the menu in the header</span>
                          </div>
                       </div>
                     )}
                  </div>
               </div>
             )}
-          </motion.div>
-        </div>
-        </div>
+          </div>
+          </section>
+        </article>
       </main>
 
       {/* Custom Creative Share Modal */}
@@ -1256,8 +1254,8 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
               
               <div className="flex items-center justify-between mb-8">
                 <div className="space-y-1">
-                  <div className="text-[10px] font-black uppercase tracking-[0.4em] text-[#ff4d00]">Neural_Broadcast</div>
-                  <div className="text-xl font-black uppercase tracking-tight">Share_Log</div>
+                  <div className="text-[10px] font-black uppercase tracking-[0.4em] text-[#ff4d00]">Share</div>
+                  <div className="text-xl font-black uppercase tracking-tight">Share link</div>
                 </div>
                 <button 
                   onClick={() => setShowShareModal(false)}
@@ -1298,7 +1296,7 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
 
               {/* Copy Field */}
               <div className="space-y-3">
-                 <div className="text-[9px] font-black uppercase tracking-[0.3em] text-white/30 ml-1">Direct_Access_Key</div>
+                 <div className="text-[9px] font-black uppercase tracking-[0.3em] text-white/30 ml-1">Page link</div>
                  <div className="relative group">
                     <input 
                       type="text" 
@@ -1335,8 +1333,8 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255, 77, 0, 0.2); border-radius: 10px; }
         .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(255, 77, 0, 0.5); }
-        .description-content strong { color: white; }
-        .description-content em { color: rgba(255,255,255,0.7); font-style: italic; }
+        .description-content strong { color: rgb(244 244 245); }
+        .description-content em { color: rgb(161 161 170); font-style: italic; }
       `}</style>
     </div>
   );

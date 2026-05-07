@@ -50,9 +50,11 @@ export interface AniListMedia {
           english?: string;
         };
         coverImage?: {
+          extraLarge?: string;
           large?: string;
         };
         type?: string;
+        externalLinks?: Array<{ url?: string | null; site?: string | null }>;
       };
     }>;
   };
@@ -99,7 +101,7 @@ query ($id: Int) {
       site
     }
     siteUrl
-    recommendations (limit: 6, sort: [RATING_DESC]) {
+    recommendations (page: 1, perPage: 10, sort: [RATING_DESC]) {
       nodes {
         mediaRecommendation {
           id
@@ -108,9 +110,14 @@ query ($id: Int) {
             english
           }
           coverImage {
+            extraLarge
             large
           }
           type
+          externalLinks {
+            url
+            site
+          }
         }
       }
     }

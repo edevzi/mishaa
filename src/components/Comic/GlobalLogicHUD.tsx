@@ -25,8 +25,8 @@ export function GlobalLogicHUD({ t }: GlobalLogicHUDProps) {
                   <BrainCircuit size={16} className="text-white" />
                </div>
                <div className="flex flex-col">
-                  <span className="text-[9px] font-black uppercase tracking-[0.2em] text-black">Logic_Assistant</span>
-                  <span className="text-[6px] font-black uppercase text-[var(--accent)] tracking-widest animate-pulse">Neural_Sync_Active</span>
+                  <span className="text-[9px] font-black uppercase tracking-[0.2em] text-black">Assist</span>
+                  <span className="text-[6px] font-black uppercase text-[var(--accent)] tracking-widest animate-pulse">Autosave on</span>
                </div>
                <button onClick={() => setIsOpen(false)} className="ml-auto text-black/25 hover:text-black transition-colors">
                   <X size={14} />

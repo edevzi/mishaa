@@ -183,14 +183,14 @@ export default function Navbar() {
                       <Settings2 size={14} /> Settings
                     </Link>
                     <Link href="/studio" className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest text-white/50 hover:bg-white/5 hover:text-white transition-all">
-                      <Menu size={14} /> Library
+                      <Menu size={14} /> {t.terminal}
                     </Link>
                     <div className="h-px bg-white/5 my-2" />
                     <button
                       onClick={handleLogout}
                       className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest text-red-500 hover:bg-red-500/10 transition-all"
                     >
-                      <X size={14} /> Logout_Session
+                      <X size={14} /> Log out
                     </button>
                   </div>
                 </div>
@@ -272,7 +272,7 @@ export default function Navbar() {
                     onClick={() => { handleLogout(); setIsOpen(false); }}
                     className="w-full rounded-2xl border border-red-500/20 bg-red-500/5 py-5 text-center text-[10px] font-black uppercase tracking-[0.3em] text-red-500 transition-colors hover:bg-red-500 hover:text-white"
                   >
-                    Logout_Session
+                    Log out
                   </button>
                 </>
               )}

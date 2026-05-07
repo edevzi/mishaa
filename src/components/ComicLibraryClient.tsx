@@ -26,6 +26,7 @@ import {
   readStoredMangaLanguage,
 } from '@/lib/manga-language';
 import {
+  MANGADEX_GIRLS_LOVE_TAG_ID,
   MANGADEX_LONG_STRIP_TAG_ID,
 } from '@/lib/mangadex';
 import { searchComics } from '@/actions/comic';
@@ -78,7 +79,7 @@ const CATEGORIES: Category[] = [
   { label: 'Erotica', source: 'mangadex', nsfw: true, ratings: ['erotica'] },
   { label: 'Mature Romance', query: 'mature', nsfw: true, source: 'nhentai' },
   { label: 'Yaoi / BL', query: 'yaoi', nsfw: true, source: 'nhentai' },
-  { label: 'Yuri / GL', query: '', nsfw: true, source: 'mangadex', includedTagIds: ['a3c44042-4659-402c-9b1f-74a03197b5c7'] },
+  { label: 'Yuri / GL', query: '', nsfw: true, source: 'mangadex', includedTagIds: [MANGADEX_GIRLS_LOVE_TAG_ID] },
   { label: 'Parody Comics', query: 'parody', nsfw: true, source: 'nhentai' },
   { label: 'Cosplay', query: 'cosplay', nsfw: true, source: 'nhentai' },
   { label: 'Rule34', source: 'rule34', nsfw: true, query: getBooruDefaultQuery('rule34') },
@@ -745,7 +746,7 @@ export default function ComicLibraryClient({ initialAgeVerified = false }: Comic
                           ) : (
                             autoCompleteResults.map(comic => (
                               <button 
-                                key={comic.id}
+                                key={`${comic.source}:${comic.id}`}
                                 onClick={() => {
                                   closeSearchDropdown();
                                   router.push(`/library/${comic.source}/${comic.id}`);

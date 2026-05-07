@@ -110,14 +110,14 @@ export default function ProfilePage() {
             <div className="space-y-4 sm:space-y-6">
               <div className="inline-flex items-center gap-2 px-3 py-1 bg-[#ff4d00]/10 border border-[#ff4d00]/20 rounded-full">
                 <span className="w-1.5 h-1.5 bg-[#ff4d00] rounded-full animate-pulse" />
-                <span className="text-[#ff4d00] text-[10px] font-black uppercase tracking-[0.2em]">Secure_Profile_Control</span>
+                <span className="text-[#ff4d00] text-[10px] font-black uppercase tracking-[0.2em]">Your account</span>
               </div>
               <h1 className="text-4xl sm:text-6xl md:text-8xl font-black italic uppercase tracking-tighter leading-[0.85] text-balance">
-                Digital_ID<br/>
-                <span className="text-[#ff4d00]">Environment</span>
+                Profile<br/>
+                <span className="text-[#ff4d00]">Settings</span>
               </h1>
               <p className="text-white/40 max-w-xl text-sm font-medium leading-relaxed tracking-wide">
-                Modify your synthesis identity parameters. Cross-platform authentication allows synchronization between multiple access methods.
+                Update how you appear on iComics.wiki and keep your login methods in sync across devices.
               </p>
             </div>
 
@@ -139,21 +139,21 @@ export default function ProfilePage() {
                         className="w-full h-full object-cover grayscale opacity-80 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-700"
                       />
                       <div className="absolute bottom-4 left-4 right-4 py-2 px-3 bg-black/60 backdrop-blur-md border border-white/10 text-[8px] font-black uppercase tracking-widest text-center">
-                        Authorized_Subject
+                        Verified reader
                       </div>
                     </div>
                     <div className="p-6 sm:p-8 md:p-10 flex flex-col justify-between gap-6">
                       <div className="space-y-1">
-                        <p className="text-[10px] font-black uppercase tracking-[0.4em] text-white/30 italic">Nexus_Identifier</p>
+                        <p className="text-[10px] font-black uppercase tracking-[0.4em] text-white/30 italic">Account ID</p>
                         <p className="text-xl md:text-2xl font-black tracking-tighter text-white/90 break-all font-mono">{user.id}</p>
                       </div>
                       <div className="flex flex-col gap-4 sm:flex-row sm:gap-10">
                         <div>
-                          <p className="text-[9px] font-black uppercase tracking-[0.3em] text-white/20 mb-1">Creation_Epoch</p>
+                          <p className="text-[9px] font-black uppercase tracking-[0.3em] text-white/20 mb-1">Joined</p>
                           <p className="text-xs font-black text-white/60">{new Date(user.createdAt).toLocaleDateString()}</p>
                         </div>
                         <div>
-                          <p className="text-[9px] font-black uppercase tracking-[0.3em] text-white/20 mb-1">Access_Status</p>
+                          <p className="text-[9px] font-black uppercase tracking-[0.3em] text-white/20 mb-1">Security</p>
                           <p className="text-xs font-black text-[#ff4d00]">ENCRYPTED</p>
                         </div>
                       </div>
@@ -165,7 +165,7 @@ export default function ProfilePage() {
                 <form onSubmit={handleSave} className="space-y-8 sm:space-y-10 p-6 sm:p-10 bg-white/[0.02] border border-white/5 rounded-3xl">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8">
                     <div className="space-y-2">
-                      <label className="text-[9px] font-black uppercase tracking-[0.4em] text-white/30 ml-1">First_Name</label>
+                      <label className="text-[9px] font-black uppercase tracking-[0.4em] text-white/30 ml-1">First name</label>
                       <input
                         value={form.firstName}
                         onChange={handleChange('firstName')}
@@ -173,7 +173,7 @@ export default function ProfilePage() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <label className="text-[9px] font-black uppercase tracking-[0.4em] text-white/30 ml-1">Last_Name</label>
+                      <label className="text-[9px] font-black uppercase tracking-[0.4em] text-white/30 ml-1">Last name</label>
                       <input
                         value={form.lastName}
                         onChange={handleChange('lastName')}
@@ -184,7 +184,7 @@ export default function ProfilePage() {
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8">
                     <div className="space-y-2">
-                      <label className="text-[9px] font-black uppercase tracking-[0.4em] text-white/30 ml-1">Global_Username</label>
+                      <label className="text-[9px] font-black uppercase tracking-[0.4em] text-white/30 ml-1">Username</label>
                       <input
                         value={form.username}
                         onChange={handleChange('username')}
@@ -192,7 +192,7 @@ export default function ProfilePage() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <label className="text-[9px] font-black uppercase tracking-[0.4em] text-white/30 ml-1">Contact_Email</label>
+                      <label className="text-[9px] font-black uppercase tracking-[0.4em] text-white/30 ml-1">Email</label>
                       <input
                         value={form.email}
                         onChange={handleChange('email')}
@@ -204,7 +204,7 @@ export default function ProfilePage() {
 
                   <div className="space-y-2">
                     <label className="text-[9px] font-black uppercase tracking-[0.4em] text-white/30 ml-1">
-                      Security_Override {user.hasPassword ? '(Update_Key)' : '(Generate_Key)'}
+                      Password {user.hasPassword ? '(change)' : '(set)'}
                     </label>
                     <input
                       type="password"
@@ -232,14 +232,14 @@ export default function ProfilePage() {
                     disabled={saving}
                     className="w-full relative group py-5 bg-white text-black font-black uppercase tracking-[0.4em] text-[11px] overflow-hidden transition-all hover:bg-[#ff4d00] hover:text-white disabled:opacity-50"
                   >
-                    <span className="relative z-10">{saving ? 'Synchronizing...' : 'Update_Environment_Parameters'}</span>
+                    <span className="relative z-10">{saving ? 'Saving…' : 'Save profile'}</span>
                   </button>
                 </form>
               </div>
             ) : (
               <div className="p-8 sm:p-20 border border-white/5 bg-white/[0.01] rounded-3xl flex flex-col items-center justify-center space-y-4">
-                <p className="text-white/20 font-black uppercase tracking-[0.5em] text-xs">Profile_Not_Found</p>
-                <button onClick={() => router.refresh()} className="text-[10px] font-black uppercase tracking-widest text-[#ff4d00]">Retry_Sync</button>
+                <p className="text-white/20 font-black uppercase tracking-[0.5em] text-xs">Couldn&apos;t load profile</p>
+                <button onClick={() => router.refresh()} className="text-[10px] font-black uppercase tracking-widest text-[#ff4d00]">Try again</button>
               </div>
             )}
           </section>
@@ -247,16 +247,16 @@ export default function ProfilePage() {
           {/* Right Column: Cards & Actions */}
           <aside className="space-y-8">
             <div className="bg-[#0a0a0a] p-6 sm:p-8 border border-white/10 rounded-3xl space-y-6">
-              <p className="text-[10px] font-black uppercase tracking-[0.5em] text-white/30 italic">Linked_Protocols</p>
+              <p className="text-[10px] font-black uppercase tracking-[0.5em] text-white/30 italic">Sign-in methods</p>
               <div className="space-y-4">
                 <div className="flex items-center justify-between p-4 bg-white/[0.02] border border-white/5 rounded-2xl">
-                  <span className="text-[10px] font-black uppercase text-white/50 tracking-widest">Google_Auth</span>
+                  <span className="text-[10px] font-black uppercase text-white/50 tracking-widest">Google</span>
                   <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded ${user?.authProviderId ? 'bg-[#ffca3a]/10 text-[#ffca3a] border border-[#ffca3a]/20' : 'bg-white/5 text-white/20'}`}>
                     {user?.authProviderId ? 'Enabled' : 'Disconnected'}
                   </span>
                 </div>
                 <div className="flex items-center justify-between p-4 bg-white/[0.02] border border-white/5 rounded-2xl">
-                  <span className="text-[10px] font-black uppercase text-white/50 tracking-widest">Key_Auth</span>
+                  <span className="text-[10px] font-black uppercase text-white/50 tracking-widest">Password</span>
                   <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded ${user?.hasPassword ? 'bg-[#16a34a]/10 text-[#16a34a] border border-[#16a34a]/20' : 'bg-white/5 text-white/20'}`}>
                     {user?.hasPassword ? 'Active' : 'Unset'}
                   </span>
@@ -265,7 +265,7 @@ export default function ProfilePage() {
             </div>
 
             <div className="bg-white/[0.02] p-6 sm:p-8 border border-white/5 rounded-3xl space-y-6">
-              <p className="text-[10px] font-black uppercase tracking-[0.5em] text-white/30 italic">Account_Metrics</p>
+              <p className="text-[10px] font-black uppercase tracking-[0.5em] text-white/30 italic">Your library</p>
               <div className="grid grid-cols-2 gap-4">
                 <div className="p-5 bg-black border border-white/10 rounded-2xl flex flex-col items-center justify-center space-y-1">
                   <div className="text-3xl font-black italic text-[#ff4d00]">{user?._count.stories ?? 0}</div>
@@ -281,7 +281,7 @@ export default function ProfilePage() {
             <div className="flex flex-col gap-3">
               <Link href="/">
                 <button className="w-full py-4 sm:py-5 bg-white/[0.05] border border-white/10 text-white font-black uppercase tracking-[0.4em] text-[10px] hover:bg-white hover:text-black transition-all">
-                  Back_To_Nexus
+                  Back home
                 </button>
               </Link>
               <button 
@@ -291,7 +291,7 @@ export default function ProfilePage() {
                 }}
                 className="w-full py-4 sm:py-5 bg-[#ff4d00]/10 border border-[#ff4d00]/20 text-[#ff4d00] font-black uppercase tracking-[0.4em] text-[10px] hover:bg-[#ff4d00] hover:text-white transition-all"
               >
-                Terminate_Session
+                Log out
               </button>
             </div>
           </aside>

@@ -129,7 +129,7 @@ export function ProfessionalCanvas({ children, settings, isPreview }: Profession
               bottom: safePx 
             }}
           >
-             <div className="absolute top-1 left-2 text-[8px] text-blue-500/45 uppercase font-bold tracking-widest bg-blue-500/5 px-2 py-0.5 rounded">Safe_Zone_Active</div>
+             <div className="absolute top-1 left-2 text-[8px] text-blue-500/45 uppercase font-bold tracking-widest bg-blue-500/5 px-2 py-0.5 rounded">Bleed guides</div>
              {/* Technical crosshair in center of safe zone */}
              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-4 h-4 text-blue-500/10">
                 <div className="absolute top-1/2 inset-x-0 h-[1px] bg-blue-500/20" />
@@ -172,7 +172,7 @@ export function ProfessionalCanvas({ children, settings, isPreview }: Profession
                 markerEnd="url(#arrowhead)"
                 className="animate-[dash_20s_linear_infinite]"
              />
-             <text x={100} y={100} fill="var(--accent)" className="text-[10px] font-black italic tracking-widest uppercase">Visual_Entry_Sequence</text>
+             <text x={100} y={100} fill="var(--accent)" className="text-[10px] font-black italic tracking-widest uppercase">Bleed overlay</text>
           </svg>
         )}
 
@@ -181,20 +181,20 @@ export function ProfessionalCanvas({ children, settings, isPreview }: Profession
           <div className="absolute -bottom-20 left-0 flex justify-between w-full p-4 border-t border-black/5 bg-white/85 backdrop-blur-md rounded-b-3xl max-md:static max-md:mt-4 max-md:rounded-2xl max-md:flex-col max-md:gap-3">
              <div className="flex gap-8">
                 <div className="flex flex-col gap-1">
-                   <span className="text-[7px] text-black/20 font-black uppercase tracking-[0.2em]">Technical_Format</span>
+                   <span className="text-[7px] text-black/20 font-black uppercase tracking-[0.2em]">Trim size</span>
                    <span className="text-[10px] text-[var(--accent)] font-black italic">{format.label}{' // '}{format.width}x{format.height}MM</span>
                 </div>
                 <div className="flex flex-col border-l border-black/5 pl-8 gap-1">
-                   <span className="text-[7px] text-black/20 font-black uppercase tracking-[0.2em]">Foundry_Res</span>
+                   <span className="text-[7px] text-black/20 font-black uppercase tracking-[0.2em]">Working resolution</span>
                    <span className="text-[10px] text-black/60 font-black tracking-widest">{dpi} DPI // CMYK:FOUNDRY_PRO</span>
                 </div>
              </div>
              <div className="flex flex-col items-end gap-1">
                 <div className="flex items-center gap-2">
                    <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-                   <span className="text-[8px] font-black text-green-600 uppercase tracking-widest">Live_Calibration_OK</span>
+                   <span className="text-[8px] font-black text-green-600 uppercase tracking-widest">Guides aligned</span>
                 </div>
-                <span className="text-[7px] text-black/10 font-bold uppercase tracking-widest">Studio_Admin_Verified</span>
+                <span className="text-[7px] text-black/10 font-bold uppercase tracking-widest">Print preset</span>
              </div>
           </div>
         )}

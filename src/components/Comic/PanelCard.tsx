@@ -143,8 +143,8 @@ export function PanelCard({
              <Layout className="text-black/5 group-hover:text-[var(--accent)]/20 transition-all duration-700" size={48} />
              {isForge && (
                 <div className="flex flex-col items-center gap-1 opacity-20 group-hover:opacity-100 transition-all">
-                   <span className="text-[10px] font-black uppercase tracking-[0.4em] text-black">Grid_Phase_{index + 1}</span>
-                   <span className="text-[8px] font-bold text-black/40 uppercase tracking-widest">Awaiting_Forge_Input</span>
+                   <span className="text-[10px] font-black uppercase tracking-[0.4em] text-black">Panel {index + 1}</span>
+                   <span className="text-[8px] font-bold text-black/40 uppercase tracking-widest">Tap to describe</span>
                 </div>
              )}
           </div>
@@ -153,7 +153,7 @@ export function PanelCard({
         {panel.status === 'loading' && (
           <div className="absolute inset-0 bg-white/80 backdrop-blur-xl flex flex-col items-center justify-center gap-4 z-[100]">
              <div className="w-10 h-10 border-2 border-[var(--accent)]/20 border-t-[var(--accent)] rounded-full animate-spin shadow-[0_0_20px_rgba(255,77,0,0.3)]" />
-             <span className="text-[8px] font-black text-black uppercase tracking-[0.4em] animate-pulse">Forging_Art...</span>
+             <span className="text-[8px] font-black text-black uppercase tracking-[0.4em] animate-pulse">Drawing…</span>
           </div>
         )}
 

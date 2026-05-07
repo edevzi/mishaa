@@ -4,7 +4,7 @@ import { cookies } from 'next/headers';
 import { BooruSource, mapBooruDetail } from "@/lib/booru";
 import { buildMangaDexCoverUrl, pickMangaDexCoverFileName, appendMangaDexFilters, isMangaDexUuid, resolveMangaDexIdFromTitle, getCachedMangaDexIdResolution, cacheMangaDexIdResolution } from "@/lib/mangadex";
 import { resolveMangaDexLocalizedText, MangaLanguage, getMangaDexTranslatedLanguages, DEFAULT_MANGA_LANGUAGE } from "@/lib/manga-language";
-import { fetchAniListManga } from "@/lib/anilist";
+import { fetchAniListManga, type AniListMedia } from "@/lib/anilist";
 import { fetchJikanManga } from "@/lib/jikan";
 import { getSiteUrl } from "@/lib/site-url";
 import { AGE_VERIFICATION_COOKIE } from "@/lib/age-verification";
@@ -102,6 +102,8 @@ const LIMIT = 36;
 
 const nhentaiCache = new Map<string, { data: any, timestamp: number }>();
 const CACHE_TTL = 1000 * 60 * 60; // 1 hour server-side cache
+/** Bump when fetch/normalization changes so poisoned cache entries are not reused. */
+const NHENTAI_CACHE_KEY_REV = 2;
 const RESTRICTED_SOURCES = new Set(['nhentai', 'e621', 'danbooru', 'gelbooru', 'rule34']);
 
 const NHENTAI_HEADERS = {
@@ -163,6 +165,76 @@ const getNHentaiPageEntries = (
     .sort((left, right) => left.page - right.page);
 };
 
+/** Infer legacy single-letter image type from filename (matches resolveNHentaiImageExt). */
+const inferNHentaiTypeChar = (filePath: string) => {
+  const lower = (filePath || '').toLowerCase();
+  if (lower.endsWith('.webp')) return 'w';
+  if (lower.endsWith('.png')) return 'p';
+  if (lower.endsWith('.gif')) return 'g';
+  return 'j';
+};
+
+const isV2GalleryDetail = (data: unknown): data is Record<string, unknown> => {
+  if (!data || typeof data !== 'object' || Array.isArray(data)) return false;
+  const row = data as Record<string, unknown>;
+  return Array.isArray(row.pages) && !('images' in row);
+};
+
+const mapV2DetailToLegacy = (raw: Record<string, unknown>): NHentaiGallery | null => {
+  const pages = raw.pages as Array<{ number?: number; path?: string }> | undefined;
+  if (!pages?.length || raw.media_id == null || raw.id == null) return null;
+
+  return {
+    id: raw.id as number | string,
+    media_id: String(raw.media_id),
+    title: ((raw.title as NHentaiGallery['title']) || {}) as NHentaiGallery['title'],
+    tags: raw.tags as NHentaiGallery['tags'],
+    upload_date: raw.upload_date as number | undefined,
+    images: {
+      thumbnail: {
+        t: inferNHentaiTypeChar(String((raw.thumbnail as { path?: string } | undefined)?.path || '')),
+      },
+      cover: {
+        t: inferNHentaiTypeChar(String((raw.cover as { path?: string } | undefined)?.path || '')),
+      },
+      pages: [...pages]
+        .map((p) => ({
+          page: Number(p.number),
+          t: inferNHentaiTypeChar(String(p.path || '')),
+        }))
+        .filter((p) => Number.isFinite(p.page))
+        .sort((a, b) => a.page - b.page),
+    },
+  };
+};
+
+/**
+ * nHentai detail can be legacy ({ images: { pages } }) or API v2 ({ pages: [...] }).
+ * Reject payloads whose id does not match the URL (avoids wrong comic from HTML/proxy races).
+ */
+const coerceNHentaiGalleryPayload = (raw: unknown, expectedId: string): NHentaiGallery | null => {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
+  const row = raw as Record<string, unknown>;
+  if ('error' in row && row.error) return null;
+
+  let legacy: NHentaiGallery | null = null;
+  if (isV2GalleryDetail(raw)) {
+    legacy = mapV2DetailToLegacy(raw as Record<string, unknown>);
+  } else if ((raw as NHentaiGallery).images?.pages) {
+    legacy = raw as NHentaiGallery;
+  } else {
+    return null;
+  }
+
+  if (!legacy) return null;
+  if (String(legacy.id) !== String(expectedId)) {
+    console.warn(`[nHentai] Rejected gallery payload: expected id ${expectedId}, got ${legacy.id}`);
+    return null;
+  }
+  (legacy as { related?: unknown }).related = row.related;
+  return legacy;
+};
+
 async function fetchJsonThroughProxy(path: string, fallbackUrl?: string) {
   const proxyUrl = `${getSiteUrl()}/api/proxy/mangadex?path=${encodeURIComponent(path)}`;
   const endpoints = fallbackUrl ? [proxyUrl, fallbackUrl] : [proxyUrl];
@@ -214,45 +286,75 @@ export async function fetchNHentaiRaw(path: string) {
     return null;
   }
 
-  // Check server-side cache first
-  const cacheKey = `nhentai_${path}`;
+  const cacheKey = `nhentai_${NHENTAI_CACHE_KEY_REV}_${path}`;
   const cached = nhentaiCache.get(cacheKey);
   if (cached && (Date.now() - cached.timestamp < CACHE_TTL)) {
     console.log(`[nHentai] 🚀 Serving from Server Cache: ${path}`);
     return cached.data;
   }
 
-  const isGallery = path.includes('gallery/') && !path.includes('v2/');
-  const id = isGallery ? path.split('/').pop() : null;
+  const galleryPathMatch = path.match(/^gallery\/([^/?]+)$/);
+  const strictGalleryId = galleryPathMatch?.[1];
 
-  // 1. Parallel Launch: Try API and HTML Parsing across multiple mirrors
+  if (strictGalleryId) {
+    for (const mirror of ['nhentai.net', 'nhentai.xxx', 'nhentai.to']) {
+      try {
+        const url = `https://${mirror}/api/v2/galleries/${encodeURIComponent(strictGalleryId)}`;
+        const res = await fetch(url, {
+          headers: NHENTAI_HEADERS,
+          next: { revalidate: 3600 },
+          signal: AbortSignal.timeout(8000),
+        });
+        if (!res.ok) continue;
+        const raw = await res.json();
+        const normalized = coerceNHentaiGalleryPayload(raw, strictGalleryId);
+        if (normalized) {
+          nhentaiCache.set(cacheKey, { data: normalized, timestamp: Date.now() });
+          console.log(`[nHentai] ✅ v2/galleries OK from ${mirror}: ${strictGalleryId}`);
+          return normalized;
+        }
+      } catch {
+        continue;
+      }
+    }
+  }
+
+  const isGallery = path.includes('gallery/') && !path.includes('v2/');
+  const legacyGalleryId = isGallery ? path.split('/').pop() : null;
+
   const apiPaths = path.startsWith('v2/') ? [path, path.replace('v2/', '')] : [path, `v2/${path}`];
   const mirrors = ['nhentai.net', 'nhentai.xxx', 'nhentai.to'];
-  
+
   const fetchTasks: Promise<any>[] = [];
 
-  // Add API tasks for each mirror
   for (const mirror of mirrors) {
     for (const p of apiPaths) {
       const url = `https://${mirror}/api/${p}`;
       fetchTasks.push((async () => {
         try {
           const res = await fetch(url, { headers: NHENTAI_HEADERS, next: { revalidate: 3600 }, signal: AbortSignal.timeout(5000) });
-          if (res.ok) {
-            const data = await res.json();
-            console.log(`[nHentai] ✅ API Success from ${mirror}: ${p}`);
-            return data;
+          if (!res.ok) throw new Error('Failed');
+          const data = await res.json();
+          if (legacyGalleryId) {
+            const normalized = coerceNHentaiGalleryPayload(data, legacyGalleryId);
+            if (normalized) {
+              console.log(`[nHentai] ✅ API normalized from ${mirror}: ${p}`);
+              return normalized;
+            }
+            throw new Error('Failed');
           }
-          throw new Error("Failed");
-        } catch { throw new Error("Error"); }
+          console.log(`[nHentai] ✅ API Success from ${mirror}: ${p}`);
+          return data;
+        } catch {
+          throw new Error('Error');
+        }
       })());
     }
   }
 
-  // Add HTML Parsing tasks if it's a gallery
-  if (isGallery && id) {
+  if (isGallery && legacyGalleryId) {
     for (const mirror of ['nhentai.to', 'nhentai.xxx']) {
-      const gUrl = `https://${mirror}/g/${id}/`;
+      const gUrl = `https://${mirror}/g/${legacyGalleryId}/`;
       fetchTasks.push((async () => {
         try {
           const res = await fetch(gUrl, {
@@ -275,38 +377,44 @@ export async function fetchNHentaiRaw(path: string) {
 
           const raw = html.slice(objectStart, objectEnd);
           const parsed = JSON.parse(cleanTrailingCommas(raw));
-          console.log(`[nHentai] ✅ Gallery HTML parsed from ${mirror} for ID ${id}`);
-          return parsed;
+          const normalized = coerceNHentaiGalleryPayload(parsed, legacyGalleryId);
+          if (!normalized) throw new Error('Gallery id mismatch');
+          console.log(`[nHentai] ✅ Gallery HTML parsed from ${mirror} for ID ${legacyGalleryId}`);
+          return normalized;
         } catch {
-          throw new Error("Error");
+          throw new Error('Error');
         }
       })());
     }
   }
 
-  // Fallback Proxies
   const fallbackProxies = [
     `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(`https://nhentai.net/api/${path}`)}`,
-    `https://corsproxy.io/?${encodeURIComponent(`https://nhentai.net/api/${path}`)}`
+    `https://corsproxy.io/?${encodeURIComponent(`https://nhentai.net/api/${path}`)}`,
   ];
   for (const p of fallbackProxies) {
     fetchTasks.push((async () => {
       try {
         const res = await fetch(p, { next: { revalidate: 3600 }, signal: AbortSignal.timeout(8000) });
-        if (res.ok) {
-           const text = await res.text();
-           const data = JSON.parse(text);
-           console.log(`[nHentai] ✅ Proxy Success for ${path}`);
-           return data;
+        if (!res.ok) throw new Error('Failed');
+        const text = await res.text();
+        const data = JSON.parse(text);
+        if (legacyGalleryId) {
+          const normalized = coerceNHentaiGalleryPayload(data, legacyGalleryId);
+          if (!normalized) throw new Error('Failed');
+          console.log(`[nHentai] ✅ Proxy Success (normalized) for ${path}`);
+          return normalized;
         }
-        throw new Error("Failed");
-      } catch { throw new Error("Error"); }
+        console.log(`[nHentai] ✅ Proxy Success for ${path}`);
+        return data;
+      } catch {
+        throw new Error('Error');
+      }
     })());
   }
 
   try {
     const result = await Promise.any(fetchTasks);
-    // Save to server-side cache
     nhentaiCache.set(cacheKey, { data: result, timestamp: Date.now() });
     return result;
   } catch (e) {
@@ -332,6 +440,113 @@ async function searchNHentai(query: string, page: number) {
     path = `v2/search?query=${encodeURIComponent(cleanQuery)}&page=${page + 1}`;
   }
   return fetchNHentaiRaw(path);
+}
+
+type MangaDexRelatedItem = {
+  id: string;
+  title: string;
+  coverUrl: string;
+  source: 'mangadex';
+  rating: string;
+};
+
+const MANGADEX_UUID_IN_TEXT = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i;
+
+function extractMangaDexUuidFromExternalLinks(
+  links: Array<{ url?: string | null }> | undefined | null,
+): string | null {
+  if (!links?.length) return null;
+  for (const link of links) {
+    const u = link.url || '';
+    const m = u.match(MANGADEX_UUID_IN_TEXT);
+    if (m) return m[0];
+  }
+  return null;
+}
+
+async function buildMangaDexRelatedRails(
+  manga: {
+    id: string;
+    attributes: {
+      tags: Array<{ id: string; attributes?: { group?: string; name?: Record<string, string> } }>;
+      contentRating?: string | null;
+    };
+  },
+  aniListData: AniListMedia | null,
+  mangaLanguage: MangaLanguage,
+): Promise<MangaDexRelatedItem[]> {
+  const currentId = manga.id;
+  const seen = new Set<string>([currentId]);
+  const out: MangaDexRelatedItem[] = [];
+
+  const push = (item: MangaDexRelatedItem | null) => {
+    if (!item || seen.has(item.id)) return;
+    seen.add(item.id);
+    out.push(item);
+  };
+
+  const nodes = aniListData?.recommendations?.nodes;
+  if (Array.isArray(nodes)) {
+    const batch = await Promise.all(
+      nodes.map(async (n) => {
+        const rec = n?.mediaRecommendation;
+        if (!rec || rec.type !== 'MANGA') return null;
+        const aniTitle = rec.title?.userPreferred || rec.title?.english || '';
+        const fromLink = extractMangaDexUuidFromExternalLinks(rec.externalLinks);
+        let mdId = fromLink;
+        if (!mdId && aniTitle) {
+          mdId = (await resolveMangaDexIdFromTitle(aniTitle)) || null;
+        }
+        if (!mdId || mdId === currentId) return null;
+        if (typeof rec.id === 'number') {
+          cacheMangaDexIdResolution(String(rec.id), mdId);
+        }
+        return {
+          id: mdId,
+          title: aniTitle || 'Untitled',
+          coverUrl: rec.coverImage?.extraLarge || rec.coverImage?.large || '/logo.png',
+          source: 'mangadex' as const,
+          rating: 'Safe',
+        };
+      }),
+    );
+    batch.forEach((x) => push(x));
+  }
+
+  const ratingsList: string[] = ['safe', 'suggestive', 'erotica', 'pornographic'];
+
+  if (out.length < 8) {
+    const tagIds = (manga.attributes.tags || [])
+      .filter((t) => {
+        const g = t.attributes?.group;
+        return g === 'genre' || g === 'theme';
+      })
+      .map((t) => t.id)
+      .filter(Boolean);
+
+    for (const tagId of tagIds.slice(0, 4)) {
+      if (out.length >= 12) break;
+      const res = await searchComics({
+        source: 'mangadex',
+        page: 0,
+        mangaLanguage,
+        includedTagIds: [tagId],
+        ratings: ratingsList,
+      });
+      for (const item of res.items) {
+        push({
+          id: item.id,
+          title: item.title,
+          coverUrl: item.coverUrl || '/logo.png',
+          source: 'mangadex',
+          rating: item.rating,
+        });
+        if (out.length >= 12) break;
+      }
+    }
+  }
+
+  return out.slice(0, 12);
 }
 
 
@@ -424,18 +639,7 @@ export async function getComicDetails(source: string, id: string, mangaLanguage:
       const aniListData = manga.attributes.links?.al
         ? await fetchAniListManga(manga.attributes.links.al)
         : null;
-      const related = Array.isArray(aniListData?.recommendations?.nodes)
-        ? aniListData.recommendations.nodes
-            .map((n: any) => n.mediaRecommendation)
-            .filter((r: any) => r && r.type === 'MANGA')
-            .map((r: any) => ({
-              id: r.id.toString(),
-              title: r.title.userPreferred || r.title.english || 'Untitled',
-              coverUrl: r.coverImage.large,
-              source: 'mangadex' as const,
-              rating: 'Safe',
-            }))
-        : [];
+      const related = await buildMangaDexRelatedRails(manga, aniListData, mangaLanguage);
 
       if (manga.attributes.links?.al) {
         cacheMangaDexIdResolution(String(manga.attributes.links.al), manga.id);
@@ -445,7 +649,7 @@ export async function getComicDetails(source: string, id: string, mangaLanguage:
         id: manga.id,
         title: title || Object.values(manga.attributes.title || {})[0] as string,
         description: description || "No description available.",
-        coverUrl: coverFileName ? buildMangaDexCoverUrl(manga.id, coverFileName) : '/logo.png',
+        coverUrl: coverFileName ? buildMangaDexCoverUrl(manga.id, coverFileName, 'original') : '/logo.png',
         rating: manga.attributes.contentRating,
         genres: genres.length > 0 ? genres : manga.attributes.tags.map((t: MangaDexTag) => t.attributes.name.en),
         status: manga.attributes.status,
@@ -469,7 +673,7 @@ export async function getComicDetails(source: string, id: string, mangaLanguage:
 
       // Extract related comics if they exist
       const related = (data as any).related || [];
-      
+
       return {
         id: data.id.toString(),
         title: data.title?.english || data.title?.japanese || "Untitled",
@@ -484,13 +688,23 @@ export async function getComicDetails(source: string, id: string, mangaLanguage:
         year: data.upload_date ? new Date(data.upload_date * 1000).getFullYear().toString() : undefined,
         author: data.tags?.find((t: NHentaiTag) => t.type === 'artist')?.name || 'Unknown',
         source: 'nhentai' as const,
-        related: related.map((r: any) => ({
-          id: r.id.toString(),
-          title: r.title.english || r.title.japanese || "Untitled",
-          coverUrl: `/api/proxy/nhentai/image?path=galleries/${r.media_id}/thumb.${resolveNHentaiImageExt(r.images.thumbnail.t)}`,
-          source: 'nhentai' as const,
-          rating: 'pornographic'
-        }))
+        related: related.map((r: any) => {
+          const relTitle =
+            r.title?.english || r.title?.japanese || r.english_title || r.japanese_title || "Untitled";
+          let relCover = '/logo.png';
+          if (r.images?.thumbnail?.t) {
+            relCover = `/api/proxy/nhentai/image?path=galleries/${r.media_id}/thumb.${resolveNHentaiImageExt(r.images.thumbnail.t)}`;
+          } else if (typeof r.thumbnail === 'string' && r.thumbnail) {
+            relCover = `/api/proxy/nhentai/image?path=${encodeURIComponent(r.thumbnail)}`;
+          }
+          return {
+            id: r.id.toString(),
+            title: relTitle,
+            coverUrl: relCover,
+            source: 'nhentai' as const,
+            rating: 'pornographic',
+          };
+        }),
       };
     }
 
@@ -770,37 +984,51 @@ export async function searchComics(params: {
     }
 
     if (source === 'mangadex') {
-      const searchParams = new URLSearchParams();
-      searchParams.set('limit', LIMIT.toString());
-      searchParams.set('offset', String(page * LIMIT));
-      searchParams.append('includes[]', 'cover_art');
-      
       const translatedLanguages = getMangaDexTranslatedLanguages(mangaLanguage);
       const mdxRatings = ratings || ['safe', 'suggestive'];
-      
-      appendMangaDexFilters(searchParams, {
-        contentRatings: mdxRatings,
-        includedTagIds,
-        excludedTagIds,
-        originalLanguages,
-        translatedLanguages: translatedLanguages
-      });
 
-      if (query.trim().length >= 2) {
-        searchParams.set('title', query.trim());
-        searchParams.set('order[relevance]', 'desc');
-      } else {
-        searchParams.set('order[followedCount]', 'desc');
+      const buildMangaDexSearchParams = (langs: string[] | undefined) => {
+        const searchParams = new URLSearchParams();
+        searchParams.set('limit', LIMIT.toString());
+        searchParams.set('offset', String(page * LIMIT));
+        searchParams.append('includes[]', 'cover_art');
+        appendMangaDexFilters(searchParams, {
+          contentRatings: mdxRatings,
+          includedTagIds,
+          excludedTagIds,
+          originalLanguages,
+          translatedLanguages: langs,
+        });
+        if (query.trim().length >= 2) {
+          searchParams.set('title', query.trim());
+          searchParams.set('order[relevance]', 'desc');
+        } else {
+          searchParams.set('order[followedCount]', 'desc');
+        }
+        return searchParams;
+      };
+
+      let params = buildMangaDexSearchParams(translatedLanguages);
+      let data = await fetchJsonThroughProxy(
+        `manga?${params.toString()}`,
+        `https://api.mangadex.org/manga?${params.toString()}`
+      );
+      let rows = data.data || [];
+
+      // Match home-data: if the translation filter yields no hits, retry without it (niche tags × lang often empty).
+      if (rows.length === 0 && translatedLanguages !== undefined) {
+        params = buildMangaDexSearchParams(undefined);
+        data = await fetchJsonThroughProxy(
+          `manga?${params.toString()}`,
+          `https://api.mangadex.org/manga?${params.toString()}`
+        );
+        rows = data.data || [];
       }
 
-      const data = await fetchJsonThroughProxy(
-        `manga?${searchParams.toString()}`,
-        `https://api.mangadex.org/manga?${searchParams.toString()}`
-      );
-      const items = data.data || [];
+      const total = typeof data.total === 'number' ? data.total : 0;
 
       return {
-        items: items.map((item: { id: string; attributes: { title: Record<string, string>; description: Record<string, string>; contentRating: string }; relationships: { type: string; attributes?: { fileName?: string; volume?: string | null; createdAt?: string } }[] }) => {
+        items: rows.map((item: { id: string; attributes: { title: Record<string, string>; description: Record<string, string>; contentRating: string }; relationships: { type: string; attributes?: { fileName?: string; volume?: string | null; createdAt?: string } }[] }) => {
           const coverFileName = pickMangaDexCoverFileName(item.relationships);
           return {
             id: item.id,
@@ -811,7 +1039,7 @@ export async function searchComics(params: {
             rating: item.attributes.contentRating
           };
         }),
-        hasMore: (page + 1) * LIMIT < data.total
+        hasMore: (page + 1) * LIMIT < total
       };
     }
 
@@ -852,9 +1080,11 @@ export async function searchComics(params: {
         
         // Background Prefetch first 10 items
         results.slice(0, 10).forEach((item: any) => {
-          const id = (item.id || item.gallery_id || "").toString();
-          if (id && !nhentaiCache.has(`nhentai_gallery/${id}`)) {
-             fetchNHentaiRaw(`gallery/${id}`).catch(() => {});
+          const gid = (item.id ?? item.gallery_id)?.toString?.() || '';
+          const gpath = gid ? `gallery/${gid}` : '';
+          const prefetchKey = gpath ? `nhentai_${NHENTAI_CACHE_KEY_REV}_${gpath}` : '';
+          if (gid && prefetchKey && !nhentaiCache.has(prefetchKey)) {
+             fetchNHentaiRaw(gpath).catch(() => {});
           }
         });
       }

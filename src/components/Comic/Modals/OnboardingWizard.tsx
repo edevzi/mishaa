@@ -17,37 +17,43 @@ export function OnboardingWizard({ isOpen, onClose, onStartCharacter, onStartPag
 
   const steps = [
     {
-      title: "Welcome to The Foundry",
-      subtitle: "XUSH KELIBSIZ! / ДОБРО ПОЖАЛОВАТЬ!",
-      desc: "This is a professional-grade comic creation engine. Let's get you oriented so you can start forging your legacy.",
+      title: 'Welcome to the comic studio',
+      subtitle: 'XUSH KELIBSIZ! / ДОБРО ПОЖАЛОВАТЬ!',
+      desc: 'This workspace helps you sketch pages and characters—no terminal jargon required. Take a minute to see where everything lives.',
       icon: Sparkles,
       action: () => setStep(1),
-      btnText: "Initialize Tour"
+      btnText: 'Start tour',
     },
     {
-      title: "1. Registry & Casting",
-      subtitle: "QAHRAMONLAR / ПЕРСОНАЖИ",
-      desc: "Every great story starts with a hero. Use the 'Character Library' to create your own characters or import iconic legends from the 'Marvel Archives'.",
+      title: '1. Characters',
+      subtitle: 'QAHRAMONLAR / ПЕРСОНАЖИ',
+      desc: 'Add heroes and villains from the character library—or import legends from Marvel and other catalogs—so panels always star the same cast.',
       icon: UserPlus,
-      action: () => { onStartCharacter(); setStep(2); },
-      btnText: "Open Character Forge"
+      action: () => {
+        onStartCharacter();
+        setStep(2);
+      },
+      btnText: 'Open character builder',
     },
     {
-      title: "2. The Artboard Grid",
-      subtitle: "SAHIFA / СТРАНИЦА",
-      desc: "Your canvas is infinite. Add pages using the Artboard tool, and panels will be automatically arranged in a cinematic grid.",
+      title: '2. Pages & layouts',
+      subtitle: 'SAHIFA / СТРАНИЦА',
+      desc: 'Add pages on the artboard; panels arrange in rows so reading order stays obvious on every screen.',
       icon: BookOpen,
-      action: () => { onStartPage(); setStep(3); },
-      btnText: "Create First Page"
+      action: () => {
+        onStartPage();
+        setStep(3);
+      },
+      btnText: 'Add first page',
     },
     {
-      title: "3. Neural Synthesis",
-      subtitle: "YARATISH / ГЕНЕРАЦИЯ",
-      desc: "Select a panel and describe your vision. Our 'Neural Forge' will translate your narrative into high-fidelity noir ink.",
+      title: '3. Panel art',
+      subtitle: 'YARATISH / ГЕНЕРАЦИЯ',
+      desc: 'Click a panel, describe the shot, and let the generator turn your script beat into usable comic art.',
       icon: Zap,
       action: () => onClose(),
-      btnText: "Start Creating"
-    }
+      btnText: 'Start creating',
+    },
   ];
 
   const current = steps[step];
@@ -82,7 +88,7 @@ export function OnboardingWizard({ isOpen, onClose, onStartCharacter, onStartPag
                 <div className="space-y-4">
                   <div className="inline-flex items-center gap-3 px-4 py-1.5 bg-black text-white text-[10px] font-black uppercase tracking-widest">
                     <current.icon size={14} />
-                    <span>System_Onboarding_v1.0</span>
+                    <span>Quick tour</span>
                   </div>
                   <h2 className="text-5xl font-accent uppercase leading-none tracking-tighter text-black">{current.title}</h2>
                   <p className="text-[10px] font-bold text-[var(--accent)] uppercase tracking-[0.5em]">{current.subtitle}</p>
@@ -117,7 +123,7 @@ export function OnboardingWizard({ isOpen, onClose, onStartCharacter, onStartPag
 
             {/* Aesthetic Tech Overlay */}
             <div className="absolute bottom-4 left-4 text-[7px] font-black text-black/10 uppercase tracking-widest pointer-events-none">
-              Foundry_Secure_Initialization_Protocol // User_Assistance_Active
+              Guided tour · tips as you build
             </div>
           </motion.div>
         </div>

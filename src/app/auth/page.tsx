@@ -235,7 +235,7 @@ function AuthPageContent() {
 
             {error && (
               <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} className="p-4 bg-red-500/10 border border-red-500/30 text-red-400 text-[11px] font-black uppercase tracking-widest rounded-xl text-center">
-                System_Error: {error}
+                Error: {error}
               </motion.div>
             )}
 
@@ -244,13 +244,13 @@ function AuthPageContent() {
               disabled={loading}
               className="w-full py-4 rounded-xl bg-white text-black text-[11px] font-black uppercase tracking-[0.2em] shadow-[0_0_30px_rgba(255,255,255,0.1)] hover:shadow-[0_0_30px_rgba(255,90,31,0.3)] hover:bg-[#ff5a1f] hover:text-white transition-all transform active:scale-[0.98] disabled:opacity-50"
             >
-              {loading ? 'Authenticating...' : (mode === 'login' ? 'Establish Connection' : 'Initialize Account')}
+              {loading ? 'Signing in…' : (mode === 'login' ? 'Sign in' : 'Create account')}
             </button>
 
             <div className="relative py-4">
                <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-white/10"></div></div>
                <div className="relative flex justify-center text-[8px] font-black uppercase tracking-[0.4em] text-white/20">
-                 <span className="bg-[#0b0c10] px-3">Protocol Security Active</span>
+                 <span className="bg-[#0b0c10] px-3">Secured connection</span>
                </div>
             </div>
 

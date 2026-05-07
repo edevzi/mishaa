@@ -117,6 +117,77 @@ const READER_THEMES: Record<ReaderTheme, {
   },
 };
 
+const preloadImageUrl = (src: string) =>
+  new Promise<void>((resolve) => {
+    if (!src) {
+      resolve();
+      return;
+    }
+    const img = new window.Image();
+    img.onload = () => resolve();
+    img.onerror = () => resolve();
+    img.src = src;
+  });
+
+/** Indices that must be decoded before we hide the page spinner. */
+const getReaderVisibleIndices = (
+  viewMode: 'classic' | 'flow' | 'journal',
+  isSpreadCover: boolean,
+  currentPage: number,
+  total: number,
+): number[] => {
+  if (total <= 0 || viewMode === 'flow') return [];
+  if (viewMode === 'classic') {
+    return currentPage >= 0 && currentPage < total ? [currentPage] : [];
+  }
+  if (currentPage === 0 && isSpreadCover) {
+    return [0].filter((i) => i < total);
+  }
+  return [currentPage, currentPage + 1].filter((i) => i >= 0 && i < total);
+};
+
+/**
+ * Next pages to warm the HTTP cache while the user reads the current spread.
+ * Classic: following single pages + one back step for prev navigation.
+ * Journal: next double-page spreads (step 2) after the current pair.
+ */
+const getReaderLookaheadIndices = (
+  viewMode: 'classic' | 'flow' | 'journal',
+  isSpreadCover: boolean,
+  currentPage: number,
+  total: number,
+  visible: number[],
+): number[] => {
+  if (total <= 0 || viewMode === 'flow') return [];
+
+  const visibleSet = new Set(visible);
+  const pushRange = (indices: number[]) =>
+    indices.filter((i) => i >= 0 && i < total && !visibleSet.has(i));
+
+  if (viewMode === 'classic') {
+    return [...new Set(pushRange([currentPage + 1, currentPage + 2, currentPage + 3, currentPage - 1]))];
+  }
+
+  if (currentPage === 0 && isSpreadCover) {
+    return [...new Set(pushRange([1, 2, 3, 4, 5, 6]))];
+  }
+
+  const step = 2;
+  const nextStart = currentPage + step;
+  return [
+    ...new Set(
+      pushRange([
+        nextStart,
+        nextStart + 1,
+        nextStart + step,
+        nextStart + step + 1,
+        nextStart + step * 2,
+        nextStart + step * 2 + 1,
+      ]),
+    ),
+  ];
+};
+
 export default function ComicReaderClient({ initialComic, initialChapters, source, id, chapterId, initialAgeVerified = false }: ComicReaderClientProps) {
   const router = useRouter();
   
@@ -406,16 +477,13 @@ export default function ComicReaderClient({ initialComic, initialChapters, sourc
     setScrolled(false);
     setScrollProgress(0);
     setReaderLoading(true);
-    
-    const minDelay = new Promise(resolve => setTimeout(resolve, 600));
 
     try {
       const chapterPages = await ensureChapterPages(chapter);
-      await minDelay;
       setPages(chapterPages);
       setPageReady(false);
       preloadNeighborChapters(idx);
-      
+
       // Update URL when changing chapter
       if (chapter.id !== chapterId) {
         window.history.replaceState(null, '', `/library/${source}/${id}/read/${chapter.id}`);
@@ -435,34 +503,39 @@ export default function ComicReaderClient({ initialComic, initialChapters, sourc
       return;
     }
 
-    const targetIndexes = viewMode === 'journal' && isSpreadCover && currentPage === 0
-      ? [0]
-      : [currentPage, ...(viewMode === 'journal' ? [currentPage + 1] : [])].filter((idx) => idx < pages.length);
+    const visible = getReaderVisibleIndices(viewMode, isSpreadCover, currentPage, pages.length);
 
     let cancelled = false;
     setPageReady(false);
 
-    const preload = async () => {
-      await Promise.all(
-        targetIndexes.map((idx) => new Promise<void>((resolve) => {
-          const image = new window.Image();
-          image.onload = () => resolve();
-          image.onerror = () => resolve();
-          image.src = pages[idx];
-        }))
-      );
-
+    void (async () => {
+      await Promise.all(visible.map((idx) => preloadImageUrl(pages[idx])));
       if (!cancelled) {
         setPageReady(true);
       }
-    };
-
-    void preload();
+    })();
 
     return () => {
       cancelled = true;
     };
   }, [pages, currentPage, viewMode, isSpreadCover]);
+
+  useEffect(() => {
+    if (viewMode === 'flow' || pages.length === 0) return;
+
+    const visible = getReaderVisibleIndices(viewMode, isSpreadCover, currentPage, pages.length);
+    const lookahead = getReaderLookaheadIndices(viewMode, isSpreadCover, currentPage, pages.length, visible);
+    if (lookahead.length === 0) return;
+
+    void Promise.all(lookahead.map((idx) => preloadImageUrl(pages[idx])));
+  }, [pages, currentPage, viewMode, isSpreadCover]);
+
+  /** Vertical scroll mode: warm the first strip of pages so early scroll is instant. */
+  useEffect(() => {
+    if (viewMode !== 'flow' || pages.length === 0) return;
+    const head = pages.slice(0, Math.min(16, pages.length));
+    void Promise.all(head.map((url) => preloadImageUrl(url)));
+  }, [viewMode, pages]);
 
   useEffect(() => {
     if (savedPageIndex === null || pages.length === 0) return;
@@ -677,19 +750,78 @@ export default function ComicReaderClient({ initialComic, initialChapters, sourc
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'ArrowLeft') handlePrevPage();
+      const target = e.target;
+      if (
+        target instanceof HTMLElement &&
+        target.closest('input, textarea, select, [contenteditable="true"]')
+      ) {
+        return;
+      }
+
+      const flow = viewMode === 'flow';
+
+      const mediaNext =
+        e.code === 'MediaTrackNext' || e.key === 'MediaTrackNext';
+      const mediaPrev =
+        e.code === 'MediaTrackPrevious' || e.key === 'MediaTrackPrevious';
+
+      // Laptop hardware / OS media keys (often not ArrowLeft/ArrowRight)
+      if (mediaNext) {
+        e.preventDefault();
+        if (flow) {
+          canvasRef.current?.scrollBy({ top: window.innerHeight * 0.8, behavior: 'smooth' });
+        } else {
+          handleNextPage();
+        }
+        return;
+      }
+      if (mediaPrev) {
+        e.preventDefault();
+        if (flow) {
+          canvasRef.current?.scrollBy({ top: -window.innerHeight * 0.8, behavior: 'smooth' });
+        } else {
+          handlePrevPage();
+        }
+        return;
+      }
+
+      // Match left/right tap zones: LTR vs RTL
+      if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        readingDirection === 'ltr' ? handlePrevPage() : handleNextPage();
+        return;
+      }
       if (e.key === 'ArrowRight' || e.key === ' ') {
-         handleNextPage();
-         if (e.key === ' ') e.preventDefault();
+        e.preventDefault();
+        readingDirection === 'ltr' ? handleNextPage() : handlePrevPage();
+        return;
       }
-      if (e.key === 'ArrowDown' || e.key === 'PageDown') {
-        canvasRef.current?.scrollBy({ top: window.innerHeight * 0.8, behavior: 'smooth' });
-        if (e.key === 'PageDown') e.preventDefault();
+
+      if (!flow) {
+        // Classic / journal: vertical keys & page keys change the page (canvas often has nothing to scroll)
+        if (e.key === 'ArrowDown' || e.key === 'PageDown') {
+          e.preventDefault();
+          handleNextPage();
+          return;
+        }
+        if (e.key === 'ArrowUp' || e.key === 'PageUp') {
+          e.preventDefault();
+          handlePrevPage();
+          return;
+        }
+      } else {
+        if (e.key === 'ArrowDown' || e.key === 'PageDown') {
+          canvasRef.current?.scrollBy({ top: window.innerHeight * 0.8, behavior: 'smooth' });
+          if (e.key === 'PageDown') e.preventDefault();
+          return;
+        }
+        if (e.key === 'ArrowUp' || e.key === 'PageUp') {
+          canvasRef.current?.scrollBy({ top: -window.innerHeight * 0.8, behavior: 'smooth' });
+          if (e.key === 'PageUp') e.preventDefault();
+          return;
+        }
       }
-      if (e.key === 'ArrowUp' || e.key === 'PageUp') {
-        canvasRef.current?.scrollBy({ top: -window.innerHeight * 0.8, behavior: 'smooth' });
-        if (e.key === 'PageUp') e.preventDefault();
-      }
+
       if (e.key === 'Home') {
         setCurrentPage(0);
         canvasRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
@@ -704,9 +836,18 @@ export default function ComicReaderClient({ initialComic, initialChapters, sourc
         else document.exitFullscreen();
       }
     };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [currentPage, pages.length, viewMode, currentChapterIdx, isSpreadCover, handleNextPage, handlePrevPage, router, source, id]);
+    window.addEventListener('keydown', handleKeyDown, true);
+    return () => window.removeEventListener('keydown', handleKeyDown, true);
+  }, [
+    pages.length,
+    viewMode,
+    readingDirection,
+    handleNextPage,
+    handlePrevPage,
+    router,
+    source,
+    id,
+  ]);
 
   if (restrictedSource && !isAgeVerified) {
     return (
@@ -731,7 +872,7 @@ export default function ComicReaderClient({ initialComic, initialChapters, sourc
       <div className="min-h-screen bg-[#020202] flex items-center justify-center">
         <div className="flex flex-col items-center gap-6">
           <Loader2 className="w-12 h-12 text-[#ff4d00] animate-spin" />
-          <div className="text-[10px] font-bold uppercase tracking-[0.5em] text-white/20">Preparing_Narrative...</div>
+          <div className="text-[10px] font-bold uppercase tracking-[0.5em] text-white/20">Loading comic...</div>
         </div>
       </div>
     );
@@ -795,9 +936,9 @@ export default function ComicReaderClient({ initialComic, initialChapters, sourc
                  />
               </div>
               <div className="text-center relative z-10 space-y-2">
-                <div className="text-[12px] font-bold uppercase tracking-[1.2em] text-white pl-[1.2em]">Live_Session</div>
+                <div className="text-[12px] font-bold uppercase tracking-[1.2em] text-white pl-[1.2em]">Opening chapter...</div>
                 <div className="text-[9px] font-bold uppercase tracking-[0.6em] text-[#ff4d00]/50">
-                   Unit_{chapters[currentChapterIdx]?.chapterNum || '00'}
+                   Ch.{chapters[currentChapterIdx]?.chapterNum || '–'}
                 </div>
               </div>
             </motion.div>
@@ -839,7 +980,7 @@ export default function ComicReaderClient({ initialComic, initialChapters, sourc
                 <div className="w-12 h-1.5 bg-white/20 rounded-full mx-auto mb-2" />
                 <div className="flex items-center justify-between border-b border-white/10 pb-4">
                   <div className="flex-1 min-w-0 pr-4">
-                    <div className="text-[10px] font-bold uppercase tracking-[0.4em] text-[#ff4d00]">Active_View</div>
+                    <div className="text-[10px] font-bold uppercase tracking-[0.4em] text-[#ff4d00]">Now reading</div>
                     <div className="text-[14px] md:text-[18px] font-black uppercase tracking-tight truncate text-white">{comic.title}</div>
                   </div>
                   <button 
@@ -952,7 +1093,7 @@ export default function ComicReaderClient({ initialComic, initialChapters, sourc
               >
                 <div className="flex items-center justify-between">
                   <div>
-                    <div className="text-[10px] font-black uppercase tracking-[0.4em]" style={{ color: READER_THEMES[readerTheme].accent }}>Reader_Config</div>
+                    <div className="text-[10px] font-black uppercase tracking-[0.4em]" style={{ color: READER_THEMES[readerTheme].accent }}>Reader</div>
                     <h3 className="mt-1 text-2xl font-black uppercase tracking-tight italic">Reader Settings</h3>
                   </div>
                   <button
@@ -1040,6 +1181,27 @@ export default function ComicReaderClient({ initialComic, initialChapters, sourc
                     </div>
                   </div>
 
+                  {/* Page overview (thumbnail grid) */}
+                  <div className="space-y-4">
+                    <div className="text-[10px] font-black uppercase tracking-[0.2em]" style={{ color: READER_THEMES[readerTheme].muted }}>Page Overview</div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowSettings(false);
+                        setShowGrid(true);
+                      }}
+                      className="w-full py-4 border text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2"
+                      style={{
+                        borderColor: READER_THEMES[readerTheme].border,
+                        backgroundColor: READER_THEMES[readerTheme].panelAltBg,
+                        color: READER_THEMES[readerTheme].text,
+                      }}
+                    >
+                      <List size={16} />
+                      All pages (thumbnails)
+                    </button>
+                  </div>
+
                   {/* Fullscreen */}
                   <div className="space-y-4">
                     <div className="text-[10px] font-black uppercase tracking-[0.2em]" style={{ color: READER_THEMES[readerTheme].muted }}>Fullscreen</div>
@@ -1099,11 +1261,11 @@ export default function ComicReaderClient({ initialComic, initialChapters, sourc
                    <ExternalLink size={48} className="relative z-10" style={{ color: READER_THEMES[readerTheme].accent }} />
                 </div>
                 <div className="space-y-4">
-                   <div className="text-[12px] font-black uppercase tracking-[0.5em]" style={{ color: READER_THEMES[readerTheme].accent }}>External_Source_Required</div>
-                   <h2 className="text-xl md:text-2xl font-black uppercase tracking-tight" style={{ color: READER_THEMES[readerTheme].text }}>Official_Source_Access</h2>
+                   <div className="text-[12px] font-black uppercase tracking-[0.5em]" style={{ color: READER_THEMES[readerTheme].accent }}>Official reader only</div>
+                   <h2 className="text-xl md:text-2xl font-black uppercase tracking-tight" style={{ color: READER_THEMES[readerTheme].text }}>Read this chapter on the publisher&apos;s site</h2>
                    <p className="text-sm leading-relaxed" style={{ color: READER_THEMES[readerTheme].muted }}>
-                      This chapter is hosted on an <b>official external platform</b> (MangaPlus/Viz). 
-                      MangaDex does not provide direct image assets for this specific unit to protect official licensing.
+                      This chapter is hosted on an <b>official platform</b> (for example MANGA Plus or VIZ).
+                      Images are not available here so that publisher rights stay protected.
                    </p>
                 </div>
                 {chapters[currentChapterIdx]?.externalUrl && (
@@ -1114,12 +1276,12 @@ export default function ComicReaderClient({ initialComic, initialChapters, sourc
                     className="inline-flex items-center gap-4 px-10 py-5 text-[12px] font-black uppercase tracking-[0.2em] rounded-2xl hover:scale-105 active:scale-95 transition-all"
                     style={{ backgroundColor: READER_THEMES[readerTheme].accent, color: '#fff', boxShadow: `0 20px 40px ${READER_THEMES[readerTheme].accentSoft}` }}
                   >
-                    <ExternalLink size={20} /> Open_Official_Archive
+                    <ExternalLink size={20} /> Open official reader
                   </a>
                 )}
                 <div className="pt-10 flex gap-4">
-                   <button onClick={prevChapter} disabled={currentChapterIdx === 0} className="px-6 py-3 border text-[10px] font-black uppercase tracking-widest disabled:opacity-0 transition-all" style={{ borderColor: READER_THEMES[readerTheme].border, color: READER_THEMES[readerTheme].muted }}>Prev_Unit</button>
-                   <button onClick={nextChapter} disabled={currentChapterIdx === chapters.length - 1} className="px-6 py-3 border text-[10px] font-black uppercase tracking-widest disabled:opacity-0 transition-all" style={{ borderColor: READER_THEMES[readerTheme].border, color: READER_THEMES[readerTheme].muted }}>Next_Unit</button>
+                   <button onClick={prevChapter} disabled={currentChapterIdx === 0} className="px-6 py-3 border text-[10px] font-black uppercase tracking-widest disabled:opacity-0 transition-all" style={{ borderColor: READER_THEMES[readerTheme].border, color: READER_THEMES[readerTheme].muted }}>Previous chapter</button>
+                   <button onClick={nextChapter} disabled={currentChapterIdx === chapters.length - 1} className="px-6 py-3 border text-[10px] font-black uppercase tracking-widest disabled:opacity-0 transition-all" style={{ borderColor: READER_THEMES[readerTheme].border, color: READER_THEMES[readerTheme].muted }}>Next chapter</button>
                 </div>
              </div>
            ) : (
@@ -1174,7 +1336,7 @@ export default function ComicReaderClient({ initialComic, initialChapters, sourc
                       ))}
                       {currentChapterIdx < chapters.length - 1 && (
                         <button onClick={nextChapter} className="w-full py-40 mt-20 border-2 border-dashed border-white/5 hover:border-[#ff4d00]/50 transition-all flex flex-col items-center gap-4">
-                           <div className="text-[12px] font-black uppercase tracking-[0.5em] text-white/20">Next_Chapter_Ready</div>
+                           <div className="text-[12px] font-black uppercase tracking-[0.5em] text-white/20">Go to next chapter</div>
                            <ChevronDown size={32} className="text-white/10" />
                         </button>
                       )}
@@ -1189,7 +1351,7 @@ export default function ComicReaderClient({ initialComic, initialChapters, sourc
              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[10050] bg-black/90 overflow-y-auto p-4 md:p-16">
                 <div className="fixed top-0 left-0 right-0 h-24 bg-black/90 backdrop-blur-xl z-[10060] px-6 flex items-center justify-between border-b border-white/10 pt-[env(safe-area-inset-top)]">
                   <button aria-label="Back to reader" onClick={() => setShowGrid(false)} className="flex items-center gap-3 text-[10px] font-black uppercase tracking-widest text-white/40">
-                      <ChevronLeft size={20} /> BACK_TO_READER
+                      <ChevronLeft size={20} /> Back to reader
                    </button>
                    <button aria-label="Close overview" onClick={() => setShowGrid(false)} className="w-11 h-11 flex items-center justify-center bg-white/5 border border-white/10 rounded-xl"><X size={24}/></button>
                 </div>
