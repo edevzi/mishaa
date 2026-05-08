@@ -30,7 +30,7 @@ export default function ContactPage() {
       
       <Navbar />
 
-      <main className="container mx-auto px-8 pt-48 pb-32">
+      <main className="container mx-auto px-8 pt-28 pb-24 sm:pb-28">
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}

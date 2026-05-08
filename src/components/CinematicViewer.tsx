@@ -157,7 +157,7 @@ export default function CinematicViewer({ story }: { story: CinematicStory }) {
           </div>
         </div>
       ) : (
-        <div className="pt-40 max-w-4xl mx-auto space-y-0 pb-40 px-4 md:px-0">
+        <div className="pt-28 md:pt-32 max-w-4xl mx-auto space-y-0 pb-40 px-4 md:px-0">
            {frames.map((frame, idx) => (
              <div key={frame.id} className="relative group">
                 <div className="absolute -left-12 top-0 bottom-0 w-8 flex flex-col items-center justify-start opacity-0 group-hover:opacity-20 transition-opacity">

@@ -67,7 +67,7 @@ export default function Gallery() {
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0%,rgba(0,0,0,0.4)_100%)] pointer-events-none" />
       <Navbar />
 
-      <main className="container mx-auto px-4 sm:px-6 lg:px-8 pt-32 sm:pt-36 lg:pt-48 pb-20 sm:pb-28 lg:pb-32">
+      <main className="container mx-auto px-4 sm:px-6 lg:px-8 pt-24 sm:pt-28 lg:pt-36 pb-20 sm:pb-28 lg:pb-32">
          <div className="relative mb-16 overflow-hidden rounded-3xl border border-white/10 bg-white/5 p-6 sm:p-10 md:p-16 backdrop-blur-xl">
             <div className="relative z-10 flex flex-col md:flex-row items-end justify-between gap-12">
                <div className="space-y-6">

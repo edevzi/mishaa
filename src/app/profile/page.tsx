@@ -103,7 +103,7 @@ export default function ProfilePage() {
     <div className="min-h-screen bg-[#020202] text-white selection:bg-[#ff4d00] selection:text-white">
       <Navbar />
 
-      <main className="container mx-auto px-4 sm:px-6 lg:px-8 pt-32 sm:pt-36 lg:pt-40 pb-20 sm:pb-28 lg:pb-32">
+      <main className="container mx-auto px-4 sm:px-6 lg:px-8 pt-24 sm:pt-28 lg:pt-32 pb-20 sm:pb-28 lg:pb-32">
         <div className="max-w-6xl mx-auto grid gap-8 lg:gap-12 lg:grid-cols-[1fr_380px]">
           {/* Left Column: Form & Info */}
           <section className="space-y-8 sm:space-y-12">

@@ -48,7 +48,7 @@ export default function FAQPage() {
       
       <Navbar />
 
-      <main className="container mx-auto px-8 pt-48 pb-32">
+      <main className="container mx-auto px-8 pt-28 pb-24">
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}

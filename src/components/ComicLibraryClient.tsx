@@ -10,6 +10,7 @@ import {
   Maximize2, Loader2
 } from 'lucide-react';
 import AgeGateOverlay from '@/components/AgeGateOverlay';
+import Navbar from '@/components/Navbar';
 import { isAdultComic, persistAgeVerification, readAgeVerification } from '@/lib/age-verification';
 import {
   BooruSource,
@@ -640,7 +641,9 @@ export default function ComicLibraryClient({ initialAgeVerified = false }: Comic
   }, [selectedComic, viewMode, pages.length]);
 
   return (
-    <div className="min-h-screen bg-[#020202] text-white">
+    <>
+    <Navbar />
+    <div className="min-h-screen bg-[#020202] text-white pt-14 sm:pt-16 lg:pt-[4.25rem]">
       {/* Unrestricted Access */}
 
       {!selectedComic && (
@@ -1182,6 +1185,7 @@ export default function ComicLibraryClient({ initialAgeVerified = false }: Comic
         }
       `}</style>
     </div>
+    </>
   );
 }
 

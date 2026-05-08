@@ -677,7 +677,7 @@ export default function HomeClient({
     <div className="min-h-screen bg-white text-neutral-900">
       <JsonLd data={websiteSchema} />
       <JsonLd data={orgSchema} />
-      <Navbar surface="catalog" />
+      <Navbar />
 
       <main className="relative overflow-hidden pt-14 sm:pt-16 lg:pt-[4.25rem]">
         {/* --- DYNAMIC HERO BANNER --- */}

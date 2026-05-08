@@ -93,7 +93,7 @@ export default function SettingsPage() {
     <div className="min-h-screen bg-[#020202] text-white selection:bg-[#ff4d00] selection:text-white overflow-x-hidden">
       <Navbar />
 
-      <main className="container mx-auto px-6 pt-40 pb-28">
+      <main className="container mx-auto px-6 pt-28 pb-24">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="max-w-6xl mx-auto space-y-10">
           <section className="space-y-4">
             <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2">

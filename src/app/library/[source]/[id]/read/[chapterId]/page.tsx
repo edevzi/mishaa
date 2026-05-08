@@ -5,6 +5,7 @@ import { cache } from 'react';
 import ComicReaderClient from './ComicReaderClient';
 import { getComicDetails, getChapters } from '@/actions/comic';
 import { buildComicOpenGraphImage, getPublicSiteUrl } from '@/lib/og-metadata';
+import JsonLd from '@/components/JsonLd';
 
 const getComicDetailsCached = cache(getComicDetails);
 const getChaptersCached = cache(getChapters);
@@ -85,15 +86,41 @@ export default async function Page({ params }: { params: Promise<RouteParams> })
     getComicDetailsCached(source, id),
     getChaptersCached(source, id),
   ]);
-  
+
+  const siteOrigin = getPublicSiteUrl().replace(/\/$/, '');
+  const canonicalChapterUrl = `${siteOrigin}/library/${source}/${id}/read/${currentChapterId}`;
+  const workUrl = `${siteOrigin}/library/${source}/${id}`;
+  const chapterRow = (initialChapters as ChapterRow[] | null)?.find((c) => c.id === currentChapterId);
+  const chLabel = chapterRow?.chapterNum || chapterRow?.title;
+  const comicTitle = initialComic?.title || 'Comic';
+
+  const breadcrumbSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: siteOrigin },
+      { '@type': 'ListItem', position: 2, name: 'Library', item: `${siteOrigin}/library` },
+      { '@type': 'ListItem', position: 3, name: comicTitle, item: workUrl },
+      {
+        '@type': 'ListItem',
+        position: 4,
+        name: chLabel ? `Chapter ${chLabel}` : 'Chapter',
+        item: canonicalChapterUrl,
+      },
+    ],
+  };
+
   return (
-    <ComicReaderClient 
-      initialComic={initialComic} 
-      initialChapters={initialChapters}
-      source={source} 
-      id={id}
-      chapterId={currentChapterId}
-      initialAgeVerified={initialAgeVerified}
-    />
+    <>
+      <JsonLd data={breadcrumbSchema} />
+      <ComicReaderClient
+        initialComic={initialComic}
+        initialChapters={initialChapters}
+        source={source}
+        id={id}
+        chapterId={currentChapterId}
+        initialAgeVerified={initialAgeVerified}
+      />
+    </>
   );
 }

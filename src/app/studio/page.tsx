@@ -12,7 +12,7 @@ export default function StudioPage() {
   return (
     <div className="min-h-screen bg-[#111111]">
       <Navbar />
-      <div className="pt-24 pb-20">
+      <div className="pt-16 sm:pt-20 pb-20">
         <ComicCreator />
       </div>
     </div>

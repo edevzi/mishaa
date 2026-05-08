@@ -8,6 +8,7 @@ import { getComicDetails as getComicDetailsAction, getChapters } from '@/actions
 import { fetchAniListManga } from '@/lib/anilist';
 import { cacheMangaDexIdResolution, getCachedMangaDexIdResolution, isMangaDexUuid, resolveMangaDexIdFromTitle } from '@/lib/mangadex';
 import { buildComicOpenGraphImage, getPublicSiteUrl } from '@/lib/og-metadata';
+import JsonLd from '@/components/JsonLd';
 
 const getComicDetails = cache(getComicDetailsAction);
 
@@ -62,6 +63,41 @@ type ComicSeoData = {
     members?: number;
   };
 };
+
+function buildAggregateRating(comicData: ComicSeoData): Record<string, unknown> | null {
+  const aniAvg = comicData.aniListData?.averageScore;
+  const jScore = comicData.jikanData?.score;
+
+  if (typeof aniAvg === 'number' && aniAvg > 0) {
+    const row: Record<string, unknown> = {
+      '@type': 'AggregateRating',
+      ratingValue: (aniAvg / 10).toFixed(1),
+      bestRating: '10',
+      worstRating: '1',
+    };
+    const pop = comicData.aniListData?.popularity;
+    if (typeof pop === 'number' && pop > 0) {
+      row.ratingCount = Math.min(Math.max(Math.round(pop), 1), 1_000_000);
+    }
+    return row;
+  }
+
+  if (typeof jScore === 'number' && jScore > 0) {
+    const row: Record<string, unknown> = {
+      '@type': 'AggregateRating',
+      ratingValue: String(jScore),
+      bestRating: '10',
+      worstRating: '1',
+    };
+    const members = comicData.jikanData?.members;
+    if (typeof members === 'number' && members > 0) {
+      row.ratingCount = Math.min(Math.max(members, 1), 1_000_000);
+    }
+    return row;
+  }
+
+  return null;
+}
 
 const DEFAULT_DESCRIPTION =
   'Read manga, manhwa, and comics online — chapters, ratings, and official-style catalog pages on iComics.wiki.';
@@ -145,8 +181,6 @@ export async function generateMetadata({ params }: MetadataProps): Promise<Metad
   };
 }
 
-import JsonLd from '@/components/JsonLd';
-
 export default async function Page({ params }: { params: Promise<RouteParams> }) {
   const { source, id } = await params;
   const resolvedId = await resolveMangaDexRouteId(source, id);
@@ -191,57 +225,66 @@ export default async function Page({ params }: { params: Promise<RouteParams> })
     getChapters(source, resolvedId)
   ]);
   const comicData = initialComic as ComicSeoData | null;
+  const siteOrigin = getPublicSiteUrl().replace(/\/$/, '');
+  const canonicalWorkUrl = `${siteOrigin}/library/${source}/${resolvedId}`;
 
-  const comicSchema = comicData ? {
-    "@context": "https://schema.org",
-    "@type": "Book",
-    "name": comicData.title,
-    "description": comicData.description,
-    "image": comicData.coverUrl,
-    "author": {
-      "@type": "Person",
-      "name": comicData.author || comicData.jikanData?.authors?.[0]?.name || "iComics.wiki Creator"
-    },
-    "genre": Array.from(new Set([
-      ...(comicData.genres || []),
-      ...(comicData.aniListData?.genres || []),
-      ...(comicData.jikanData?.genres?.map((genre) => genre.name).filter((name): name is string => Boolean(name)) || [])
-    ])).join(', '),
-    "aggregateRating": {
-      "@type": "AggregateRating",
-      "ratingValue": comicData.aniListData?.averageScore 
-        ? (comicData.aniListData.averageScore / 10).toFixed(1)
-        : comicData.jikanData?.score 
-          ? comicData.jikanData.score.toString()
-          : "4.8",
-      "bestRating": "10",
-      "ratingCount": comicData.aniListData?.popularity || comicData.jikanData?.members || "1000"
-    }
-  } : null;
+  const genreLine = Array.from(
+    new Set([
+      ...(comicData?.genres || []),
+      ...(comicData?.aniListData?.genres || []),
+      ...(comicData?.jikanData?.genres?.map((genre) => genre.name).filter((name): name is string => Boolean(name)) ||
+        []),
+    ]),
+  ).join(', ');
+
+  const aggregateRating = comicData ? buildAggregateRating(comicData) : null;
+
+  const comicSchema = comicData
+    ? {
+        '@context': 'https://schema.org',
+        '@type': 'Book',
+        name: comicData.title,
+        url: canonicalWorkUrl,
+        description:
+          typeof comicData.description === 'string'
+            ? comicData.description.replace(/<[^>]*>/g, '').trim().slice(0, 5000)
+            : undefined,
+        image: comicData.coverUrl,
+        author: {
+          '@type': 'Person',
+          name:
+            comicData.author ||
+            comicData.jikanData?.authors?.[0]?.name ||
+            'Various',
+        },
+        ...(genreLine ? { genre: genreLine } : {}),
+        ...(aggregateRating ? { aggregateRating } : {}),
+      }
+    : null;
 
   const breadcrumbSchema = {
-    "@context": "https://schema.org",
-    "@type": "BreadcrumbList",
-    "itemListElement": [
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
       {
-        "@type": "ListItem",
-        "position": 1,
-        "name": "Home",
-        "item": "https://icomics.wiki"
+        '@type': 'ListItem',
+        position: 1,
+        name: 'Home',
+        item: siteOrigin,
       },
       {
-        "@type": "ListItem",
-        "position": 2,
-        "name": "Library",
-        "item": "https://icomics.wiki/library"
+        '@type': 'ListItem',
+        position: 2,
+        name: 'Library',
+        item: `${siteOrigin}/library`,
       },
       {
-        "@type": "ListItem",
-        "position": 3,
-        "name": comicData?.title || "Comic",
-        "item": `https://icomics.wiki/library/${source}/${resolvedId}`
-      }
-    ]
+        '@type': 'ListItem',
+        position: 3,
+        name: comicData?.title || 'Comic',
+        item: canonicalWorkUrl,
+      },
+    ],
   };
   
   return (

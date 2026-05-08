@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import Navbar from '@/components/Navbar';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Shield, Zap, Search, Swords, Users, RefreshCw, X, Check, Star, Crosshair, Brain, Activity } from 'lucide-react';
 import Image from 'next/image';
@@ -167,8 +168,9 @@ export default function SuperheroesDashboard() {
   );
 
   return (
-    <div className="min-h-screen bg-[#020202] text-white pt-24 pb-20 px-4 md:px-12 selection:bg-[#ff4d00]">
-       <div className="max-w-7xl mx-auto space-y-12">
+    <div className="min-h-screen bg-[#020202] text-white selection:bg-[#ff4d00]">
+       <Navbar />
+       <div className="max-w-7xl mx-auto space-y-12 px-4 pt-16 sm:pt-20 pb-20 md:px-12">
           {/* Header */}
           <div className="text-center space-y-4">
              <div className="inline-flex items-center gap-2 px-4 py-2 bg-[#ff4d00]/10 border border-[#ff4d00]/30 rounded-full">

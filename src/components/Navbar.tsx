@@ -18,11 +18,11 @@ interface SessionUser {
 }
 
 type NavbarProps = {
-  /** Full-width black bar (home catalog / Marvel-style). Default: floating glass pill. */
+  /** `catalog`: full-width black bar (site default). `glass`: floating pill (legacy). */
   surface?: 'glass' | 'catalog';
 };
 
-export default function Navbar({ surface = 'glass' }: NavbarProps) {
+export default function Navbar({ surface = 'catalog' }: NavbarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
