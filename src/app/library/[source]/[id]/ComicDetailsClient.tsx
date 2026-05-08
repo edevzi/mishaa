@@ -247,25 +247,33 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
     setIsBookmarked(!isBookmarked);
   };
 
-  const shareToTelegram = () => {
-    const url = encodeURIComponent(window.location.href);
-    const text = encodeURIComponent(`Check out ${comic?.title} on iComics.wiki! \n\n${comic?.description.substring(0, 100)}...`);
-    window.open(`https://t.me/share/url?url=${url}&text=${text}`, '_blank');
-  };
-
-  const shareToTwitter = () => {
-    const url = encodeURIComponent(window.location.href);
-    const text = encodeURIComponent(`Reading ${comic?.title} on iComics.wiki!`);
-    window.open(`https://twitter.com/intent/tweet?url=${url}&text=${text}`, '_blank');
-  };
+  const openExternalShare = useCallback(
+    (target: 'telegram' | 'twitter' | 'whatsapp') => {
+      if (typeof window === 'undefined') return;
+      const pageUrl = window.location.href;
+      const title = comic?.title ?? 'iComics.wiki';
+      const snippet = trimText(comic?.description, 100);
+      const body = snippet
+        ? `Check out ${title} on iComics.wiki!\n\n${snippet}`
+        : `Check out ${title} on iComics.wiki!`;
+      const urls = {
+        telegram: `https://t.me/share/url?url=${encodeURIComponent(pageUrl)}&text=${encodeURIComponent(body)}`,
+        twitter: `https://twitter.com/intent/tweet?url=${encodeURIComponent(pageUrl)}&text=${encodeURIComponent(`Reading ${title} on iComics.wiki!`)}`,
+        whatsapp: `https://api.whatsapp.com/send?text=${encodeURIComponent(`${body}\n\n${pageUrl}`)}`,
+      } as const;
+      window.open(urls[target], '_blank', 'noopener,noreferrer');
+    },
+    [comic?.title, comic?.description],
+  );
 
   const socialShares = useMemo(
-    () => [
-      { name: 'Telegram', url: '#', icon: 'https://cdn.simpleicons.org/telegram/24A1DE' },
-      { name: t.socialTwitterX, url: '#', icon: 'https://cdn.simpleicons.org/x/1DA1F2' },
-      { name: 'WhatsApp', url: '#', icon: 'https://cdn.simpleicons.org/whatsapp/25D366' },
-      { name: t.socialCopyLink, url: '#', icon: 'https://cdn.simpleicons.org/link/FFFFFF' },
-    ],
+    () =>
+      [
+        { id: 'telegram' as const, name: 'Telegram', icon: 'https://cdn.simpleicons.org/telegram/24A1DE' },
+        { id: 'twitter' as const, name: t.socialTwitterX, icon: 'https://cdn.simpleicons.org/x/1DA1F2' },
+        { id: 'whatsapp' as const, name: 'WhatsApp', icon: 'https://cdn.simpleicons.org/whatsapp/25D366' },
+        { id: 'copy' as const, name: t.socialCopyLink, icon: 'https://cdn.simpleicons.org/link/FFFFFF' },
+      ] as const,
     [t.socialTwitterX, t.socialCopyLink],
   );
 
@@ -1253,18 +1261,30 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
               {/* Social Grid */}
               <div className="grid grid-cols-4 gap-4 mb-8">
                 {socialShares.map((social) => (
-                  <a 
-                    key={social.name}
-                    href={social.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex flex-col items-center gap-3 group"
+                  <button
+                    key={social.id}
+                    type="button"
+                    onClick={() => {
+                      if (social.id === 'copy') {
+                        void copyToClipboard();
+                        return;
+                      }
+                      openExternalShare(social.id);
+                    }}
+                    className="flex flex-col items-center gap-3 group cursor-pointer border-0 bg-transparent p-0 text-left"
                   >
                     <div className="w-14 h-14 bg-black/[0.04] dark:bg-white/5 border border-neutral-200 dark:border-white/10 rounded-2xl flex items-center justify-center group-hover:bg-[#ff4d00] group-hover:border-[#ff4d00] group-hover:-translate-y-1 transition-all shadow-lg">
-                       <img src={social.icon} className="h-6 w-6 opacity-90 dark:invert dark:group-hover:invert-0 transition-all group-hover:opacity-100" alt={social.name} />
+                      <img
+                        src={social.icon}
+                        className="h-6 w-6 opacity-90 dark:invert dark:group-hover:invert-0 transition-all group-hover:opacity-100"
+                        alt=""
+                        aria-hidden
+                      />
                     </div>
-                    <span className="text-[9px] font-black uppercase tracking-widest text-neutral-600 transition-colors group-hover:text-neutral-900 dark:text-white/30 dark:group-hover:text-white">{social.name}</span>
-                  </a>
+                    <span className="text-[9px] font-black uppercase tracking-widest text-neutral-600 transition-colors group-hover:text-neutral-900 dark:text-white/30 dark:group-hover:text-white">
+                      {social.name}
+                    </span>
+                  </button>
                 ))}
               </div>
 

@@ -16,17 +16,20 @@ const AVATAR_STYLES = [
   'fun-emoji', 'icons', 'lorelei', 'micah', 'miniavs', 'thumbs'
 ];
 
+type UrlAuthError = 'google_state_mismatch' | 'google_login_failed';
+
 function AuthPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [mode, setMode] = useState<Mode>('login');
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(() => {
+  const [urlAuthError, setUrlAuthError] = useState<UrlAuthError | null>(() => {
     const authError = searchParams.get('error');
-    if (authError === 'google_state_mismatch') return 'Google session expired. Please try again.';
-    if (authError === 'google_login_failed') return 'Google sign-in failed.';
-    return '';
+    if (authError === 'google_state_mismatch') return 'google_state_mismatch';
+    if (authError === 'google_login_failed') return 'google_login_failed';
+    return null;
   });
+  const [formError, setFormError] = useState('');
   const [showPass, setShowPass] = useState(false);
   const [selectedAvatarStyle, setSelectedAvatarStyle] = useState('adventurer');
   const [lang, setLang] = useState<Lang>('en');
@@ -41,12 +44,20 @@ function AuthPageContent() {
       t_timeout = setTimeout(() => setLang(prev => (savedLang !== prev ? savedLang : prev)), 0);
     }
     const handleLang = (e: Event) => setLang((e as CustomEvent<Lang>).detail);
-    window.addEventListener('langChange', handleLang);
+    window.addEventListener('langChange', handleLang as EventListener);
     return () => {
-      window.removeEventListener('langChange', handleLang);
+      window.removeEventListener('langChange', handleLang as EventListener);
       clearTimeout(t_timeout);
     };
   }, []);
+
+  const displayError =
+    formError ||
+    (urlAuthError === 'google_state_mismatch'
+      ? t.errGoogleState
+      : urlAuthError === 'google_login_failed'
+        ? t.errGoogleLogin
+        : '');
 
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
@@ -59,7 +70,8 @@ function AuthPageContent() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
+    setFormError('');
+    setUrlAuthError(null);
     setLoading(true);
     try {
       const endpoint = mode === 'login' ? '/api/auth/login' : '/api/auth/signup';
@@ -72,11 +84,11 @@ function AuthPageContent() {
         body: JSON.stringify(body),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Authentication failed');
+      if (!res.ok) throw new Error(data.error || t.errAuthFailed);
       router.push('/');
       router.refresh();
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Something went wrong');
+      setFormError(err instanceof Error ? err.message : t.errUnexpected);
     } finally {
       setLoading(false);
     }
@@ -116,10 +128,10 @@ function AuthPageContent() {
             </motion.div>
             <div className="space-y-1">
               <h1 className="text-4xl font-black uppercase tracking-tight text-neutral-900 leading-none dark:text-white">
-                {mode === 'login' ? 'Welcome Back' : 'Join the Studio'}
+                {mode === 'login' ? t.titleLogin : t.titleSignup}
               </h1>
               <p className="text-sm text-neutral-500 dark:text-white/40 font-medium">
-                {mode === 'login' ? 'Sign in to access your creative uplink' : 'Create an account to start your narrative journey'}
+                {mode === 'login' ? t.subtitleLogin : t.subtitleSignup}
               </p>
             </div>
           </div>
@@ -130,13 +142,13 @@ function AuthPageContent() {
               onClick={() => setMode('login')}
               className={`flex-1 py-3 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all ${mode === 'login' ? 'bg-white text-black shadow-lg' : 'text-neutral-500 hover:text-neutral-900 dark:text-white/40 dark:hover:text-white'}`}
             >
-              Sign In
+              {t.tabSignIn}
             </button>
             <button
               onClick={() => setMode('signup')}
               className={`flex-1 py-3 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all ${mode === 'signup' ? 'bg-white text-black shadow-lg' : 'text-neutral-500 hover:text-neutral-900 dark:text-white/40 dark:hover:text-white'}`}
             >
-              Register
+              {t.tabRegister}
             </button>
           </div>
 
@@ -156,7 +168,7 @@ function AuthPageContent() {
                       <Image src={avatarUrl} alt="Avatar" fill unoptimized className="object-cover" />
                     </div>
                     <div className="flex-1">
-                       <p className="text-[9px] font-black uppercase tracking-widest text-neutral-500 dark:text-white/30 mb-2">Avatar Prototype</p>
+                       <p className="text-[9px] font-black uppercase tracking-widest text-neutral-500 dark:text-white/30 mb-2">{t.avatarPrototype}</p>
                        <div className="flex flex-wrap gap-1.5">
                           {AVATAR_STYLES.slice(0, 5).map(style => (
                             <button
@@ -174,22 +186,22 @@ function AuthPageContent() {
 
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                       <label className="text-[10px] font-black uppercase tracking-widest text-neutral-500 dark:text-white/30 ml-2">First Name</label>
+                       <label className="text-[10px] font-black uppercase tracking-widest text-neutral-500 dark:text-white/30 ml-2">{t.firstName}</label>
                        <input 
                          type="text" 
                          value={firstName} 
                          onChange={e => setFirstName(e.target.value)} 
-                         placeholder="John"
+                         placeholder={t.placeholderFirstDemo}
                          className="w-full bg-neutral-100/90 dark:bg-black/40 border border-neutral-200 dark:border-white/10 rounded-xl px-4 py-3 text-sm focus:border-[#ff5a1f] outline-none transition-all"
                        />
                     </div>
                     <div className="space-y-2">
-                       <label className="text-[10px] font-black uppercase tracking-widest text-neutral-500 dark:text-white/30 ml-2">Last Name</label>
+                       <label className="text-[10px] font-black uppercase tracking-widest text-neutral-500 dark:text-white/30 ml-2">{t.lastName}</label>
                        <input 
                          type="text" 
                          value={lastName} 
                          onChange={e => setLastName(e.target.value)} 
-                         placeholder="Doe"
+                         placeholder={t.placeholderLastDemo}
                          className="w-full bg-neutral-100/90 dark:bg-black/40 border border-neutral-200 dark:border-white/10 rounded-xl px-4 py-3 text-sm focus:border-[#ff5a1f] outline-none transition-all"
                        />
                     </div>
@@ -200,14 +212,14 @@ function AuthPageContent() {
 
             {/* Username/Alias */}
             <div className="space-y-2">
-               <label className="text-[10px] font-black uppercase tracking-widest text-neutral-500 dark:text-white/30 ml-2">Username / Alias</label>
+               <label className="text-[10px] font-black uppercase tracking-widest text-neutral-500 dark:text-white/30 ml-2">{t.labelUsernameAlias}</label>
                <div className="relative group">
                   <User className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-400 transition-colors group-focus-within:text-[#ff5a1f] dark:text-white/20" size={18} />
                   <input 
                     type="text" 
                     value={username} 
                     onChange={e => setUsername(e.target.value.toLowerCase())} 
-                    placeholder="creative_entity"
+                    placeholder={t.placeholderUsername}
                     required
                     className="w-full bg-neutral-100/90 dark:bg-black/40 border border-neutral-200 dark:border-white/10 rounded-xl pl-12 pr-4 py-4 text-sm focus:border-[#ff5a1f] outline-none transition-all"
                   />
@@ -216,7 +228,7 @@ function AuthPageContent() {
 
             {/* Password */}
             <div className="space-y-2">
-               <label className="text-[10px] font-black uppercase tracking-widest text-neutral-500 dark:text-white/30 ml-2">Access Key</label>
+               <label className="text-[10px] font-black uppercase tracking-widest text-neutral-500 dark:text-white/30 ml-2">{t.accessKeyShort}</label>
                <div className="relative group">
                   <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-400 transition-colors group-focus-within:text-[#ff5a1f] dark:text-white/20" size={18} />
                   <input 
@@ -233,9 +245,9 @@ function AuthPageContent() {
                </div>
             </div>
 
-            {error && (
+            {displayError && (
               <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} className="p-4 bg-red-500/10 border border-red-500/30 text-red-400 text-[11px] font-black uppercase tracking-widest rounded-xl text-center">
-                Error: {error}
+                {t.errLabel}: {displayError}
               </motion.div>
             )}
 
@@ -244,13 +256,19 @@ function AuthPageContent() {
               disabled={loading}
               className="w-full py-4 rounded-xl bg-white text-black text-[11px] font-black uppercase tracking-[0.2em] shadow-[0_0_30px_rgba(255,255,255,0.1)] hover:shadow-[0_0_30px_rgba(255,90,31,0.3)] hover:bg-[#ff5a1f] hover:text-white transition-all transform active:scale-[0.98] disabled:opacity-50"
             >
-              {loading ? 'Signing in…' : (mode === 'login' ? 'Sign in' : 'Create account')}
+              {loading
+                ? mode === 'login'
+                  ? t.signingInEllipsis
+                  : t.createAccountEllipsis
+                : mode === 'login'
+                  ? t.signInSubmit
+                  : t.createAccountSubmit}
             </button>
 
             <div className="relative py-4">
                <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-neutral-200 dark:border-white/10"></div></div>
                <div className="relative flex justify-center text-[8px] font-black uppercase tracking-[0.4em] text-neutral-400 dark:text-white/20">
-                 <span className="bg-zinc-100 px-3 dark:bg-[#0b0c10]">Secured connection</span>
+                 <span className="bg-zinc-100 px-3 dark:bg-[#0b0c10]">{t.securedConnection}</span>
                </div>
             </div>
 
@@ -265,7 +283,7 @@ function AuthPageContent() {
                 <path fill="currentColor" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" />
                 <path fill="currentColor" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
               </svg>
-              Continue with Google
+              {t.google}
             </button>
           </form>
 
@@ -275,7 +293,7 @@ function AuthPageContent() {
               onClick={() => setMode(mode === 'login' ? 'signup' : 'login')}
               className="text-[10px] font-black uppercase tracking-widest text-neutral-500 dark:text-white/30 hover:text-[#ff5a1f] transition-all"
             >
-              {mode === 'login' ? "Don't have an account? Register" : "Already have an account? Sign In"}
+              {mode === 'login' ? t.switchToRegister : t.switchToSignIn}
             </button>
           </div>
         </div>
@@ -283,9 +301,9 @@ function AuthPageContent() {
       
       {/* Visual Accents */}
       <div className="mt-8 flex items-center gap-4 text-[9px] font-black uppercase tracking-[0.4em] text-white/10">
-         <ShieldCheck size={14}/> Encrypted Session
+         <ShieldCheck size={14}/> {t.footerEncrypted}
          <span className="w-1 h-1 rounded-full bg-white/10"></span>
-         <Globe size={14}/> Global Uplink
+         <Globe size={14}/> {t.footerGlobalUplink}
       </div>
     </div>
   );

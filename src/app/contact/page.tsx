@@ -20,8 +20,8 @@ export default function ContactPage() {
     }
 
     const handleLang = (e: Event) => setLang((e as CustomEvent<Lang>).detail);
-    window.addEventListener('langChange', handleLang);
-    return () => window.removeEventListener('langChange', handleLang);
+    window.addEventListener('langChange', handleLang as EventListener);
+    return () => window.removeEventListener('langChange', handleLang as EventListener);
   }, []);
 
   return (
@@ -42,7 +42,7 @@ export default function ContactPage() {
               <span className="text-white text-[10px] font-black uppercase tracking-[0.4em]">{t.badge}</span>
             </div>
             <h1 className="text-6xl md:text-9xl font-display uppercase tracking-tighter leading-none italic">
-               {t.title.split(' ')[0]} <br /><span className="text-[#3b82f6]">{t.title.split(' ')[1]}</span>
+               {t.titleLine1} <br /><span className="text-[#3b82f6]">{t.titleLine2}</span>
             </h1>
             <p className="text-xl font-editorial italic opacity-60">&quot;{t.subtitle}&quot;</p>
           </div>

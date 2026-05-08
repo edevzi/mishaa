@@ -30,7 +30,8 @@ import {
   MANGADEX_GIRLS_LOVE_TAG_ID,
   MANGADEX_LONG_STRIP_TAG_ID,
 } from '@/lib/mangadex';
-import { searchComics } from '@/actions/comic';
+import { useDebouncedValue } from '@/hooks/useDebouncedValue';
+import { searchComicsWithClientCache as searchComics } from '@/lib/comic-search-client-cache';
 import type { ComicListItem } from '@/lib/comic-types';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -78,6 +79,9 @@ const CATEGORIES: Category[] = [
 ];
 
 const LIMIT = 36;
+
+/** Separator for debouncing `activeCategory + search` as one string (rare in titles). */
+const LIB_TAB_SEARCH_PAIR_SEP = '\u241e';
 
 const createCategoryQueryMap = () =>
   Object.fromEntries(CATEGORIES.map((category) => [category.label, category.query ?? ''])) as Record<string, string>;
@@ -137,8 +141,6 @@ export default function ComicLibraryClient({ initialAgeVerified = false }: Comic
   const [hasMore, setHasMore] = useState(true);
   const [lang, setLang] = useState<Lang>('en');
   const [zoom, setZoom] = useState(1);
-  const [autoCompleteResults, setAutoCompleteResults] = useState<ComicListItem[]>([]);
-  const [isSearching, setIsSearching] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
   const [bookmarks, setBookmarks] = useState<StoredBookmark[]>([]);
   const [recentActivity, setRecentActivity] = useState<Record<string, number>>({});
@@ -162,6 +164,30 @@ export default function ComicLibraryClient({ initialAgeVerified = false }: Comic
   const observer = useRef<IntersectionObserver | null>(null);
   const searchBoxRef = useRef<HTMLDivElement | null>(null);
   const searchQuery = categoryQueries[activeCategory] ?? '';
+  /** Debounce `{tab}|{typed query}` so tab switches bypass the delay from the prior tab. */
+  const composedDebouncedPair = useDebouncedValue(
+    `${activeCategory}${LIB_TAB_SEARCH_PAIR_SEP}${searchQuery}`,
+    430,
+  );
+  const [debouncedCat, debouncedQueryRaw] = useMemo(() => {
+    const sepIndex = composedDebouncedPair.indexOf(LIB_TAB_SEARCH_PAIR_SEP);
+    if (sepIndex === -1) return [activeCategory, searchQuery] as const;
+    return [
+      composedDebouncedPair.slice(0, sepIndex),
+      composedDebouncedPair.slice(sepIndex + LIB_TAB_SEARCH_PAIR_SEP.length),
+    ] as const;
+  }, [composedDebouncedPair, activeCategory, searchQuery]);
+  const fetchSearchQueryTrimmed =
+    debouncedCat === activeCategory ? debouncedQueryRaw.trim() : searchQuery.trim();
+
+  const autoCompletePreview = useMemo(() => {
+    const q = fetchSearchQueryTrimmed;
+    if (q.length < 3) return [];
+    /** Avoid flashing rows from the previous query while `loadData` is replacing comics. */
+    if (loading) return [];
+    return comics.slice(0, 8);
+  }, [comics, fetchSearchQueryTrimmed, loading]);
+
   const bookmarkedKeys = useMemo(() => new Set(bookmarks.map((bookmark) => `${bookmark.source}:${bookmark.id}`)), [bookmarks]);
   const visibleComics = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
@@ -288,20 +314,14 @@ export default function ComicLibraryClient({ initialAgeVerified = false }: Comic
   }, [categoryQueries, isAgeVerified, updateLibraryUrl]);
 
   const handleSearchQueryChange = useCallback((value: string) => {
-    requestIdRef.current += 1;
-    setOffset(0);
-    setHasMore(true);
-    setComics([]);
     setCategoryQueries((prev) => ({
       ...prev,
       [activeCategory]: value,
     }));
-    updateLibraryUrl(activeCategory, value, 'replace');
-  }, [activeCategory, updateLibraryUrl]);
+  }, [activeCategory]);
 
   const closeSearchDropdown = useCallback(() => {
     setShowDropdown(false);
-    setIsSearching(false);
   }, []);
 
   const handleNsfwToggle = useCallback(() => {
@@ -423,7 +443,7 @@ export default function ComicLibraryClient({ initialAgeVerified = false }: Comic
 
     try {
       const cat = CATEGORIES.find(c => c.label === activeCategory);
-      const query = searchQuery.trim();
+      const query = fetchSearchQueryTrimmed;
       const safeMarvelQuery = query;
       
       const canAccessAdultContent = isAgeVerified && nsfwEnabled;
@@ -551,47 +571,27 @@ export default function ComicLibraryClient({ initialAgeVerified = false }: Comic
         setLoadingMore(false);
       }
     }
-  }, [activeCategory, fetchArchive, fetchBooru, fetchMangaDex, fetchMarvelIssues, fetchSuperheroes, isAgeVerified, mangaLanguage, nsfwEnabled, searchQuery]);
+  }, [activeCategory, fetchArchive, fetchBooru, fetchMangaDex, fetchMarvelIssues, fetchSuperheroes, fetchSearchQueryTrimmed, isAgeVerified, mangaLanguage, nsfwEnabled]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
       void loadData(0, false);
     }, 0);
     return () => window.clearTimeout(timer);
-  }, [activeCategory, searchQuery, nsfwEnabled, mangaLanguage, loadData]);
+  }, [activeCategory, fetchSearchQueryTrimmed, nsfwEnabled, mangaLanguage, loadData]);
 
-  // Autocomplete Effect
   useEffect(() => {
-    if (searchQuery.length < 3) {
-      const timer = window.setTimeout(() => {
-        setAutoCompleteResults([]);
-        setShowDropdown(false);
-      }, 0);
-      return () => window.clearTimeout(timer);
-    }
+    const timer = window.setTimeout(() => {
+      updateLibraryUrl(activeCategory, fetchSearchQueryTrimmed, 'replace');
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [activeCategory, fetchSearchQueryTrimmed, updateLibraryUrl]);
 
-    const timer = setTimeout(async () => {
-      setIsSearching(true);
-      setShowDropdown(true);
-      try {
-        const cat = CATEGORIES.find(c => c.label === activeCategory);
-        const source = cat?.source || 'mangadex';
-        const res = await searchComics({ 
-          source, 
-          query: searchQuery, 
-          page: 0,
-          mangaLanguage 
-        });
-        setAutoCompleteResults(res.items.slice(0, 8));
-      } catch (e) {
-        console.error('Autocomplete error:', e);
-      } finally {
-        setIsSearching(false);
-      }
-    }, 400);
-
-    return () => clearTimeout(timer);
-  }, [searchQuery, activeCategory, mangaLanguage]);
+  useEffect(() => {
+    if (searchQuery.length >= 3) return;
+    const t = window.setTimeout(() => setShowDropdown(false), 0);
+    return () => window.clearTimeout(t);
+  }, [searchQuery]);
 
   useEffect(() => {
     // Infinite scroll advances the page index and fetches the next batch.
@@ -603,7 +603,7 @@ export default function ComicLibraryClient({ initialAgeVerified = false }: Comic
       const timer = setTimeout(() => {
         void loadData(offset, true);
       }, 0);
-      return () => clearTimeout(timer);
+      return () => window.clearTimeout(timer);
     }
   }, [offset, loadData]);
 
@@ -751,15 +751,15 @@ export default function ComicLibraryClient({ initialAgeVerified = false }: Comic
                           </button>
                         </div>
                         <div className="max-h-[400px] overflow-y-auto custom-scrollbar">
-                          {isSearching ? (
+                          {loading && fetchSearchQueryTrimmed.length >= 3 ? (
                             <div className="p-8 text-center">
                               <Loader2 className="w-5 h-5 text-[#ff4d00] animate-spin mx-auto mb-3" />
                               <span className="text-[9px] font-black uppercase tracking-[0.5em] text-neutral-400 dark:text-white/10">Searching</span>
                             </div>
-                          ) : autoCompleteResults.length === 0 ? (
+                          ) : autoCompletePreview.length === 0 ? (
                             <div className="p-8 text-center text-[9px] font-black uppercase tracking-[0.5em] text-neutral-400 dark:text-white/10">No matches</div>
                           ) : (
-                            autoCompleteResults.map(comic => (
+                            autoCompletePreview.map(comic => (
                               <button 
                                 key={`${comic.source}:${comic.id}`}
                                 onClick={() => {

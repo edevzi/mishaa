@@ -58,7 +58,7 @@ export default function Gallery() {
       await fetch(`/api/stories?id=${id}`, { method: 'DELETE' });
       setStories(stories.filter(s => s.id !== id));
     } catch {
-      alert('Delete failed');
+      alert(t.deleteFailed);
     }
   };
 

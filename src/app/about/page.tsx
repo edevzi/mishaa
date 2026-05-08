@@ -53,7 +53,8 @@ export default function AboutPage() {
               <span className="text-white text-[10px] font-black uppercase tracking-[0.4em]">{t.origin}</span>
             </div>
             <h1 className="text-4xl sm:text-6xl md:text-9xl font-display uppercase tracking-tighter leading-none italic text-balance">
-               THIS IS <span className="text-[#3b82f6]">ICOMICS.WIKI.</span>
+               {t.titleLine1}{' '}
+               <span className="text-[#3b82f6]">{t.titleLine2}</span>
             </h1>
             <p className="text-lg sm:text-2xl md:text-4xl font-sans font-black uppercase leading-tight tracking-tight border-y-4 border-black py-6 sm:py-8">
               {t.headline}

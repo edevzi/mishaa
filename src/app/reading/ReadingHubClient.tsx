@@ -1,0 +1,101 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+import Link from 'next/link';
+import { BookMarked, Library, Rss } from 'lucide-react';
+import Navbar from '@/components/Navbar';
+import Footer from '@/components/Footer';
+import { translations, Lang } from '@/lib/translations';
+import { readStorageItem } from '@/lib/browser-storage';
+
+export default function ReadingHubClient() {
+  const [lang, setLang] = useState<Lang>('en');
+  const tr = translations[lang].reading;
+
+  useEffect(() => {
+    const savedLang = readStorageItem('lang') as Lang;
+    const timer =
+      savedLang && translations[savedLang]
+        ? window.setTimeout(() => setLang((c) => (savedLang !== c ? savedLang : c)), 0)
+        : undefined;
+    const onLang = (e: Event) => setLang((e as CustomEvent<Lang>).detail);
+    window.addEventListener('langChange', onLang as EventListener);
+    return () => {
+      window.removeEventListener('langChange', onLang as EventListener);
+      if (timer) window.clearTimeout(timer);
+    };
+  }, []);
+
+  const cards = [
+    {
+      href: '/guides',
+      title: tr.cardGuidesTitle,
+      body: tr.cardGuidesBody,
+      icon: BookMarked,
+    },
+    {
+      href: '/feed.xml',
+      title: tr.cardRssTitle,
+      body: tr.cardRssBody,
+      icon: Rss,
+    },
+    {
+      href: '/library',
+      title: tr.cardLibraryTitle,
+      body: tr.cardLibraryBody,
+      icon: Library,
+    },
+  ];
+
+  return (
+    <div className="min-h-screen overflow-x-hidden bg-zinc-50 text-neutral-900 selection:bg-[#ff4d00] selection:text-white dark:bg-[#020202] dark:text-white dark:selection:text-white">
+      <Navbar />
+
+      <main className="container mx-auto px-4 pb-20 pt-24 sm:px-6 sm:pb-28 sm:pt-28 lg:px-8 lg:pb-32 lg:pt-36">
+        <header className="mx-auto max-w-4xl space-y-6 text-center">
+          <p className="text-[10px] font-black uppercase tracking-[0.45em] text-[#ff4d00]">{tr.kicker}</p>
+          <h1 className="text-balance text-4xl font-black uppercase tracking-tighter text-neutral-900 dark:text-white sm:text-5xl md:text-6xl">
+            {tr.title}
+          </h1>
+          <p className="mx-auto max-w-2xl text-sm leading-relaxed text-neutral-600 dark:text-white/55 md:text-base">{tr.intro}</p>
+        </header>
+
+        <div className="mx-auto mt-14 grid max-w-5xl gap-5 md:grid-cols-3">
+          {cards.map(({ href, title, body, icon: Icon }) => (
+            <Link
+              key={href}
+              href={href}
+              className="group flex flex-col rounded-[1.75rem] border border-neutral-200 bg-white/90 p-6 backdrop-blur-xl transition-all hover:border-[#ff5a1f]/45 hover:shadow-xl dark:border-white/10 dark:bg-white/[0.03] dark:hover:border-[#ff5a1f]/35 sm:p-8"
+            >
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-neutral-200 bg-neutral-50 text-[#ff5a1f] dark:border-white/10 dark:bg-black/40">
+                <Icon size={22} strokeWidth={2} />
+              </div>
+              <h2 className="mt-5 text-lg font-black uppercase tracking-tight text-neutral-900 transition-colors group-hover:text-[#ff5a1f] dark:text-white dark:group-hover:text-white">
+                {title}
+              </h2>
+              <p className="mt-3 flex-1 text-sm leading-relaxed text-neutral-600 dark:text-white/55">{body}</p>
+              <span className="mt-6 text-[10px] font-black uppercase tracking-[0.35em] text-neutral-400 dark:text-white/35">{tr.openCta}</span>
+            </Link>
+          ))}
+        </div>
+
+        <section className="mx-auto mt-16 max-w-3xl rounded-[1.75rem] border border-neutral-200 bg-white/90 p-8 text-sm leading-relaxed text-neutral-700 backdrop-blur-xl dark:border-white/10 dark:bg-white/[0.03] dark:text-white/65 md:p-10">
+          <h2 className="text-[10px] font-black uppercase tracking-[0.45em] text-[#ff4d00]">{tr.discoverTitle}</h2>
+          <p className="mt-4">
+            {tr.closingBeforeFaq}{' '}
+            <Link href="/faq" className="font-semibold text-[#ff5a1f] underline decoration-[#ff5a1f]/40 underline-offset-4">
+              {tr.faqLinkLabel}
+            </Link>{' '}
+            {tr.closingMid}{' '}
+            <Link href="/support" className="font-semibold text-[#ff5a1f] underline decoration-[#ff5a1f]/40 underline-offset-4">
+              {tr.supportLinkLabel}
+            </Link>{' '}
+            {tr.closingAfter}
+          </p>
+        </section>
+      </main>
+
+      <Footer />
+    </div>
+  );
+}

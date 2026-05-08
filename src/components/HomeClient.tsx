@@ -18,6 +18,7 @@ import {
   Theater,
 } from 'lucide-react';
 import Navbar from '@/components/Navbar';
+import HomeQuickSearch from '@/components/HomeQuickSearch';
 import {
   MangaLanguage,
   MANGA_LANGUAGE_OPTIONS,
@@ -31,6 +32,7 @@ import {
   readBookmarks,
   readReadingHistory,
 } from '@/lib/library-storage';
+import { translations, Lang } from '@/lib/translations';
 import {
   comicKey,
   createDefaultHomeProfile,
@@ -283,8 +285,10 @@ export default function HomeClient({
     base['trending'] = { items: initialData?.['trending'] || [], loading: !(initialData?.['trending']?.length) };
     return base;
   });
-  const searchQuery = '';
   const [activeTab] = useState<ShelfKey>('all');
+  const [homeShelfSearch, setHomeShelfSearch] = useState('');
+  const [uiLang, setUiLang] = useState<Lang>('en');
+  const shelfCopy = translations[uiLang].hero;
   const [mangaLanguage, setMangaLanguage] = useState<MangaLanguage>(() => initialMangaLanguage);
   const [personalRecs, setPersonalRecs] = useState<LibraryComic[]>([]);
   const [isRecsLoading, setIsRecsLoading] = useState(false);
@@ -395,6 +399,20 @@ export default function HomeClient({
     setIsAgeVerified(verified);
     if (verified) persistAgeVerification();
   }, [initialAgeVerified]);
+
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+    const saved = readStorageItem('lang') as Lang;
+    if (saved && translations[saved]) {
+      timer = setTimeout(() => setUiLang((prev) => (saved !== prev ? saved : prev)), 0);
+    }
+    const onLang = (e: Event) => setUiLang((e as CustomEvent<Lang>).detail);
+    window.addEventListener('langChange', onLang as EventListener);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener('langChange', onLang as EventListener);
+    };
+  }, []);
 
   useEffect(() => {
     const syncPreferenceProfile = async () => {
@@ -611,6 +629,7 @@ export default function HomeClient({
   const renderedShelves = activeTab === 'all'
     ? visibleShelves
     : visibleShelves.filter((shelf) => shelf.key === activeTab);
+  const shelfSearchNorm = homeShelfSearch.trim().toLowerCase();
   const shelfCardLimit = isTouchDevice ? 8 : 12;
 
   const heroFeaturedKey = featuredComic ? comicKey(featuredComic) : '';
@@ -807,15 +826,28 @@ export default function HomeClient({
         </section>
         {/* Shelves Layout */}
         <section className="relative z-20 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pb-20 sm:pb-24 lg:pb-28">
-          <div className="space-y-16 sm:space-y-20">
-            {renderedShelves.every(s => shelfState[s.key]?.items.filter(c => c.title.toLowerCase().includes(searchQuery.toLowerCase())).length === 0) &&
-              searchQuery && (
+          <div className="space-y-16 sm:space-y-20 pt-10 sm:pt-12">
+            <HomeQuickSearch
+              mangaLanguage={mangaLanguage}
+              isAgeVerified={isAgeVerified}
+              onDebouncedShelfFilter={setHomeShelfSearch}
+            />
+            {renderedShelves.every((s) =>
+              shelfState[s.key]?.items.filter(
+                (c) =>
+                  c.title.toLowerCase().includes(shelfSearchNorm) ||
+                  c.description.toLowerCase().includes(shelfSearchNorm),
+              ).length === 0,
+            ) &&
+              shelfSearchNorm && (
                 <div className="py-20 text-center">
                   <div className="mb-6 inline-flex h-16 w-16 items-center justify-center border border-neutral-200 bg-neutral-100 text-neutral-400 dark:border-white/10 dark:bg-white/5 dark:text-neutral-500">
                     <Search size={28} strokeWidth={1.5} />
                   </div>
-                  <h3 className="mb-2 text-xl font-bold uppercase tracking-tight text-neutral-900 dark:text-white">No results found</h3>
-                  <p className="text-sm text-neutral-500 dark:text-neutral-400">We couldn&apos;t find any comics matching &quot;{searchQuery}&quot;</p>
+                  <h3 className="mb-2 text-xl font-bold uppercase tracking-tight text-neutral-900 dark:text-white">
+                    {shelfCopy.shelfNoMatchesTitle}
+                  </h3>
+                  <p className="text-sm text-neutral-500 dark:text-neutral-400">{shelfCopy.shelfNoMatchesBody}</p>
                 </div>
               )}
 
@@ -825,9 +857,10 @@ export default function HomeClient({
                 if (!state) return null;
 
                 const filteredItems = rankComicsForHome(
-                  state.items.filter(comic =>
-                    comic.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                    comic.description.toLowerCase().includes(searchQuery.toLowerCase())
+                  state.items.filter(
+                    (comic) =>
+                      comic.title.toLowerCase().includes(shelfSearchNorm) ||
+                      comic.description.toLowerCase().includes(shelfSearchNorm),
                   ),
                   {
                     profile: preferenceProfile,
@@ -837,7 +870,7 @@ export default function HomeClient({
                 );
 
                 if (shelf.key === 'for-you' && filteredItems.length === 0 && !isRecsLoading) return null;
-                if (searchQuery && filteredItems.length === 0) return null;
+                if (shelfSearchNorm && filteredItems.length === 0) return null;
 
                 return (
                   <motion.div

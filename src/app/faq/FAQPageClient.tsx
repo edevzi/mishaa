@@ -14,14 +14,15 @@ export default function FAQPageClient() {
   const [lang, setLang] = useState<Lang>('en');
 
   const t = translations[lang].faq;
+  const footerT = translations[lang].footer;
 
   useEffect(() => {
     const savedLang = readStorageItem('lang') as Lang;
     if (savedLang && translations[savedLang]) setLang(savedLang);
 
     const handleLang = (e: Event) => setLang((e as CustomEvent<Lang>).detail);
-    window.addEventListener('langChange', handleLang);
-    return () => window.removeEventListener('langChange', handleLang);
+    window.addEventListener('langChange', handleLang as EventListener);
+    return () => window.removeEventListener('langChange', handleLang as EventListener);
   }, []);
 
   const FAQS = [
@@ -32,6 +33,7 @@ export default function FAQPageClient() {
     { q: t.q5, a: t.a5 },
     { q: t.q6, a: t.a6 },
     { q: t.q7, a: t.a7 },
+    { q: t.q8, a: t.a8 },
   ];
 
   return (
@@ -49,8 +51,8 @@ export default function FAQPageClient() {
               <span className="text-white text-[10px] font-black uppercase tracking-[0.4em]">{t.badge}</span>
             </div>
             <h1 className="text-6xl md:text-9xl font-display uppercase tracking-tighter leading-none italic">
-              {t.title.split(' ')[0]} <br />
-              <span className="text-[#3b82f6]">{t.title.split(' ')[1]}</span>
+              {t.titleLine1} <br />
+              <span className="text-[#3b82f6]">{t.titleLine2}</span>
             </h1>
             <p className="text-xl font-editorial italic opacity-60">&quot;{t.subtitle}&quot;</p>
           </div>
@@ -98,13 +100,13 @@ export default function FAQPageClient() {
                 href="/guides"
                 className="ink-stroke text-[10px] font-black uppercase tracking-[0.4em] hover:text-[#ff5a1f] transition-colors"
               >
-                Guides
+                {footerT.guides}
               </Link>
               <Link
                 href="/reading"
                 className="ink-stroke text-[10px] font-black uppercase tracking-[0.4em] hover:text-[#ff5a1f] transition-colors"
               >
-                Reading hub
+                {footerT.readingHub}
               </Link>
               <a
                 href="https://t.me/icomicsuz"

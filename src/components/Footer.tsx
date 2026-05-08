@@ -37,14 +37,16 @@ export default function Footer() {
             </div>
               <div className="flex flex-col">
                 <h2 className="text-3xl font-display uppercase leading-none text-neutral-900 sm:text-4xl dark:text-white">iComics.wiki</h2>
-                <span className="text-[10px] font-black uppercase tracking-[0.4em] text-[#ff4d00]">Official Library</span>
+                <span className="text-[10px] font-black uppercase tracking-[0.4em] text-[#ff4d00]">{t.brandSubtitle}</span>
               </div>
             </div>
             <div className="max-w-xs space-y-4">
               <p className="text-[10px] font-black uppercase tracking-[0.4em] leading-loose text-neutral-600 opacity-80 dark:text-white dark:opacity-40">
-                Independent Comic Synthesis Protocol<br />
-                Developed by iComics.wiki Collective 2026<br />
-                icomics.wiki | Sequential Production
+                {t.taglineLine1}
+                <br />
+                {t.taglineLine2}
+                <br />
+                {t.taglineLine3}
               </p>
             </div>
           </div>
@@ -64,19 +66,19 @@ export default function Footer() {
                 <Link href="/guides" className="transition-all hover:translate-x-2 hover:text-[#ff4d00] dark:hover:text-white">{t.guides}</Link>
                 <Link href="/reading" className="transition-all hover:translate-x-2 hover:text-[#ff4d00] dark:hover:text-white">{t.readingHub}</Link>
                 <Link href="/support" className="transition-all hover:translate-x-2 hover:text-[#ff4d00] dark:hover:text-white">{t.customer}</Link>
-                <Link href="/settings" className="transition-all hover:translate-x-2 hover:text-[#ff4d00] dark:hover:text-white">Settings</Link>
-                <a href={TELEGRAM_CHANNEL_URL} target="_blank" rel="noreferrer" className="transition-all hover:translate-x-2 hover:text-[#ff4d00] dark:hover:text-white">Telegram: @icomicswiki</a>
+                <Link href="/settings" className="transition-all hover:translate-x-2 hover:text-[#ff4d00] dark:hover:text-white">{t.settingsLink}</Link>
+                <a href={TELEGRAM_CHANNEL_URL} target="_blank" rel="noreferrer" className="transition-all hover:translate-x-2 hover:text-[#ff4d00] dark:hover:text-white">{t.telegramChannel}</a>
               </div>
             </div>
             <div className="space-y-5 sm:space-y-6 lg:space-y-8">
               <span className="text-[11px] font-black uppercase tracking-[0.4em] text-[#ff4d00]">{t.legal}</span>
               <div className="flex flex-col gap-4 text-[10px] font-black uppercase tracking-widest text-neutral-600 dark:text-white/60">
-                <Link href="/privacy" className="transition-all hover:translate-x-2 hover:text-[#ff4d00] dark:hover:text-white">Privacy Policy</Link>
-                <Link href="/terms" className="transition-all hover:translate-x-2 hover:text-[#ff4d00] dark:hover:text-white">Terms</Link>
-                <Link href="/content-policy" className="transition-all hover:translate-x-2 hover:text-[#ff4d00] dark:hover:text-white">Content Policy</Link>
-                <Link href="/dmca" className="transition-all hover:translate-x-2 hover:text-[#ff4d00] dark:hover:text-white">DMCA</Link>
-                <Link href="/contact" className="transition-all hover:translate-x-2 hover:text-[#ff4d00] dark:hover:text-white">Contact: info@icomics.wiki</Link>
-                <span className="text-neutral-500 opacity-70 dark:text-white dark:opacity-30">© 2026 icomics.wiki</span>
+                <Link href="/privacy" className="transition-all hover:translate-x-2 hover:text-[#ff4d00] dark:hover:text-white">{t.privacyPolicy}</Link>
+                <Link href="/terms" className="transition-all hover:translate-x-2 hover:text-[#ff4d00] dark:hover:text-white">{t.termsShort}</Link>
+                <Link href="/content-policy" className="transition-all hover:translate-x-2 hover:text-[#ff4d00] dark:hover:text-white">{t.contentPolicy}</Link>
+                <Link href="/dmca" className="transition-all hover:translate-x-2 hover:text-[#ff4d00] dark:hover:text-white">{t.dmca}</Link>
+                <Link href="/contact" className="transition-all hover:translate-x-2 hover:text-[#ff4d00] dark:hover:text-white">{t.contactEmail}</Link>
+                <span className="text-neutral-500 opacity-70 dark:text-white dark:opacity-30">{t.copyrightNotice}</span>
               </div>
             </div>
           </div>
