@@ -4,15 +4,13 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "prisma generate && next build && opennextjs-cloudflare build -s",
+    "build": "prisma generate && next build",
     "start": "next start",
     "lint": "NODE_OPTIONS=--max-old-space-size=8192 eslint",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:integration": "vitest run --config vitest.integration.config.ts",
-    "smoke:prod": "node scripts/smoke-prod.mjs",
-    "deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
-    "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview"
+    "smoke:prod": "node scripts/smoke-prod.mjs"
   },
   "dependencies": {
     "@neondatabase/serverless": "^0.10.4",
@@ -29,7 +27,6 @@
     "tailwind-merge": "^3.5.0"
   },
   "devDependencies": {
-    "@opennextjs/cloudflare": "^1.19.5",
     "@tailwindcss/postcss": "^4",
     "@types/bcryptjs": "^2.4.6",
     "@types/node": "^20",
@@ -41,7 +38,6 @@
     "prisma": "^6.2.1",
     "tailwindcss": "^4",
     "typescript": "^5",
-    "vitest": "^3.2.4",
-    "wrangler": "^4.87.0"
+    "vitest": "^3.2.4"
   }
 }

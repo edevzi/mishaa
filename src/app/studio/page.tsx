@@ -3,7 +3,8 @@ import ComicCreator from '@/components/ComicCreator';
 import Navbar from '@/components/Navbar';
 import { staticPageMetadata } from '@/lib/seo/page-metadata';
 
-export const runtime = "edge";
+/** Node runtime: studio bundle exceeds Vercel Edge 1 MB limit on Hobby. */
+export const runtime = "nodejs";
 export const metadata: Metadata = staticPageMetadata({
   title: 'Creative Studio',
   description:
