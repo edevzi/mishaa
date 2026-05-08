@@ -1048,7 +1048,11 @@ export default function ComicReaderClient({ initialComic, initialChapters, sourc
           marginLeft: 'auto',
           marginRight: 'auto',
         }
-      : { width: '100%' };
+      : {
+          width: '100%',
+          marginLeft: 'auto',
+          marginRight: 'auto',
+        };
 
   if (restrictedSource && !isAgeVerified) {
     return (
@@ -1792,7 +1796,10 @@ export default function ComicReaderClient({ initialComic, initialChapters, sourc
         <div
           ref={canvasRef}
           className="flex-1 w-full overflow-y-auto relative scroll-smooth touch-pan-y"
-          style={{ backgroundColor: READER_THEMES[readerTheme].canvasBg }}
+          style={{
+            backgroundColor: READER_THEMES[readerTheme].canvasBg,
+            scrollbarGutter: 'stable',
+          }}
           onTouchStart={handleTouchStart}
           onTouchEnd={handleTouchEnd}
           aria-label="Comic reader content"
@@ -1836,7 +1843,7 @@ export default function ComicReaderClient({ initialComic, initialChapters, sourc
                 </div>
              </div>
            ) : (
-              <div style={comicZoomWrapStyle} className={`mx-auto flex flex-col items-center transition-all duration-500 ${viewMode === 'flow' ? 'w-full pt-0 pb-20' : 'min-h-[calc(100vh-40px)] justify-center py-10 md:py-20'}`}>
+              <div style={comicZoomWrapStyle} className={`mx-auto flex w-full flex-col items-center transition-all duration-500 ${viewMode === 'flow' ? 'pt-0 pb-20' : 'min-h-[calc(100vh-40px)] justify-center py-10 md:py-20'}`}>
                 {viewMode === 'classic' ? (
                    <div className="relative flex items-center justify-center w-full min-h-[80vh]">
                      {!pageReady ? (
@@ -1855,13 +1862,13 @@ export default function ComicReaderClient({ initialComic, initialChapters, sourc
                            maxHeight: '90vh',
                            border: `1px solid ${READER_THEMES[readerTheme].border}`,
                          }}
-                         className="shadow-2xl rounded-sm object-contain"
+                         className="mx-auto block shadow-2xl rounded-sm object-contain"
                          alt={`Page ${currentPage + 1} of ${comic.title}`}
                        />
                      )}
                    </div>
                 ) : viewMode === 'journal' ? (
-                   <div className="flex items-stretch justify-center w-full max-w-[98vw] gap-0 min-h-[85vh]">
+                   <div className="mx-auto flex min-h-[85vh] w-full max-w-[min(100%,98vw)] items-stretch justify-center gap-0">
                       {!pageReady ? (
                         <div className="flex items-center justify-center w-full min-h-[85vh]">
                           <div className="w-14 h-14 border-2 border-[#ff4d00]/30 border-t-[#ff4d00] rounded-full animate-spin" />
@@ -1905,7 +1912,10 @@ export default function ComicReaderClient({ initialComic, initialChapters, sourc
                       )}
                    </div>
                  ) : (
-                  <div className="flex flex-col items-center gap-0 w-full" style={{ maxWidth: isMobile ? '100%' : '800px', width: '100%' }}>
+                  <div
+                    className="mx-auto flex w-full flex-col items-center gap-0"
+                    style={{ maxWidth: isMobile ? '100%' : '800px', width: '100%' }}
+                  >
                       {pages.map((p, i) => (
                         <div
                           key={i}
