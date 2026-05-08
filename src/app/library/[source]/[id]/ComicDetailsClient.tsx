@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
@@ -60,6 +60,8 @@ interface ComicDetailsClientProps {
 
 export default function ComicDetailsClient({ initialComic, initialChapters, source, id, initialAgeVerified = false }: ComicDetailsClientProps) {
   const router = useRouter();
+  const [readNavPending, startReadNavTransition] = useTransition();
+  const [pendingReadChapterId, setPendingReadChapterId] = useState<string | null>(null);
 
   const [comic, setComic] = useState<ComicDetail | null>(initialComic);
   const [chapters, setChapters] = useState<ComicChapter[]>(initialChapters || []);
@@ -302,18 +304,32 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
     setShowAgeGate(false);
   };
 
+  const nextReadChapterId = useMemo(() => {
+    if (!chapters.length) return null;
+    return lastReadChapter?.id && chapters.some((c) => c.id === lastReadChapter.id)
+      ? lastReadChapter.id
+      : chapters[0].id;
+  }, [chapters, lastReadChapter]);
+
+  const navigateToReaderChapter = useCallback(
+    (chapterId: string) => {
+      setPendingReadChapterId(chapterId);
+      startReadNavTransition(() => {
+        router.push(`/library/${source}/${id}/read/${chapterId}`);
+      });
+    },
+    [id, router, source, startReadNavTransition],
+  );
+
   const startReading = () => {
-    if (chapters.length > 0) {
-      const resumeChapterId = lastReadChapter?.id && chapters.some((chapter) => chapter.id === lastReadChapter.id)
-        ? lastReadChapter.id
-        : chapters[0].id;
+    if (chapters.length > 0 && nextReadChapterId) {
       trackEvent('comic_start_reading', {
         source,
         comicId: id,
         comicTitle: comic?.title || id,
-        chapterId: resumeChapterId,
+        chapterId: nextReadChapterId,
       });
-      router.push(`/library/${source}/${id}/read/${resumeChapterId}`);
+      navigateToReaderChapter(nextReadChapterId);
     } else {
       // Professional approach: Scroll to the chapters section to show the explanation
       const chaptersSection = document.getElementById('chapters-section');
@@ -782,7 +798,9 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
             <div className="mt-6 grid grid-cols-1 gap-3">
                {comic.source !== 'superhero' && (
                  <motion.button 
-                   onClick={startReading} 
+                   type="button"
+                   onClick={startReading}
+                   aria-busy={readNavPending && nextReadChapterId != null && pendingReadChapterId === nextReadChapterId}
                    whileHover={{ scale: 1.02 }}
                    whileTap={{ scale: 0.98 }}
                    className="group relative flex items-center justify-center gap-3 overflow-hidden bg-neutral-900 py-6 font-black uppercase tracking-[0.5em] text-[12px] text-white shadow-lg transition-all dark:bg-white dark:text-black dark:shadow-[0_20px_40px_rgba(255,255,255,0.1)]"
@@ -795,7 +813,14 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
                      transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
                      className="absolute inset-0 bg-[#ff4d00] blur-3xl z-0"
                    />
-                   <span className="relative z-10 flex items-center gap-3"><Play fill="currentColor" size={16} /> {t.read}</span>
+                   <span className="relative z-10 flex items-center gap-3">
+                     {readNavPending && nextReadChapterId != null && pendingReadChapterId === nextReadChapterId ? (
+                       <Loader2 className="h-4 w-4 shrink-0 animate-spin" aria-hidden />
+                     ) : (
+                       <Play fill="currentColor" size={16} aria-hidden />
+                     )}
+                     {readNavPending && nextReadChapterId != null && pendingReadChapterId === nextReadChapterId ? t.openingReader : t.read}
+                   </span>
                  </motion.button>
                )}
                
@@ -804,18 +829,25 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
                    initial={{ opacity: 0, scale: 0.95 }}
                    animate={{ opacity: 1, scale: 1 }}
                  >
-                   <Link
-                     href={`/library/${source}/${id}/read/${lastReadChapter.id}`}
+                   <button
+                     type="button"
+                     onClick={() => navigateToReaderChapter(lastReadChapter.id)}
+                     aria-busy={readNavPending && pendingReadChapterId === lastReadChapter.id}
                      className="flex w-full flex-col items-center justify-center gap-1 overflow-hidden border border-neutral-200 bg-neutral-100 py-4 font-black uppercase tracking-widest text-[9px] text-neutral-900 transition-all hover:bg-neutral-200/80 dark:border-white/15 dark:bg-white/10 dark:text-white dark:hover:bg-white/15"
                    >
-                     <span className="text-[#ff4d00]">{t.continueReading}</span>
+                     <span className="flex items-center gap-2 text-[#ff4d00]">
+                       {readNavPending && pendingReadChapterId === lastReadChapter.id ? (
+                         <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin" aria-hidden />
+                       ) : null}
+                       {readNavPending && pendingReadChapterId === lastReadChapter.id ? t.openingReader : t.continueReading}
+                     </span>
                      <span className="w-full truncate px-4 text-center text-neutral-600 dark:text-white/50">{lastReadChapter.title}</span>
                      {typeof lastReadChapter.progressPercent === 'number' && (
                        <span className="text-[8px] font-black uppercase tracking-[0.35em] text-neutral-500 dark:text-white/35">
                          {t.progressComplete.replace('{percent}', String(lastReadChapter.progressPercent))}
                        </span>
                      )}
-                   </Link>
+                   </button>
                  </motion.div>
                )}
               <div className="grid grid-cols-2 gap-4">
@@ -1083,6 +1115,7 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
                       chapters.map((ch) => {
                         const sharedClass =
                           'group relative flex w-full items-center gap-4 border border-neutral-200 bg-white p-5 text-left transition-all hover:border-[#ff4d00]/45 hover:bg-[#ff4d00]/5 dark:border-white/8 dark:bg-white/5 dark:hover:bg-[#ff4d00]/10 md:p-6';
+                        const chapterOpening = readNavPending && pendingReadChapterId === ch.id;
                         const inner = (
                           <>
                             <div className="absolute inset-0 bg-gradient-to-r from-[#ff4d00]/5 to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
@@ -1105,6 +1138,12 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
                               <ExternalLink
                                 size={20}
                                 className="relative z-10 shrink-0 text-neutral-400 transition-all group-hover:text-blue-500 dark:text-white/35 dark:group-hover:text-blue-400"
+                              />
+                            ) : chapterOpening ? (
+                              <Loader2
+                                size={20}
+                                className="relative z-10 shrink-0 animate-spin text-[#ff4d00]"
+                                aria-hidden
                               />
                             ) : (
                               <ChevronRight
@@ -1130,14 +1169,16 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
                         }
 
                         return (
-                          <Link
+                          <button
                             key={ch.id}
-                            href={`/library/${source}/${id}/read/${ch.id}`}
-                            prefetch={false}
+                            type="button"
+                            onClick={() => navigateToReaderChapter(ch.id)}
+                            aria-busy={chapterOpening}
+                            aria-label={chapterOpening ? t.openingReader : undefined}
                             className={sharedClass}
                           >
                             {inner}
-                          </Link>
+                          </button>
                         );
                       })
                     ) : (

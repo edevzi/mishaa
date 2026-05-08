@@ -1286,7 +1286,7 @@ export default function ComicReaderClient({ initialComic, initialChapters, sourc
               initial={{ y: -100, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               exit={{ y: -100, opacity: 0 }}
-              className="fixed top-8 left-1/2 -translate-x-1/2 z-[10045] bg-white/5 backdrop-blur-xl border border-white/10 px-8 py-3 rounded-2xl flex items-center justify-center shadow-2xl pointer-events-none"
+              className="fixed left-1/2 z-[10045] flex -translate-x-1/2 items-center justify-center rounded-2xl border border-white/10 bg-white/5 px-8 py-3 shadow-2xl backdrop-blur-xl pointer-events-none top-[max(0.75rem,env(safe-area-inset-top,0px))]"
             >
                <div className="text-[11px] font-black uppercase tracking-widest text-white/80">
                   Chapter {chapters[currentChapterIdx]?.chapterNum}
@@ -1404,7 +1404,7 @@ export default function ComicReaderClient({ initialComic, initialChapters, sourc
 
         {pages.length > 0 && viewMode !== 'flow' && !readerLoading && (
           <div
-            className={`fixed z-[10055] flex items-center gap-0.5 rounded-2xl border px-1.5 py-1 shadow-xl backdrop-blur-md transition-all duration-300 bottom-[max(2rem,env(safe-area-inset-bottom))] left-4 max-w-[calc(100vw-8rem)] sm:left-8 ${
+            className={`fixed z-[10055] flex max-w-[calc(100vw-env(safe-area-inset-left,0px)-env(safe-area-inset-right,0px)-1.25rem)] touch-manipulation items-center gap-0.5 overflow-x-auto overscroll-x-contain rounded-2xl border py-1 pl-1 pr-2 shadow-xl backdrop-blur-md [-ms-overflow-style:none] [scrollbar-width:none] transition-all duration-300 sm:max-w-[calc(100vw-8rem)] sm:overflow-visible sm:px-1.5 sm:pr-1.5 bottom-[max(1rem,calc(env(safe-area-inset-bottom,0px)+0.75rem))] left-[max(0.75rem,env(safe-area-inset-left,0px))] sm:bottom-[max(2rem,env(safe-area-inset-bottom,0px))] sm:left-8 [&::-webkit-scrollbar]:hidden ${
               showSettings || showGrid || showReaderHelp || uiVisible
                 ? 'pointer-events-none opacity-0 scale-95'
                 : 'opacity-100 scale-100'
@@ -1420,7 +1420,7 @@ export default function ComicReaderClient({ initialComic, initialChapters, sourc
             <button
               type="button"
               aria-label="Zoom out"
-              className="rounded-xl p-2.5 transition-opacity disabled:opacity-30"
+              className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl transition-opacity disabled:opacity-30 sm:h-auto sm:w-auto sm:p-2.5"
               disabled={readerZoom <= 0.66}
               style={{ color: READER_THEMES[readerTheme].text }}
               onClick={() => setReaderZoom((z) => z - READER_ZOOM_STEP)}
@@ -1428,7 +1428,7 @@ export default function ComicReaderClient({ initialComic, initialChapters, sourc
               <ZoomOut size={18} aria-hidden />
             </button>
             <span
-              className="min-w-[3rem] text-center text-[11px] font-black tabular-nums sm:min-w-[3.25rem]"
+              className="min-w-10 flex-shrink-0 text-center text-[10px] font-black tabular-nums sm:min-w-[3.25rem] sm:text-[11px]"
               style={{ color: READER_THEMES[readerTheme].text }}
             >
               {Math.round(readerZoom * 100)}%
@@ -1436,7 +1436,7 @@ export default function ComicReaderClient({ initialComic, initialChapters, sourc
             <button
               type="button"
               aria-label="Zoom in"
-              className="rounded-xl p-2.5 transition-opacity disabled:opacity-30"
+              className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl transition-opacity disabled:opacity-30 sm:h-auto sm:w-auto sm:p-2.5"
               disabled={readerZoom >= 2.98}
               style={{ color: READER_THEMES[readerTheme].text }}
               onClick={() => setReaderZoom((z) => z + READER_ZOOM_STEP)}
@@ -1446,7 +1446,7 @@ export default function ComicReaderClient({ initialComic, initialChapters, sourc
             <button
               type="button"
               aria-label={t.readerZoomReset}
-              className="rounded-xl p-2.5"
+              className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl sm:h-auto sm:w-auto sm:p-2.5"
               style={{ color: READER_THEMES[readerTheme].muted }}
               onClick={() => setReaderZoom(1)}
             >
@@ -1460,7 +1460,7 @@ export default function ComicReaderClient({ initialComic, initialChapters, sourc
             <button
               type="button"
               aria-label={isFullscreen ? t.readerFullscreenExit : t.readerFullscreenEnter}
-              className="rounded-xl p-2.5"
+              className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl sm:h-auto sm:w-auto sm:p-2.5"
               style={{ color: READER_THEMES[readerTheme].text }}
               onClick={() => void toggleFullscreen()}
             >
@@ -1471,14 +1471,14 @@ export default function ComicReaderClient({ initialComic, initialChapters, sourc
 
         {pages.length > 0 && (
           <div
-            className={`fixed bottom-8 right-8 z-[10040] transition-all duration-300 ${
+            className={`fixed z-[10040] touch-manipulation transition-all duration-300 bottom-[max(1rem,env(safe-area-inset-bottom,0px))] right-[max(1rem,env(safe-area-inset-right,0px))] sm:bottom-8 sm:right-8 ${
               uiVisible || showSettings || !settingsFabIdle
                 ? 'opacity-0 scale-50 pointer-events-none'
                 : 'opacity-100 scale-100'
             }`}
           >
-             <button onClick={() => setShowSettings(true)} className="w-16 h-16 bg-[#ff4d00] text-white rounded-full flex items-center justify-center shadow-[0_10px_30px_rgba(255,77,0,0.5)] border border-[#ff4d00]/50 active:scale-90 transition-all">
-               <Settings size={28} />
+             <button onClick={() => setShowSettings(true)} className="flex h-14 w-14 items-center justify-center rounded-full border border-[#ff4d00]/50 bg-[#ff4d00] text-white shadow-[0_10px_30px_rgba(255,77,0,0.5)] transition-all active:scale-90 sm:h-16 sm:w-16">
+               <Settings className="h-6 w-6 sm:h-7 sm:w-7" aria-hidden />
              </button>
           </div>
         )}
@@ -1653,8 +1653,14 @@ export default function ComicReaderClient({ initialComic, initialChapters, sourc
               initial={{ y: 40, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               exit={{ y: 40, opacity: 0 }}
-              className="fixed bottom-6 left-4 right-4 z-[10055] flex flex-col items-stretch gap-3 sm:left-1/2 sm:right-auto sm:w-[min(92vw,24rem)] sm:-translate-x-1/2"
-              style={{ paddingBottom: 'max(env(safe-area-inset-bottom), 0.5rem)' }}
+              className="fixed left-4 right-4 z-[10056] flex flex-col items-stretch gap-3 sm:left-1/2 sm:right-auto sm:w-[min(92vw,24rem)] sm:-translate-x-1/2"
+              style={{
+                paddingBottom: 'max(env(safe-area-inset-bottom, 0px), 0.5rem)',
+                bottom:
+                  pages.length > 0 && viewMode !== 'flow' && !readerLoading
+                    ? 'calc(7.35rem + env(safe-area-inset-bottom, 0px))'
+                    : 'max(1.5rem, env(safe-area-inset-bottom, 0px))',
+              }}
             >
               <div
                 className="rounded-2xl border px-4 py-3 shadow-2xl backdrop-blur-xl"
@@ -1794,11 +1800,13 @@ export default function ComicReaderClient({ initialComic, initialChapters, sourc
           )}
         </AnimatePresence>
         
-        <div className={`fixed top-8 left-8 z-[10040] transition-all duration-300 ${uiVisible ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
+        <div
+          className={`fixed z-[10040] touch-manipulation transition-all duration-300 top-[max(0.75rem,env(safe-area-inset-top,0px))] left-[max(0.75rem,env(safe-area-inset-left,0px))] sm:top-8 sm:left-8 ${uiVisible ? 'pointer-events-none opacity-0' : 'opacity-100'}`}
+        >
            <button
              aria-label="Close reader"
              onClick={() => router.push(`/library/${source}/${id}`)}
-             className="w-12 h-12 backdrop-blur-md border rounded-full flex items-center justify-center transition-all"
+             className="flex h-11 w-11 items-center justify-center rounded-full border backdrop-blur-md transition-all sm:h-12 sm:w-12"
              style={{
                backgroundColor: READER_THEMES[readerTheme].panelBg,
                borderColor: READER_THEMES[readerTheme].border,
@@ -1813,7 +1821,7 @@ export default function ComicReaderClient({ initialComic, initialChapters, sourc
           ref={canvasRef}
           className={`relative h-full min-h-0 flex-1 w-full overflow-y-auto scroll-smooth touch-pan-y ${
             viewMode !== 'flow' && pages.length > 0 && !readerLoading
-              ? 'scroll-pb-[max(6.75rem,calc(5.75rem+env(safe-area-inset-bottom)))]'
+              ? 'scroll-pb-[max(8.25rem,calc(7rem+env(safe-area-inset-bottom,0px)))] sm:scroll-pb-[max(6.75rem,calc(5.75rem+env(safe-area-inset-bottom,0px)))]'
               : ''
           }`}
           style={{
@@ -1868,7 +1876,7 @@ export default function ComicReaderClient({ initialComic, initialChapters, sourc
                 className={`mx-auto flex w-full flex-col items-center transition-all duration-500 ${
                   viewMode === 'flow'
                     ? 'pt-0 pb-20'
-                    : 'box-border min-h-full justify-center px-3 pt-4 pb-[max(6.75rem,calc(5.75rem+env(safe-area-inset-bottom)))] sm:px-4 sm:pt-6 sm:pb-[max(7rem,calc(6rem+env(safe-area-inset-bottom)))]'
+                    : 'box-border min-h-full justify-center px-3 pt-4 pb-[max(8.25rem,calc(7rem+env(safe-area-inset-bottom,0px)))] sm:px-4 sm:pt-6 sm:pb-[max(7rem,calc(6rem+env(safe-area-inset-bottom,0px)))]'
                 }`}
               >
                 {viewMode === 'classic' ? (
