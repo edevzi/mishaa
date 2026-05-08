@@ -1129,6 +1129,15 @@ export default function HomeClient({
               </p>
             </div>
             <nav className="flex flex-wrap justify-center gap-x-8 gap-y-3 text-[10px] font-semibold uppercase tracking-[0.2em] text-neutral-600 dark:text-neutral-400">
+              <Link href="/guides" className="transition-colors hover:text-[#ff5a1f] dark:hover:text-white">
+                Guides
+              </Link>
+              <Link href="/reading" className="transition-colors hover:text-[#ff5a1f] dark:hover:text-white">
+                Reading hub
+              </Link>
+              <Link href="/faq" className="transition-colors hover:text-[#ff5a1f] dark:hover:text-white">
+                FAQ
+              </Link>
               <Link href="/library" className="transition-colors hover:text-[#ff5a1f] dark:hover:text-white">
                 Library
               </Link>

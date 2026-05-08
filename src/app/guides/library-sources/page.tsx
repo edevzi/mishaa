@@ -1,12 +1,18 @@
 import { Database } from 'lucide-react';
 import GuideArticleShell from '@/components/guides/GuideArticleShell';
+import JsonLd from '@/components/JsonLd';
 import { guideArticleMetadata } from '@/lib/guides/registry';
+import { buildGuideArticleJsonLd } from '@/lib/seo/guide-jsonld';
 
 export const metadata = guideArticleMetadata('library-sources');
 
 export default function LibrarySourcesGuidePage() {
+  const articleLd = buildGuideArticleJsonLd('library-sources');
+
   return (
-    <GuideArticleShell
+    <>
+      {articleLd ? <JsonLd data={articleLd} /> : null}
+      <GuideArticleShell
       badge="Sources & safety"
       icon={<Database size={14} className="text-[#ff4d00]" />}
       title="Library sources, safety settings, and age gate"
@@ -46,5 +52,6 @@ export default function LibrarySourcesGuidePage() {
         'Visit FAQ or Support from the footer for routing specifics.'
       }
     />
+    </>
   );
 }

@@ -1,12 +1,18 @@
 import { Layers } from 'lucide-react';
 import GuideArticleShell from '@/components/guides/GuideArticleShell';
+import JsonLd from '@/components/JsonLd';
 import { guideArticleMetadata } from '@/lib/guides/registry';
+import { buildGuideArticleJsonLd } from '@/lib/seo/guide-jsonld';
 
 export const metadata = guideArticleMetadata('manga-formats');
 
 export default function MangaFormatsGuidePage() {
+  const articleLd = buildGuideArticleJsonLd('manga-formats');
+
   return (
-    <GuideArticleShell
+    <>
+      {articleLd ? <JsonLd data={articleLd} /> : null}
+      <GuideArticleShell
       badge="Formats"
       icon={<Layers size={14} className="text-[#ff4d00]" />}
       title="Manga vs manhwa vs webtoon"
@@ -46,5 +52,6 @@ export default function MangaFormatsGuidePage() {
         '→ /guides/library-sources'
       }
     />
+    </>
   );
 }

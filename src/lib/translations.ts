@@ -8,6 +8,7 @@ export const translations = {
       about: 'About',
       support: 'Support',
       guides: 'Guides',
+      readingHub: 'Reading hub',
       terminal: 'Comic studio',
       registry: 'Join',
       library: 'Library'
@@ -101,7 +102,10 @@ export const translations = {
       reason3D: 'Join a growing collective of readers and independent creators.',
       joinTitle: 'Join the Community',
       joinSub: 'Start your journey today on icomics.wiki',
-      activeBtn: 'Create Account Now'
+      activeBtn: 'Create Account Now',
+      trustTitle: 'Editorial transparency',
+      trustBody:
+        'iComics.wiki aggregates public catalogs and APIs so readers can browse metadata and chapters in one reader-focused interface. We do not claim ownership of third-party titles. Content concerns belong on Content Policy; copyright notices on DMCA.',
     },
     faq: {
       badge: 'Library Info',
@@ -117,6 +121,10 @@ export const translations = {
       a4: 'Browsing is free, but an account lets you save your progress and build a personal collection.',
       q5: 'WHO OWNS THE CONTENT?',
       a5: 'All rights belong to their respective creators. We provide the platform to showcase their incredible work.',
+      q6: 'IS THERE AN RSS FEED?',
+      a6: 'Yes. Subscribe at /feed.xml or /feed for updates when we publish guides, hub pages, and notable reader resources.',
+      q7: 'WHERE ARE READING GUIDES AND THE HUB?',
+      a7: 'Use Guides in the navigation or open /guides for tutorials. The Reading hub at /reading links guides, RSS, FAQ, and the library in one SEO-friendly index page.',
       stillQuestions: 'Still have questions?',
       stillDesc: 'Connect with our support team for any assistance.',
       dept: 'Support',
@@ -170,7 +178,8 @@ export const translations = {
       guides: 'Guides',
       faq: 'FAQ',
       customer: 'Support',
-      legal: 'Legal'
+      legal: 'Legal',
+      readingHub: 'Reading hub'
     },
     edit_forge: 'Edit',
     composition: 'Layout',
@@ -207,6 +216,7 @@ export const translations = {
       about: 'О нас',
       support: 'Поддержка',
       guides: 'Гайды',
+      readingHub: 'Хаб чтения',
       terminal: 'Студия',
       registry: 'Вход',
       library: 'Библиотека'
@@ -300,7 +310,10 @@ export const translations = {
       reason3D: 'Присоединяйтесь к растущему коллективу читателей и независимых авторов.',
       joinTitle: 'Присоединяйтесь к Сообществу',
       joinSub: 'Начните свое путешествие сегодня на icomics.wiki',
-      activeBtn: 'Создать Аккаунт'
+      activeBtn: 'Создать Аккаунт',
+      trustTitle: 'Редакционная прозрачность',
+      trustBody:
+        'iComics.wiki собирает метаданные из открытых каталогов и API, чтобы читатели могли пользоваться одним интерфейсом. Мы не заявляем прав на сторонние произведения. Вопросы по контенту — в Content Policy; по авторским правам — в DMCA.',
     },
     faq: {
       badge: 'Инфо Библиотеки',
@@ -316,6 +329,10 @@ export const translations = {
       a4: 'Просмотр бесплатен, но аккаунт позволяет сохранять прогресс и создавать личную коллекцию.',
       q5: 'КТО ВЛАДЕЕТ КОНТЕНТОМ?',
       a5: 'Все права принадлежат их соответствующим авторам. Мы предоставляем платформу для демонстрации их невероятных работ.',
+      q6: 'ЕСТЬ ЛИ RSS?',
+      a6: 'Да. Подпишитесь на /feed.xml или /feed — там обновления гайдов и ключевых страниц для читателей.',
+      q7: 'ГДЕ ГАЙДЫ И ХАБ?',
+      a7: 'Раздел Guides в меню или адрес /guides. Хаб «Чтение» на /reading собирает гайды, RSS, FAQ и библиотеку на одной странице.',
       stillQuestions: 'Остались вопросы?',
       stillDesc: 'Свяжитесь с нашей командой поддержки для любой помощи.',
       dept: 'Поддержка',
@@ -369,7 +386,8 @@ export const translations = {
       guides: 'Гайды',
       faq: 'Вопросы',
       customer: 'Поддержка',
-      legal: 'Правовое'
+      legal: 'Правовое',
+      readingHub: 'Хаб чтения'
     },
     edit_forge: 'Правка',
     composition: 'Макет',

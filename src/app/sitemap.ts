@@ -46,6 +46,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     '/content-policy',
     '/dmca',
     '/guides',
+    '/reading',
     ...GUIDES_ORDER.map((g) => `/guides/${g.slug}`),
   ];
 
@@ -54,7 +55,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency:
         route === '' || route === '/library'
           ? 'daily'
-          : route.startsWith('/guides')
+          : route.startsWith('/guides') || route === '/reading'
             ? 'monthly'
             : 'weekly',
       priority:
@@ -62,7 +63,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
           ? 1
           : route === '/library' || route === '/studio'
             ? 0.9
-            : route.startsWith('/guides')
+            : route.startsWith('/guides') || route === '/reading'
               ? 0.75
               : 0.6,
     }),

@@ -2,13 +2,16 @@ import Link from 'next/link';
 import { BookOpen } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
+import JsonLd from '@/components/JsonLd';
 import { GUIDES_ORDER, guidesIndexMetadata } from '@/lib/guides/registry';
+import { buildGuidesIndexItemListJsonLd } from '@/lib/seo/guide-jsonld';
 
 export const metadata = guidesIndexMetadata();
 
 export default function GuidesIndexPage() {
   return (
     <div className="min-h-screen overflow-x-hidden bg-zinc-50 text-neutral-900 selection:bg-[#ff4d00] selection:text-white dark:bg-[#020202] dark:text-white dark:selection:text-white">
+      <JsonLd data={buildGuidesIndexItemListJsonLd()} />
       <Navbar />
 
       <main className="container mx-auto px-4 pb-20 pt-24 sm:px-6 sm:pb-24 sm:pt-28 lg:px-8 lg:pb-28 lg:pt-32">
@@ -52,6 +55,10 @@ export default function GuidesIndexPage() {
           <p className="text-center text-[10px] font-black uppercase tracking-[0.35em] text-neutral-400 dark:text-white/30">
             <Link href="/feed.xml" className="underline decoration-[#ff5a1f]/50 underline-offset-4 hover:text-[#ff5a1f]">
               RSS feed
+            </Link>{' '}
+            ·{' '}
+            <Link href="/reading" className="underline decoration-[#ff5a1f]/50 underline-offset-4 hover:text-[#ff5a1f]">
+              Reading hub
             </Link>{' '}
             ·{' '}
             <Link href="/library" className="underline decoration-[#ff5a1f]/50 underline-offset-4 hover:text-[#ff5a1f]">

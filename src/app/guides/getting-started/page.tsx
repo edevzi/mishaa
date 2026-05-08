@@ -1,12 +1,22 @@
 import { Compass } from 'lucide-react';
 import GuideArticleShell from '@/components/guides/GuideArticleShell';
+import JsonLd from '@/components/JsonLd';
 import { guideArticleMetadata } from '@/lib/guides/registry';
+import {
+  buildGettingStartedHowToJsonLd,
+  buildGuideArticleJsonLd,
+} from '@/lib/seo/guide-jsonld';
 
 export const metadata = guideArticleMetadata('getting-started');
 
 export default function GettingStartedGuidePage() {
+  const articleLd = buildGuideArticleJsonLd('getting-started');
+
   return (
-    <GuideArticleShell
+    <>
+      {articleLd ? <JsonLd data={articleLd} /> : null}
+      <JsonLd data={buildGettingStartedHowToJsonLd()} />
+      <GuideArticleShell
       badge="Getting started"
       icon={<Compass size={14} className="text-[#ff4d00]" />}
       title="Getting started with the iComics.wiki reader"
@@ -46,5 +56,6 @@ export default function GettingStartedGuidePage() {
         '→ /guides/manga-formats'
       }
     />
+    </>
   );
 }

@@ -30,6 +30,8 @@ export default function FAQPageClient() {
     { q: t.q3, a: t.a3 },
     { q: t.q4, a: t.a4 },
     { q: t.q5, a: t.a5 },
+    { q: t.q6, a: t.a6 },
+    { q: t.q7, a: t.a7 },
   ];
 
   return (
@@ -85,12 +87,24 @@ export default function FAQPageClient() {
           <div className="text-center space-y-8 py-20 border-t-4 border-black border-dashed">
             <h2 className="text-4xl font-display uppercase tracking-tight">{t.stillQuestions}</h2>
             <p className="text-lg opacity-60">{t.stillDesc}</p>
-            <div className="flex justify-center gap-8">
+            <div className="flex flex-wrap justify-center gap-x-8 gap-y-3">
               <Link
                 href="/contact"
                 className="ink-stroke text-[10px] font-black uppercase tracking-[0.4em] hover:text-[#e63946] transition-colors"
               >
                 {t.dept}
+              </Link>
+              <Link
+                href="/guides"
+                className="ink-stroke text-[10px] font-black uppercase tracking-[0.4em] hover:text-[#ff5a1f] transition-colors"
+              >
+                Guides
+              </Link>
+              <Link
+                href="/reading"
+                className="ink-stroke text-[10px] font-black uppercase tracking-[0.4em] hover:text-[#ff5a1f] transition-colors"
+              >
+                Reading hub
               </Link>
               <a
                 href="https://t.me/icomicsuz"

@@ -78,6 +78,7 @@ export default function Navbar({ surface = 'catalog' }: NavbarProps) {
     { name: t.gallery, href: '/gallery' },
     { name: t.library, href: '/library' },
     { name: t.guides, href: '/guides' },
+    { name: t.readingHub, href: '/reading' },
     { name: t.about, href: '/about' },
     { name: t.support, href: '/support' },
   ];

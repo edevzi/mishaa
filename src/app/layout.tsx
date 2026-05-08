@@ -14,33 +14,39 @@ const SITE_ORIGIN = getPublicSiteUrl().replace(/\/$/, "");
 const syne = Syne({
   variable: "--font-syne",
   subsets: ["latin"],
+  display: "swap",
 });
 
 const outfit = Outfit({
   variable: "--font-outfit",
   subsets: ["latin"],
+  display: "swap",
 });
 
 const bricolage = Bricolage_Grotesque({
   variable: "--font-bricolage",
   subsets: ["latin"],
+  display: "swap",
 });
 
 const jetBrainsMono = JetBrains_Mono({
   variable: "--font-mono",
   subsets: ["latin"],
+  display: "swap",
 });
 
 const staatliches = Staatliches({
   variable: "--font-staatliches",
   subsets: ["latin"],
   weight: "400",
+  display: "swap",
 });
 
 const bangers = Bangers({
   variable: "--font-bangers",
   subsets: ["latin"],
   weight: "400",
+  display: "swap",
 });
 
 export const viewport: Viewport = {

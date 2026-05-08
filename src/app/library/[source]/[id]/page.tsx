@@ -7,7 +7,7 @@ import ComicDetailsClient from './ComicDetailsClient';
 import { getComicDetails as getComicDetailsAction, getChapters } from '@/actions/comic';
 import { fetchAniListManga } from '@/lib/anilist';
 import { cacheMangaDexIdResolution, getCachedMangaDexIdResolution, isMangaDexUuid, resolveMangaDexIdFromTitle } from '@/lib/mangadex';
-import { buildComicOpenGraphImage, getPublicSiteUrl } from '@/lib/og-metadata';
+import { buildComicOpenGraphImage, getPublicSiteUrl, toAbsoluteAssetUrl } from '@/lib/og-metadata';
 import JsonLd from '@/components/JsonLd';
 
 const getComicDetails = cache(getComicDetailsAction);
@@ -249,13 +249,20 @@ export default async function Page({ params }: { params: Promise<RouteParams> })
           typeof comicData.description === 'string'
             ? comicData.description.replace(/<[^>]*>/g, '').trim().slice(0, 5000)
             : undefined,
-        image: comicData.coverUrl,
+        ...(comicData.coverUrl
+          ? { image: toAbsoluteAssetUrl(comicData.coverUrl, siteOrigin) }
+          : {}),
         author: {
           '@type': 'Person',
           name:
             comicData.author ||
             comicData.jikanData?.authors?.[0]?.name ||
             'Various',
+        },
+        publisher: {
+          '@type': 'Organization',
+          name: 'iComics.wiki',
+          url: siteOrigin,
         },
         ...(genreLine ? { genre: genreLine } : {}),
         ...(aggregateRating ? { aggregateRating } : {}),

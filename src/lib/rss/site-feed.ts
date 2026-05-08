@@ -30,6 +30,13 @@ export function buildSiteRssResponse(): Response {
       pubDate: new Date('2026-05-08T12:00:00.000Z'),
     },
     {
+      url: `${base}/reading`,
+      title: 'Reading hub — guides, RSS & library',
+      description:
+        'Central index linking editorial guides, the comic library, and reader FAQ resources.',
+      pubDate: new Date('2026-05-08T12:00:00.000Z'),
+    },
+    {
       url: `${base}/library`,
       title: 'Comic & manga library',
       description: 'Search and browse the multi-source comic library on iComics.wiki.',
@@ -39,6 +46,12 @@ export function buildSiteRssResponse(): Response {
       url: `${base}/faq`,
       title: 'FAQ — manga & comic reader',
       description: 'Answers about reading on iComics.wiki, accounts, mobile reading, and library behavior.',
+      pubDate: new Date('2026-05-08T12:00:00.000Z'),
+    },
+    {
+      url: `${base}/guides`,
+      title: 'Reading guides index',
+      description: 'Editorial tutorials for formats, library sources, and first-time reader setup.',
       pubDate: new Date('2026-05-08T12:00:00.000Z'),
     },
     ...GUIDES_ORDER.map((g) => ({

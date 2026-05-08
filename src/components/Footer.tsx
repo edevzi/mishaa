@@ -63,6 +63,7 @@ export default function Footer() {
               <div className="flex flex-col gap-4 text-[10px] font-black uppercase tracking-widest text-neutral-600 dark:text-white/60">
                 <Link href="/faq" className="transition-all hover:translate-x-2 hover:text-[#ff4d00] dark:hover:text-white">{t.faq}</Link>
                 <Link href="/guides" className="transition-all hover:translate-x-2 hover:text-[#ff4d00] dark:hover:text-white">{t.guides}</Link>
+                <Link href="/reading" className="transition-all hover:translate-x-2 hover:text-[#ff4d00] dark:hover:text-white">{t.readingHub}</Link>
                 <Link href="/support" className="transition-all hover:translate-x-2 hover:text-[#ff4d00] dark:hover:text-white">{t.customer}</Link>
                 <Link href="/settings" className="transition-all hover:translate-x-2 hover:text-[#ff4d00] dark:hover:text-white">Settings</Link>
                 <a href={TELEGRAM_CHANNEL_URL} target="_blank" rel="noreferrer" className="transition-all hover:translate-x-2 hover:text-[#ff4d00] dark:hover:text-white">Telegram: @icomicswiki</a>

@@ -58,6 +58,12 @@ export default function AboutPage() {
             <p className="text-lg sm:text-2xl md:text-4xl font-sans font-black uppercase leading-tight tracking-tight border-y-4 border-black py-6 sm:py-8">
               {t.headline}
             </p>
+            <div className="mx-auto max-w-3xl rounded-xl border border-neutral-200 bg-white/90 px-6 py-6 text-left shadow-[8px_8px_0_#000] dark:border-white/10 dark:bg-white/[0.04] sm:px-10 sm:py-8">
+              <h2 className="text-[10px] font-black uppercase tracking-[0.45em] text-[#ff4d00]">{t.trustTitle}</h2>
+              <p className="mt-4 text-sm font-medium leading-relaxed text-neutral-700 dark:text-white/70 sm:text-base">
+                {t.trustBody}
+              </p>
+            </div>
           </div>
 
           {/* Grid Layout for Content */}

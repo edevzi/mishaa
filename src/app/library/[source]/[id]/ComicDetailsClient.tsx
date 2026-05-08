@@ -390,7 +390,7 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
             src={comic.bannerUrl || comic.coverUrl}
             fill
             className="object-cover opacity-20 grayscale blur-3xl scale-110"
-            alt=""
+            alt={`${comic.title} — backdrop`}
             priority
             unoptimized
           />
@@ -418,7 +418,7 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
                   src={comic.coverUrl}
                   fill
                   className="object-cover"
-                  alt={comic.title}
+                  alt={`${comic.title} — cover`}
                   unoptimized
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent" />
@@ -632,7 +632,7 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
                     <div className="aspect-[2/3] bg-black border border-neutral-200 dark:border-white/10 overflow-hidden relative">
                       <Image
                         src={normalizeMarvelImageToProxyUrl(marvelSeries.thumbnail) || comic.coverUrl}
-                        alt={marvelSeries.title || marvelIssue.seriesName || ''}
+                        alt={`${marvelSeries.title || marvelIssue.seriesName || 'Series'} — cover`}
                         fill
                         className="object-cover"
                         unoptimized
@@ -763,7 +763,7 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
                  src={comic.coverUrl} 
                  fill
                  className="object-cover"
-                 alt={`Read ${comic.title} online - Cover Art`} 
+                 alt={`${comic.title} — cover`} 
                  itemProp="image"
                  sizes="(max-width: 1024px) 256px, 288px"
                  unoptimized
@@ -927,7 +927,7 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
                                fill
                                sizes="116px"
                                className="object-cover"
-                               alt={item.title}
+                               alt={`${item.title} — cover`}
                                unoptimized
                              />
                            </div>
@@ -957,7 +957,7 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
                           <div className="relative aspect-[3/4] overflow-hidden rounded-lg border border-neutral-200 dark:border-white/10 bg-zinc-900">
                             <Image 
                               src={edge.node?.image?.large || '/logo.png'} 
-                              alt={edge.node?.name?.full || ''}
+                              alt={edge.node?.name?.full ? `${edge.node.name.full} — character` : 'Character'}
                               fill
                               sizes="80px"
                               className="object-cover object-top"
@@ -1196,7 +1196,7 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
               {/* Comic Preview Card */}
               <div className="mb-8 flex items-center gap-4 rounded-2xl border border-white/5 bg-white/5 p-4">
                  <div className="relative w-16 aspect-[2/3] flex-shrink-0 overflow-hidden rounded-lg">
-                    <Image src={comic.coverUrl} fill className="object-cover" alt="" unoptimized />
+                    <Image src={comic.coverUrl} fill className="object-cover" alt={`${comic.title} — cover`} unoptimized />
                  </div>
                  <div className="min-w-0 flex-1">
                     <div className="mb-1 text-xs font-black uppercase tracking-tight text-white/40">{comic.source}</div>

@@ -33,6 +33,7 @@ import {
 import { searchComics } from '@/actions/comic';
 import type { ComicListItem } from '@/lib/comic-types';
 import Image from 'next/image';
+import Link from 'next/link';
 import { readBookmarks, readReadingHistory, BOOKMARKS_UPDATED_EVENT, LIBRARY_ACTIVITY_EVENT, type StoredBookmark } from '@/lib/library-storage';
 
 import type { LibrarySource } from '@/lib/comic-sources';
@@ -683,6 +684,30 @@ export default function ComicLibraryClient({ initialAgeVerified = false }: Comic
                 </div>
               </div>
 
+              <nav className="flex flex-wrap items-center gap-x-5 gap-y-2 border-y border-neutral-200 py-4 dark:border-white/10">
+                <span className="text-[8px] font-black uppercase tracking-[0.4em] text-neutral-400 dark:text-white/25">
+                  Learn
+                </span>
+                <Link
+                  href="/guides"
+                  className="text-[9px] font-black uppercase tracking-[0.35em] text-neutral-600 underline-offset-4 hover:text-[#ff4d00] hover:underline dark:text-white/50 dark:hover:text-[#ff5a1f]"
+                >
+                  Guides
+                </Link>
+                <Link
+                  href="/reading"
+                  className="text-[9px] font-black uppercase tracking-[0.35em] text-neutral-600 underline-offset-4 hover:text-[#ff4d00] hover:underline dark:text-white/50 dark:hover:text-[#ff5a1f]"
+                >
+                  Reading hub
+                </Link>
+                <Link
+                  href="/faq"
+                  className="text-[9px] font-black uppercase tracking-[0.35em] text-neutral-600 underline-offset-4 hover:text-[#ff4d00] hover:underline dark:text-white/50 dark:hover:text-[#ff5a1f]"
+                >
+                  FAQ
+                </Link>
+              </nav>
+
               <div className="flex flex-col gap-3 md:flex-row md:items-center">
                 <button onClick={() => {
                   const randomOffset = Math.floor(Math.random() * 10);
@@ -744,7 +769,7 @@ export default function ComicLibraryClient({ initialAgeVerified = false }: Comic
                                 className="w-full p-3 flex items-center gap-4 hover:bg-black/[0.05] dark:hover:bg-black/[0.04] dark:bg-white/5 border-b border-neutral-100 dark:border-white/5 transition-all text-left group"
                               >
                                 <div className="relative w-10 aspect-[2/3] bg-black border border-neutral-200 dark:border-white/10 shrink-0">
-                                  <Image src={comic.coverUrl || '/logo.png'} fill className="object-cover" alt="" unoptimized />
+                                  <Image src={comic.coverUrl || '/logo.png'} fill className="object-cover" alt={`${comic.title} — cover`} unoptimized />
                                 </div>
                                 <div className="flex-1 min-w-0">
                                   <div className="text-[10px] font-black uppercase tracking-widest text-neutral-800 dark:text-white/80 group-hover:text-[#ff4d00] transition-colors truncate">{comic.title}</div>
@@ -921,7 +946,7 @@ export default function ComicLibraryClient({ initialAgeVerified = false }: Comic
                               unoptimized
                               className={coverClassName}
                               style={coverStyle}
-                              alt={comic.title}
+                              alt={`${comic.title} — cover`}
                             />
                           </div>
                         ) : (
@@ -948,7 +973,7 @@ export default function ComicLibraryClient({ initialAgeVerified = false }: Comic
                             unoptimized
                             className={coverClassName}
                             style={coverStyle}
-                            alt={comic.title}
+                            alt={`${comic.title} — cover`}
                           />
                         </div>
                       ) : (
@@ -959,7 +984,7 @@ export default function ComicLibraryClient({ initialAgeVerified = false }: Comic
                             unoptimized
                             className={coverClassName}
                             style={coverStyle}
-                            alt={comic.title}
+                            alt={`${comic.title} — cover`}
                           />
                         </div>
                       )}
