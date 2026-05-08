@@ -3,7 +3,7 @@
   "crons": [
     {
       "path": "/api/telegram/cron/queue",
-      "schedule": "*/15 * * * *"
+      "schedule": "15 2 * * *"
     },
     {
       "path": "/api/telegram/cron/morning",

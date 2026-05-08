@@ -699,6 +699,49 @@ export async function processTelegramScheduledQueue(): Promise<{
   }
 }
 
+/**
+ * Run queue until nothing due is left or maxSteps (for Hobby: one daily cron can flush many due posts at once).
+ * Pro users may call the route more often via an external scheduler or by changing vercel.json schedule.
+ */
+export async function processTelegramScheduledQueueDrain(maxSteps = 60): Promise<{
+  ok: boolean;
+  sentTotal: number;
+  cancelledPending?: number;
+  comicTitles: string[];
+  lastError?: string;
+}> {
+  let sentTotal = 0;
+  const comicTitles: string[] = [];
+  let lastError: string | undefined;
+  let cancelledPending: number | undefined;
+
+  for (let step = 0; step < maxSteps; step += 1) {
+    const r = await processTelegramScheduledQueue();
+    if (r.cancelledPending !== undefined) {
+      cancelledPending = r.cancelledPending;
+      break;
+    }
+    if (!r.ok) {
+      lastError = r.error;
+      break;
+    }
+    if (r.sent) {
+      sentTotal += 1;
+      if (r.comicTitle) comicTitles.push(r.comicTitle);
+      continue;
+    }
+    break;
+  }
+
+  return {
+    ok: !lastError,
+    sentTotal,
+    cancelledPending,
+    comicTitles,
+    lastError,
+  };
+}
+
 export async function runTelegramQueueCron(request: Request) {
   const secret = process.env.CRON_SECRET?.trim();
   const auth = request.headers.get('authorization')?.trim();
@@ -706,13 +749,18 @@ export async function runTelegramQueueCron(request: Request) {
     return new Response('Unauthorized', { status: 401 });
   }
 
-  const result = await processTelegramScheduledQueue();
+  const rawMax = Number(process.env.TELEGRAM_QUEUE_DRAIN_MAX || '60');
+  const maxSteps = Number.isFinite(rawMax) && rawMax > 0 ? Math.min(Math.floor(rawMax), 100) : 60;
+
+  const drain = await processTelegramScheduledQueueDrain(maxSteps);
   return Response.json({
-    ok: result.ok,
-    sent: result.sent,
-    cancelledPending: result.cancelledPending ?? null,
-    comicTitle: result.comicTitle ?? null,
-    error: result.error ?? null,
+    ok: drain.ok,
+    sent: drain.sentTotal > 0,
+    sentTotal: drain.sentTotal,
+    cancelledPending: drain.cancelledPending ?? null,
+    comicTitles: drain.comicTitles,
+    comicTitle: drain.comicTitles.length ? drain.comicTitles[drain.comicTitles.length - 1] : null,
+    error: drain.lastError ?? null,
   });
 }
 
