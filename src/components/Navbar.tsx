@@ -217,11 +217,11 @@ export default function Navbar({ surface = 'catalog' }: NavbarProps) {
               </div>
             </div>
           ) : (
-            <Link href="/auth" className="relative group">
-              <div className="absolute inset-0 translate-x-1.5 translate-y-1.5 rounded-2xl border border-[#ff5a1f]/40 transition-transform group-hover:translate-x-0 group-hover:translate-y-0" />
-              <button className="relative rounded-2xl border border-white/10 bg-white px-8 py-3 text-[10px] font-black uppercase tracking-widest text-black transition-colors group-hover:bg-[#ff5a1f] group-hover:text-white">
-                {t.registry}
-              </button>
+            <Link
+              href="/auth"
+              className="inline-flex min-h-11 shrink-0 items-center justify-center rounded-full bg-[#ff5a1f] px-7 py-2.5 text-center text-[10px] font-black uppercase leading-none tracking-widest text-white shadow-[0_1px_0_rgba(0,0,0,0.06)] transition-[background-color,box-shadow,transform] hover:bg-[#e64f1a] hover:shadow-md active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#ff5a1f]"
+            >
+              {t.registry}
             </Link>
           )}
         </div>

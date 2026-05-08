@@ -151,9 +151,10 @@ export const persistHomePreferenceProfile = (profile: HomePreferenceProfile) => 
   }));
 };
 
-export const inferComicGenres = (comic: PersonalizableComic, shelfKey = '') => {
+export const inferComicGenres = (comic: PersonalizableComic) => {
+  // Do not inject shelf tab names (e.g. "romance"): they match every row on that shelf,
+  // equalize scores, and make overlapping MangaDex picks sort in the same order on every shelf.
   const haystack = [
-    shelfKey,
     comic.meta,
     comic.title,
     comic.description,
@@ -245,9 +246,11 @@ export const rankComicsForHome = <T extends PersonalizableComic>(
     })
     .map((comic) => {
       const key = comicKey(comic);
-      const genres = inferComicGenres(comic, options.shelfKey);
+      const genres = inferComicGenres(comic);
       const preferredGenreScore = genres.reduce((score, genre) => score + (options.profile.genreWeights[genre] || 0), 0);
       const romanceFantasyBoost = genres.some((genre) => PREFERRED_HOME_GENRES.includes(genre)) ? 5 : 0;
+      const shelfIntentBoost =
+        options.shelfKey && genres.includes(options.shelfKey) ? 6 : 0;
       const savedBoost = savedKeys.has(key) ? 4 : 0;
       const viewedPenalty = viewedKeys.has(key) ? -2.2 : 0;
       const skippedPenalty = skippedKeys.has(key) ? -3.5 : 0;
@@ -255,11 +258,21 @@ export const rankComicsForHome = <T extends PersonalizableComic>(
         ? (options.adultPenalty ?? (pageIndex < 2 ? -12 : -4))
         : 0;
       const freshness = Number(comic.timestamp || 0) > 0 ? Math.min(2, (Date.now() - Number(comic.timestamp)) / -86400000) : 0;
-      const randomness = seededUnit(options.profile.seed + pageIndex, key) * 3.2;
+      const randomness =
+        seededUnit(options.profile.seed + pageIndex, `${options.shelfKey || 'home'}:${key}`) * 3.2;
 
       return {
         comic,
-        score: preferredGenreScore + romanceFantasyBoost + savedBoost + freshness + randomness + viewedPenalty + skippedPenalty + adultPenalty,
+        score:
+          preferredGenreScore +
+          romanceFantasyBoost +
+          shelfIntentBoost +
+          savedBoost +
+          freshness +
+          randomness +
+          viewedPenalty +
+          skippedPenalty +
+          adultPenalty,
       };
     })
     .sort((left, right) => right.score - left.score)
