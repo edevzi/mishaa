@@ -1,5 +1,7 @@
 import { prisma } from '@/lib/prisma';
 import { getHomeData } from '@/lib/home-data';
+import { getPublicSiteUrl } from '@/lib/og-metadata';
+import { resolveTelegramComicReadUrl as buildTelegramComicReadUrl } from '@/lib/telegram-read-url';
 import { getSiteUrl } from '@/lib/site-url';
 import {
   TELEGRAM_BOT_COMMANDS,
@@ -18,6 +20,8 @@ export type TelegramComicCandidate = {
   description: string;
   coverUrl?: string;
   href: string;
+  /** Home feed source when present (mangadex / nhentai). */
+  source?: string;
   rating?: string;
   shelf: string;
 };
@@ -128,14 +132,9 @@ function shortText(value: string, maxLength: number) {
   return `${compact.slice(0, maxLength - 1).trimEnd()}…`;
 }
 
-/** Join site origin with a comic path for Telegram/HTML links; never double-prefix absolute URLs. */
-function absoluteSitePath(siteOrigin: string, pathOrUrl: string) {
-  const origin = siteOrigin.replace(/\/$/, '');
-  const raw = pathOrUrl.trim();
-  if (!raw) return origin;
-  if (/^https?:\/\//i.test(raw)) return raw;
-  if (raw.startsWith('/')) return `${origin}${raw}`;
-  return `${origin}/${raw}`;
+function resolveTelegramComicReadUrl(comic: TelegramComicCandidate): string {
+  const origin = getPublicSiteUrl().replace(/\/$/, '');
+  return buildTelegramComicReadUrl(origin, comic);
 }
 
 function extractTelegramCommand(text?: string | null) {
@@ -173,13 +172,14 @@ export async function getTelegramComicCandidates() {
           description: String(item.description || 'Featured comic pick'),
           coverUrl: item.coverUrl ? String(item.coverUrl) : undefined,
           href: String(item.href || '/library'),
+          source: item.source ? String(item.source) : undefined,
           rating: item.rating ? String(item.rating) : undefined,
           shelf,
         }))
       : [],
   );
 
-  return shelfEntries.filter((item) => item.id && item.title && item.href);
+  return shelfEntries.filter((item) => item.id && item.title);
 }
 
 export function pickTelegramComic(slot: TelegramSlot, candidates: TelegramComicCandidate[]) {
@@ -211,7 +211,7 @@ export function pickTelegramComic(slot: TelegramSlot, candidates: TelegramComicC
 }
 
 function buildTelegramCaptionLines(comic: TelegramComicCandidate, featureLabel: string) {
-  const siteUrl = getSiteUrl();
+  const readUrl = resolveTelegramComicReadUrl(comic);
   const rating = comic.rating ? `⭐ ${comic.rating}` : '⭐ N/A';
   const shelfLabel = comic.shelf.replace(/-/g, ' ').toUpperCase();
   const title = escapeHtml(shortText(comic.title, 72));
@@ -221,7 +221,7 @@ function buildTelegramCaptionLines(comic: TelegramComicCandidate, featureLabel: 
     `<b>${title}</b>`,
     `${rating} • ${escapeHtml(shelfLabel)} • ${escapeHtml(featureLabel)}`,
     description,
-    `<a href="${escapeHtml(absoluteSitePath(siteUrl, comic.href))}">Read on iComics.wiki</a>`,
+    `<a href="${escapeHtml(readUrl)}">Read on iComics.wiki</a>`,
   ].join('\n');
 }
 
