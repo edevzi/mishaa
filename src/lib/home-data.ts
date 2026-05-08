@@ -43,7 +43,17 @@ type NhentaiGalleryItem = {
   thumbnail?: string | { path?: string };
 };
 
-async function loadMangaDex(params: URLSearchParams, lang: MangaLanguage, fallbackParams?: URLSearchParams) {
+type LoadMangaDexOptions = {
+  /** Use when many parallel `/manga` queries run (home shelves); avoids Next fetch cache mixing shelves. */
+  exclusiveFetch?: boolean;
+};
+
+async function loadMangaDex(
+  params: URLSearchParams,
+  lang: MangaLanguage,
+  fallbackParams?: URLSearchParams,
+  options?: LoadMangaDexOptions,
+) {
   const fetchItems = async (queryParams: URLSearchParams) => {
     const res = await fetch(`https://api.mangadex.org/manga?${queryParams.toString()}`, {
       headers: {
@@ -51,7 +61,9 @@ async function loadMangaDex(params: URLSearchParams, lang: MangaLanguage, fallba
         Accept: 'application/json',
         'Accept-Language': 'en-US,en;q=0.9',
       },
-      next: { revalidate: 3600 },
+      ...(options?.exclusiveFetch
+        ? { cache: 'no-store' as const }
+        : { next: { revalidate: 3600 } }),
       signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
     });
     if (!res.ok) return [];
@@ -210,11 +222,11 @@ export async function getHomeFeed(lang: MangaLanguage = 'en', options: HomeFeedO
     : Promise.resolve([]);
 
   const [romance, fantasy, drama, popular, latest, adult] = await Promise.all([
-    loadMangaDex(romanceParams, lang, withoutTranslatedLanguage(romanceParams)),
-    loadMangaDex(fantasyParams, lang, withoutTranslatedLanguage(fantasyParams)),
-    loadMangaDex(dramaParams, lang, withoutTranslatedLanguage(dramaParams)),
-    loadMangaDex(popularParams, lang, withoutTranslatedLanguage(popularParams)),
-    loadMangaDex(latestParams, lang, withoutTranslatedLanguage(latestParams)),
+    loadMangaDex(romanceParams, lang, withoutTranslatedLanguage(romanceParams), { exclusiveFetch: true }),
+    loadMangaDex(fantasyParams, lang, withoutTranslatedLanguage(fantasyParams), { exclusiveFetch: true }),
+    loadMangaDex(dramaParams, lang, withoutTranslatedLanguage(dramaParams), { exclusiveFetch: true }),
+    loadMangaDex(popularParams, lang, withoutTranslatedLanguage(popularParams), { exclusiveFetch: true }),
+    loadMangaDex(latestParams, lang, withoutTranslatedLanguage(latestParams), { exclusiveFetch: true }),
     adultPromise,
   ]);
 
@@ -291,12 +303,12 @@ export async function getHomeData(lang: MangaLanguage = 'en', options: HomeDataO
     : [Promise.resolve([]), Promise.resolve([]), Promise.resolve([])];
 
   const [romance, fantasy, drama, manga, webtoons, manhwa, doujinshi, milf, ntr, trending, latest] = await Promise.all([
-    loadMangaDex(romanceParams, lang, romanceFallbackParams),
-    loadMangaDex(fantasyParams, lang, fantasyFallbackParams),
-    loadMangaDex(dramaParams, lang, dramaFallbackParams),
-    loadMangaDex(mangaParams, lang, mangaFallbackParams),
-    loadMangaDex(webtoonsParams, lang, webtoonsFallbackParams),
-    loadMangaDex(manhwaParams, lang, manhwaFallbackParams),
+    loadMangaDex(romanceParams, lang, romanceFallbackParams, { exclusiveFetch: true }),
+    loadMangaDex(fantasyParams, lang, fantasyFallbackParams, { exclusiveFetch: true }),
+    loadMangaDex(dramaParams, lang, dramaFallbackParams, { exclusiveFetch: true }),
+    loadMangaDex(mangaParams, lang, mangaFallbackParams, { exclusiveFetch: true }),
+    loadMangaDex(webtoonsParams, lang, webtoonsFallbackParams, { exclusiveFetch: true }),
+    loadMangaDex(manhwaParams, lang, manhwaFallbackParams, { exclusiveFetch: true }),
     ...adultShelves,
     fetchTrendingAniListManga(12).then(async (items) => {
       const resolved = await Promise.all(items.map(async (item, index) => {
@@ -323,7 +335,7 @@ export async function getHomeData(lang: MangaLanguage = 'en', options: HomeDataO
 
       return resolved;
     }).catch(() => []),
-    loadMangaDex(latestParams, lang, latestFallbackParams)
+    loadMangaDex(latestParams, lang, latestFallbackParams, { exclusiveFetch: true }),
   ]);
 
   return {

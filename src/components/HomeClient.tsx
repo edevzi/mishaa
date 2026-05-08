@@ -906,7 +906,7 @@ export default function HomeClient({
 
                           return (
                             <motion.article
-                              key={comicKey(comic)}
+                              key={`${shelf.key}:${comicKey(comic)}`}
                               initial={false}
                               whileHover={useRichMotion ? { y: -4 } : undefined}
                               transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
@@ -929,7 +929,7 @@ export default function HomeClient({
                                     }`}
                                   >
                                     <SafeCoverImage
-                                      key={comicKey(comic)}
+                                      key={`${shelf.key}:${comicKey(comic)}`}
                                       src={comic.coverUrl}
                                       alt={shouldBlur ? 'Restricted' : comic.title}
                                       sizes="(max-width: 640px) 45vw, (max-width: 1024px) 30vw, 200px"

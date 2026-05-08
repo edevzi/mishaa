@@ -7,15 +7,39 @@
 
 const SITE_FALLBACK = 'https://icomics.wiki';
 
+function isLoopbackHostname(hostname: string): boolean {
+  return hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '[::1]';
+}
+
+/**
+ * Canonical site origin for OG, RSS, sitemaps, and JSON-LD.
+ * On Vercel, `NEXT_PUBLIC_*` is baked at build time — if it points to localhost by mistake,
+ * we fall back to deployment/production host so public feeds never advertise loopback URLs.
+ */
 export function getPublicSiteUrl(): string {
   const raw = process.env.NEXT_PUBLIC_SITE_URL?.trim();
-  if (!raw) return SITE_FALLBACK;
-  try {
-    const u = new URL(raw.startsWith('http') ? raw : `https://${raw}`);
-    return u.origin;
-  } catch {
-    return SITE_FALLBACK;
+  if (raw) {
+    try {
+      const u = new URL(raw.startsWith('http') ? raw : `https://${raw}`);
+      const onVercel = process.env.VERCEL === '1';
+      if (!(onVercel && isLoopbackHostname(u.hostname))) {
+        return u.origin;
+      }
+    } catch {
+      /* fall through */
+    }
   }
+
+  for (const key of ['VERCEL_PROJECT_PRODUCTION_URL', 'VERCEL_URL'] as const) {
+    const h = process.env[key]?.trim();
+    if (!h) continue;
+    const host = h.replace(/^https?:\/\//, '').replace(/\/$/, '');
+    if (host) {
+      return `https://${host}`;
+    }
+  }
+
+  return SITE_FALLBACK;
 }
 
 export function toAbsoluteAssetUrl(pathOrUrl: string | undefined, siteUrl: string): string {
