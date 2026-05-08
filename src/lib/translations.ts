@@ -237,6 +237,19 @@ export const translations = {
       copiedButton: 'Copied',
       socialCopyLink: 'Copy Link',
       socialTwitterX: 'X / Twitter',
+      readerResumePrompt: 'Continue from page {page}?',
+      readerResumeBtn: 'Resume',
+      readerStartOverBtn: 'Start over',
+      readerZoomSection: 'Page zoom (classic & journal)',
+      readerZoomHint: 'Pinch · Ctrl+scroll · + / −',
+      readerZoomReset: 'Reset',
+      readerShortcutsBtn: 'Keyboard shortcuts',
+      readerShortcutsTitle: 'Reader shortcuts',
+      readerShortcutsBody:
+        '← / → / Space — turn pages (respects reading direction)\n↑ / ↓ — scroll (Flow) or change page\nPgUp / PgDn — page or scroll by screen\nHome / End — first / last page\nF — fullscreen\nEsc — back to title\n+ / − — zoom\n0 — reset zoom\n⌃ scroll — zoom (desktop)',
+      readerShortcutsOk: 'Got it',
+      readerShortcutsDontShow: "Don't show again",
+      readerShortcutsShowHint: 'Open any time from reader settings.',
     }
   },
   ru: {
@@ -473,6 +486,19 @@ export const translations = {
       copiedButton: 'Скопировано',
       socialCopyLink: 'Копировать ссылку',
       socialTwitterX: 'X / Twitter',
+      readerResumePrompt: 'Продолжить со страницы {page}?',
+      readerResumeBtn: 'Продолжить',
+      readerStartOverBtn: 'С начала',
+      readerZoomSection: 'Масштаб (classic и journal)',
+      readerZoomHint: 'Щипок · Ctrl+колесо · + / −',
+      readerZoomReset: 'Сбросить',
+      readerShortcutsBtn: 'Горячие клавиши',
+      readerShortcutsTitle: 'Сочетания клавиш',
+      readerShortcutsBody:
+        '← / → / Пробел — листание (зависит от направления)\n↑ / ↓ — прокрутка (Flow) или страница\nPgUp / PgDn — страница или экранная прокрутка\nHome / End — первая / последняя\nF — полный экран\nEsc — назад к тайтлу\n+ / − — масштаб\n0 — сброс масштаба\n⌃ колесо — масштаб (ПК)',
+      readerShortcutsOk: 'Понятно',
+      readerShortcutsDontShow: 'Не показывать снова',
+      readerShortcutsShowHint: 'Откройте в любой момент в настройках читалки.',
     }
   }
 };

@@ -5,13 +5,15 @@ import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ChevronLeft, X, Settings,
-  ChevronRight, Loader2, Sparkles,
-  Smartphone, Monitor,
+  ChevronRight, Loader2,
   ChevronUp,
-  Columns, List, ExternalLink,
+  List, ExternalLink,
   Maximize2, Minimize2,
   ChevronDown,
   BookOpen,
+  HelpCircle,
+  ZoomIn,
+  ZoomOut,
 } from 'lucide-react';
 import AgeGateOverlay from '@/components/AgeGateOverlay';
 import { isAdultComic, persistAgeVerification, readAgeVerification } from '@/lib/age-verification';
@@ -29,6 +31,10 @@ import { getChapterPages, getComicDetails, getChapters } from '@/actions/comic';
 import { isRestrictedLibrarySource } from '@/lib/comic-sources';
 import type { ComicChapter, ComicDetail } from '@/lib/comic-types';
 import Image from 'next/image';
+import {
+  clampReaderZoom,
+  computeLastPageIndexForAdjacentChapter,
+} from '@/lib/reader-navigation';
 
 interface ComicReaderClientProps {
   initialComic: ComicDetail | null;
@@ -86,6 +92,11 @@ const READER_THEMES: Record<ReaderTheme, {
     accentSoft: 'rgba(196,107,44,0.12)',
   },
 };
+
+const READER_ZOOM_STEP = 0.12;
+const READER_HELP_DISMISSED_KEY = 'reader_help_dismissed';
+const READER_ZOOM_STORAGE_KEY = 'reader_zoom';
+const UI_SHEET_AUTO_HIDE_MS = 4500;
 
 const preloadImageUrl = (src: string) =>
   new Promise<void>((resolve) => {
@@ -181,9 +192,9 @@ export default function ComicReaderClient({ initialComic, initialChapters, sourc
   const [uiVisible, setUiVisible] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [scrollProgress, setScrollProgress] = useState(0);
-  const [zoom] = useState(1);
+  const [readerZoom, setReaderZoomState] = useState(1);
   const [isMobile, setIsMobile] = useState(false);
-  const [isSpreadCover, setIsSpreadCover] = useState(true);
+  const [isSpreadCover] = useState(true);
   const [showGrid, setShowGrid] = useState(false);
   const [isAgeVerified, setIsAgeVerified] = useState(() => Boolean(initialAgeVerified));
   const [showAgeGate, setShowAgeGate] = useState(false);
@@ -196,6 +207,8 @@ export default function ComicReaderClient({ initialComic, initialChapters, sourc
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [savedPageIndex, setSavedPageIndex] = useState<number | null>(null);
+  const [resumeOfferPage, setResumeOfferPage] = useState<number | null>(null);
+  const [showReaderHelp, setShowReaderHelp] = useState(false);
   
   const readerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLDivElement>(null);
@@ -205,32 +218,79 @@ export default function ComicReaderClient({ initialComic, initialChapters, sourc
   const touchStartRef = useRef({ x: 0, y: 0 });
   const progressSaveAbortRef = useRef<AbortController | null>(null);
   const settingsFabScrollEndTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const adjNavigateRef = useRef<'prev' | 'next' | null>(null);
+  const readerZoomRef = useRef(1);
+  const resumeDismissGateRef = useRef<string | null>(null);
+  const pinchStartDistRef = useRef(0);
+  const pinchStartZoomRef = useRef(1);
+  const twoFingerGestureRef = useRef(false);
 
   const restrictedSource = isRestrictedLibrarySource(source);
 
+  const setReaderZoom = useCallback((value: number | ((z: number) => number)) => {
+    setReaderZoomState((prev) => {
+      const resolved = typeof value === 'function' ? value(prev) : value;
+      const clamped = clampReaderZoom(resolved);
+      readerZoomRef.current = clamped;
+      if (typeof window !== 'undefined') {
+        try {
+          window.localStorage.setItem(READER_ZOOM_STORAGE_KEY, String(clamped));
+        } catch {
+          /* private mode */
+        }
+      }
+      return clamped;
+    });
+  }, []);
+
   useEffect(() => {
-    const initialMobile = window.innerWidth < 768;
-    setIsMobile(initialMobile);
-    if (initialMobile) {
-      setViewMode('flow');
-    }
     const checkMobile = () => setIsMobile(window.innerWidth < 768);
+
+    let verificationTimer: number | undefined;
+
+    queueMicrotask(() => {
+      const initialMobile = window.innerWidth < 768;
+      setIsMobile(initialMobile);
+      if (initialMobile) {
+        setViewMode('flow');
+      }
+
+      const verified = initialAgeVerified || readAgeVerification();
+      verificationTimer = window.setTimeout(() => {
+        setIsAgeVerified((prev) => (verified !== prev ? verified : prev));
+      }, 0);
+      if (verified) persistAgeVerification();
+
+      const savedTheme = localStorage.getItem('reader_theme') as ReaderTheme | null;
+      if (savedTheme && READER_THEMES[savedTheme]) {
+        setReaderTheme(savedTheme);
+      } else if (!savedTheme) {
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        setReaderTheme(prefersDark ? 'dark' : 'light');
+      }
+      const savedDirRaw = localStorage.getItem('reading_direction');
+      if (savedDirRaw === 'ltr' || savedDirRaw === 'rtl') {
+        setReadingDirection(savedDirRaw);
+      }
+      const savedFullscreen = readStorageItem('reader_fullscreen') === 'true';
+      setIsFullscreen(savedFullscreen);
+
+      try {
+        const raw = localStorage.getItem(READER_ZOOM_STORAGE_KEY);
+        const parsed = raw ? parseFloat(raw) : 1;
+        const z = clampReaderZoom(Number.isFinite(parsed) ? parsed : 1);
+        readerZoomRef.current = z;
+        setReaderZoomState(z);
+      } catch {
+        readerZoomRef.current = 1;
+      }
+    });
+
     window.addEventListener('resize', checkMobile);
-
-    const verified = initialAgeVerified || readAgeVerification();
-    const t = setTimeout(() => setIsAgeVerified(prev => (verified !== prev ? verified : prev)), 0);
-    if (verified) persistAgeVerification();
-
-    const savedTheme = localStorage.getItem('reader_theme') as ReaderTheme | null;
-    if (savedTheme && READER_THEMES[savedTheme]) setReaderTheme(savedTheme);
-    const savedDir = localStorage.getItem('reading_direction') as any;
-    if (savedDir) setReadingDirection(savedDir);
-    const savedFullscreen = readStorageItem('reader_fullscreen') === 'true';
-    setIsFullscreen(savedFullscreen);
 
     return () => {
       window.removeEventListener('resize', checkMobile);
-      clearTimeout(t);
+      if (verificationTimer !== undefined) window.clearTimeout(verificationTimer);
     };
   }, [initialAgeVerified]);
 
@@ -319,7 +379,7 @@ export default function ComicReaderClient({ initialComic, initialChapters, sourc
     return () => {
       cancelled = true;
     };
-  }, [chapters.length, comic, id, mangaLanguage, restrictedSource, source, isAgeVerified]);
+  }, [chapters.length, chapterId, comic, id, mangaLanguage, restrictedSource, source, isAgeVerified]);
 
   useEffect(() => {
     const handleFullscreenChange = () => {
@@ -391,7 +451,7 @@ export default function ComicReaderClient({ initialComic, initialChapters, sourc
   }, [viewMode, uiVisible]);
 
   useEffect(() => {
-    setSettingsFabIdle(true);
+    queueMicrotask(() => setSettingsFabIdle(true));
   }, [chapterId]);
 
   const getChapterCacheKey = useCallback((chapId: string) => {
@@ -469,9 +529,10 @@ export default function ComicReaderClient({ initialComic, initialChapters, sourc
     setScrollProgress(0);
     setReaderLoading(true);
 
+    let loadedPages: string[] = [];
     try {
-      const chapterPages = await ensureChapterPages(chapter);
-      setPages(chapterPages);
+      loadedPages = await ensureChapterPages(chapter);
+      setPages(loadedPages);
       setPageReady(false);
       preloadNeighborChapters(idx);
 
@@ -485,19 +546,38 @@ export default function ComicReaderClient({ initialComic, initialChapters, sourc
     } finally {
       setReaderLoading(false);
       canvasRef.current?.scrollTo(0, 0);
+      const nav = adjNavigateRef.current;
+      adjNavigateRef.current = null;
+      if (loadedPages.length > 0 && nav === 'prev') {
+        const lastIdx = computeLastPageIndexForAdjacentChapter(
+          viewMode,
+          isSpreadCover,
+          loadedPages.length,
+        );
+        setCurrentPage(lastIdx);
+      }
     }
-  }, [chapters, ensureChapterPages, preloadNeighborChapters, chapterId, id, source]);
+  }, [
+    chapters,
+    chapterId,
+    ensureChapterPages,
+    id,
+    isSpreadCover,
+    preloadNeighborChapters,
+    source,
+    viewMode,
+  ]);
 
   useEffect(() => {
     if (viewMode === 'flow' || pages.length === 0) {
-      setPageReady(true);
+      queueMicrotask(() => setPageReady(true));
       return;
     }
 
     const visible = getReaderVisibleIndices(viewMode, isSpreadCover, currentPage, pages.length);
 
     let cancelled = false;
-    setPageReady(false);
+    queueMicrotask(() => setPageReady(false));
 
     void (async () => {
       await Promise.all(visible.map((idx) => preloadImageUrl(pages[idx])));
@@ -529,24 +609,91 @@ export default function ComicReaderClient({ initialComic, initialChapters, sourc
   }, [viewMode, pages]);
 
   useEffect(() => {
-    if (savedPageIndex === null || pages.length === 0) return;
-    if (chapters[currentChapterIdx]?.id !== chapterId) return;
+    resumeDismissGateRef.current = null;
+    queueMicrotask(() => setResumeOfferPage(null));
+  }, [chapterId]);
 
-    const nextPage = Math.max(0, Math.min(savedPageIndex, pages.length - 1));
-    if (nextPage !== currentPage) {
-      setCurrentPage(nextPage);
+  useEffect(() => {
+    if (readerLoading || pages.length === 0) return;
+    if (savedPageIndex === null || savedPageIndex < 1) return;
+    if (chapters[currentChapterIdx]?.id !== chapterId) return;
+    const clampedOffer = Math.min(savedPageIndex, pages.length - 1);
+    if (clampedOffer < 1) return;
+    const gateKey = `${chapterId}:${savedPageIndex}`;
+    if (resumeDismissGateRef.current === gateKey) return;
+    queueMicrotask(() => setResumeOfferPage(clampedOffer));
+  }, [
+    chapters,
+    chapterId,
+    currentChapterIdx,
+    pages.length,
+    readerLoading,
+    savedPageIndex,
+  ]);
+
+  useEffect(() => {
+    if (!uiVisible || showGrid) return;
+    const tid = window.setTimeout(() => setUiVisible(false), UI_SHEET_AUTO_HIDE_MS);
+    return () => clearTimeout(tid);
+  }, [uiVisible, showGrid]);
+
+  useEffect(() => {
+    if (readerLoading || pages.length === 0) return;
+    if (typeof window === 'undefined') return;
+    try {
+      if (window.localStorage.getItem(READER_HELP_DISMISSED_KEY) === '1') return;
+    } catch {
+      return;
     }
-  }, [chapterId, chapters, currentChapterIdx, currentPage, pages.length, savedPageIndex]);
+    const tid = window.setTimeout(() => setShowReaderHelp(true), 900);
+    return () => window.clearTimeout(tid);
+  }, [readerLoading, pages.length]);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const onWheel = (e: WheelEvent) => {
+      if (viewMode === 'flow' || !(e.ctrlKey || e.metaKey)) return;
+      e.preventDefault();
+      const delta = e.deltaY > 0 ? -READER_ZOOM_STEP : READER_ZOOM_STEP;
+      setReaderZoom((z) => z + delta);
+    };
+    canvas.addEventListener('wheel', onWheel, { passive: false });
+    return () => canvas.removeEventListener('wheel', onWheel);
+  }, [setReaderZoom, viewMode]);
+
+  useEffect(() => {
+    const el = canvasRef.current;
+    if (!el || viewMode === 'flow') return;
+
+    const onTouchMovePinch = (e: TouchEvent) => {
+      if (e.touches.length < 2) return;
+      const base = pinchStartDistRef.current;
+      if (base <= 0) return;
+      const a = e.touches[0];
+      const b = e.touches[1];
+      const dist = Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY);
+      e.preventDefault();
+      const ratio = dist / base;
+      setReaderZoom(pinchStartZoomRef.current * ratio);
+      twoFingerGestureRef.current = true;
+    };
+
+    el.addEventListener('touchmove', onTouchMovePinch, { passive: false });
+    return () => el.removeEventListener('touchmove', onTouchMovePinch);
+  }, [setReaderZoom, viewMode]);
 
   useEffect(() => {
     if (chapters.length > 0) {
-      void loadChapterPages(currentChapterIdx);
+      queueMicrotask(() => {
+        void loadChapterPages(currentChapterIdx);
+      });
     }
   }, [currentChapterIdx, chapters, loadChapterPages]);
 
   useEffect(() => {
     if ((restrictedSource || (comic && isAdultComic(comic))) && !isAgeVerified && !showAgeGate) {
-      setShowAgeGate(true);
+      queueMicrotask(() => setShowAgeGate(true));
     }
   }, [comic, isAgeVerified, showAgeGate, restrictedSource]);
 
@@ -584,6 +731,7 @@ export default function ComicReaderClient({ initialComic, initialChapters, sourc
       setCurrentPage(p => p + step);
       canvasRef.current?.scrollTo({ top: 0, behavior: 'instant' });
     } else {
+      adjNavigateRef.current = 'next';
       nextChapter();
     }
   }, [viewMode, isSpreadCover, currentPage, pages.length, nextChapter]);
@@ -594,17 +742,34 @@ export default function ComicReaderClient({ initialComic, initialChapters, sourc
       setCurrentPage(p => Math.max(0, p - step));
       canvasRef.current?.scrollTo({ top: 0, behavior: 'instant' });
     } else {
+      adjNavigateRef.current = 'prev';
       prevChapter();
     }
   }, [viewMode, isSpreadCover, currentPage, prevChapter]);
 
   const handleTouchStart = useCallback((event: React.TouchEvent<HTMLDivElement>) => {
+    if (viewMode !== 'flow' && event.touches.length >= 2) {
+      const a = event.touches[0];
+      const b = event.touches[1];
+      twoFingerGestureRef.current = true;
+      pinchStartDistRef.current = Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY);
+      pinchStartZoomRef.current = readerZoomRef.current;
+      return;
+    }
+    pinchStartDistRef.current = 0;
     const touch = event.touches[0];
     if (!touch) return;
     touchStartRef.current = { x: touch.clientX, y: touch.clientY };
-  }, []);
+  }, [viewMode]);
 
   const handleTouchEnd = useCallback((event: React.TouchEvent<HTMLDivElement>) => {
+    if (twoFingerGestureRef.current) {
+      if (event.touches.length === 0) {
+        twoFingerGestureRef.current = false;
+        pinchStartDistRef.current = 0;
+      }
+      return;
+    }
     if (viewMode === 'flow') return;
 
     const touch = event.changedTouches[0];
@@ -617,12 +782,14 @@ export default function ComicReaderClient({ initialComic, initialChapters, sourc
     const currentChapterId = chapters[currentChapterIdx]?.id || chapterId;
     if (dx < 0) {
       trackEvent('reader_swipe_next', { source, comicId: id, chapterId: currentChapterId });
-      readingDirection === 'ltr' ? handleNextPage() : handlePrevPage();
+      if (readingDirection === 'ltr') handleNextPage();
+      else handlePrevPage();
       return;
     }
 
     trackEvent('reader_swipe_prev', { source, comicId: id, chapterId: currentChapterId });
-    readingDirection === 'ltr' ? handlePrevPage() : handleNextPage();
+    if (readingDirection === 'ltr') handlePrevPage();
+    else handleNextPage();
   }, [chapterId, chapters, currentChapterIdx, handleNextPage, handlePrevPage, id, readingDirection, source, viewMode]);
 
   const currentProgressPercent = calculateReadingProgressPercent({
@@ -751,6 +918,19 @@ export default function ComicReaderClient({ initialComic, initialChapters, sourc
 
       const flow = viewMode === 'flow';
 
+      if (!flow) {
+        const zoomReset = !e.repeat && (e.code === 'Digit0' || e.code === 'Numpad0');
+        const zoomOut = e.code === 'Minus' || e.code === 'NumpadSubtract';
+        const zoomIn = e.code === 'NumpadAdd' || (e.shiftKey && e.code === 'Equal');
+        if (zoomReset || zoomIn || zoomOut) {
+          e.preventDefault();
+          if (zoomReset) setReaderZoom(1);
+          else if (zoomIn) setReaderZoom((z) => z + READER_ZOOM_STEP);
+          else setReaderZoom((z) => z - READER_ZOOM_STEP);
+          return;
+        }
+      }
+
       const mediaNext =
         e.code === 'MediaTrackNext' || e.key === 'MediaTrackNext';
       const mediaPrev =
@@ -779,12 +959,14 @@ export default function ComicReaderClient({ initialComic, initialChapters, sourc
       // Match left/right tap zones: LTR vs RTL
       if (e.key === 'ArrowLeft') {
         e.preventDefault();
-        readingDirection === 'ltr' ? handlePrevPage() : handleNextPage();
+        if (readingDirection === 'ltr') handlePrevPage();
+        else handleNextPage();
         return;
       }
       if (e.key === 'ArrowRight' || e.key === ' ') {
         e.preventDefault();
-        readingDirection === 'ltr' ? handleNextPage() : handlePrevPage();
+        if (readingDirection === 'ltr') handleNextPage();
+        else handlePrevPage();
         return;
       }
 
@@ -838,7 +1020,20 @@ export default function ComicReaderClient({ initialComic, initialChapters, sourc
     router,
     source,
     id,
+    setReaderZoom,
   ]);
+
+  const flowDisplayZoom = viewMode === 'flow' ? 1 : readerZoom;
+  const comicZoomWrapStyle: React.CSSProperties =
+    flowDisplayZoom !== 1
+      ? {
+          width: `${100 / flowDisplayZoom}%`,
+          transform: `scale(${flowDisplayZoom})`,
+          transformOrigin: 'top center',
+          marginLeft: 'auto',
+          marginRight: 'auto',
+        }
+      : { width: '100%' };
 
   if (restrictedSource && !isAgeVerified) {
     return (
@@ -1329,6 +1524,81 @@ export default function ComicReaderClient({ initialComic, initialChapters, sourc
                     </button>
                   </div>
 
+                  {/* Zoom */}
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        aria-label="Zoom out"
+                        onClick={() => setReaderZoom((z) => z - READER_ZOOM_STEP)}
+                        className="flex-1 py-4 border transition-all flex items-center justify-center"
+                        disabled={readerZoom <= 0.66}
+                        style={{
+                          borderColor: READER_THEMES[readerTheme].border,
+                          backgroundColor: READER_THEMES[readerTheme].panelAltBg,
+                          color: readerZoom <= 0.66 ? READER_THEMES[readerTheme].muted : READER_THEMES[readerTheme].text,
+                        }}
+                      >
+                        <ZoomOut size={18} aria-hidden />
+                      </button>
+                      <div
+                        className="flex-[1.4] py-4 border text-center text-[11px] font-black uppercase tracking-widest"
+                        style={{
+                          borderColor: READER_THEMES[readerTheme].border,
+                          color: READER_THEMES[readerTheme].text,
+                        }}
+                      >
+                        {Math.round(readerZoom * 100)}%
+                      </div>
+                      <button
+                        type="button"
+                        aria-label="Zoom in"
+                        onClick={() => setReaderZoom((z) => z + READER_ZOOM_STEP)}
+                        className="flex-1 py-4 border transition-all flex items-center justify-center"
+                        disabled={readerZoom >= 2.98}
+                        style={{
+                          borderColor: READER_THEMES[readerTheme].border,
+                          backgroundColor: READER_THEMES[readerTheme].panelAltBg,
+                          color: readerZoom >= 2.98 ? READER_THEMES[readerTheme].muted : READER_THEMES[readerTheme].text,
+                        }}
+                      >
+                        <ZoomIn size={18} aria-hidden />
+                      </button>
+                      <button
+                        type="button"
+                        aria-label={t.readerZoomReset}
+                        onClick={() => setReaderZoom(1)}
+                        className="px-4 py-4 border text-[9px] font-black uppercase tracking-tight whitespace-nowrap"
+                        style={{
+                          borderColor: READER_THEMES[readerTheme].border,
+                          backgroundColor: READER_THEMES[readerTheme].panelAltBg,
+                          color: READER_THEMES[readerTheme].muted,
+                        }}
+                      >
+                        {t.readerZoomReset}
+                      </button>
+                    </div>
+                    <p className="text-[9px] font-bold uppercase tracking-wider leading-relaxed" style={{ color: READER_THEMES[readerTheme].muted }}>
+                      {t.readerZoomHint}
+                    </p>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowSettings(false);
+                      setShowReaderHelp(true);
+                    }}
+                    className="w-full py-4 border text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2"
+                    style={{
+                      borderColor: READER_THEMES[readerTheme].border,
+                      backgroundColor: READER_THEMES[readerTheme].panelAltBg,
+                      color: READER_THEMES[readerTheme].text,
+                    }}
+                  >
+                    <HelpCircle size={16} aria-hidden /> {t.readerShortcutsBtn}
+                  </button>
+
                   {/* Fullscreen */}
                   <div className="space-y-4">
                     <div className="text-[10px] font-black uppercase tracking-[0.2em]" style={{ color: READER_THEMES[readerTheme].muted }}>Fullscreen</div>
@@ -1344,6 +1614,153 @@ export default function ComicReaderClient({ initialComic, initialChapters, sourc
                       {isFullscreen ? 'Exit Fullscreen' : 'Enter Fullscreen'}
                     </button>
                   </div>
+                </div>
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>
+
+        <AnimatePresence>
+          {!readerLoading && resumeOfferPage !== null && resumeOfferPage > 0 && (
+            <motion.div
+              initial={{ y: 40, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 40, opacity: 0 }}
+              className="fixed bottom-6 left-4 right-4 z-[10055] flex flex-col items-stretch gap-3 sm:left-1/2 sm:right-auto sm:w-[min(92vw,24rem)] sm:-translate-x-1/2"
+              style={{ paddingBottom: 'max(env(safe-area-inset-bottom), 0.5rem)' }}
+            >
+              <div
+                className="rounded-2xl border px-4 py-3 shadow-2xl backdrop-blur-xl"
+                style={{
+                  backgroundColor: READER_THEMES[readerTheme].panelBg,
+                  borderColor: READER_THEMES[readerTheme].border,
+                  color: READER_THEMES[readerTheme].text,
+                }}
+              >
+                <p className="text-center text-[11px] font-black uppercase tracking-wide">
+                  {t.readerResumePrompt.replace('{page}', String(resumeOfferPage + 1))}
+                </p>
+                <div className="mt-3 flex gap-2">
+                  <button
+                    type="button"
+                    className="flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest"
+                    style={{ backgroundColor: READER_THEMES[readerTheme].accent, color: '#fff' }}
+                    onClick={() => {
+                      if (savedPageIndex !== null) {
+                        resumeDismissGateRef.current = `${chapterId}:${savedPageIndex}`;
+                      } else {
+                        resumeDismissGateRef.current = `${chapterId}:${resumeOfferPage}`;
+                      }
+                      const p = resumeOfferPage;
+                      setResumeOfferPage(null);
+                      setCurrentPage(p);
+                      if (viewMode === 'flow') {
+                        window.requestAnimationFrame(() => {
+                          document.getElementById(`page-${p}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        });
+                      } else {
+                        canvasRef.current?.scrollTo({ top: 0, behavior: 'instant' });
+                      }
+                    }}
+                  >
+                    {t.readerResumeBtn}
+                  </button>
+                  <button
+                    type="button"
+                    className="flex-1 py-3 rounded-xl border text-[10px] font-black uppercase tracking-widest"
+                    style={{
+                      borderColor: READER_THEMES[readerTheme].border,
+                      color: READER_THEMES[readerTheme].muted,
+                      backgroundColor: READER_THEMES[readerTheme].panelAltBg,
+                    }}
+                    onClick={() => {
+                      if (savedPageIndex !== null) {
+                        resumeDismissGateRef.current = `${chapterId}:${savedPageIndex}`;
+                      } else {
+                        resumeDismissGateRef.current = `${chapterId}:${resumeOfferPage}`;
+                      }
+                      setResumeOfferPage(null);
+                    }}
+                  >
+                    {t.readerStartOverBtn}
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        <AnimatePresence>
+          {showReaderHelp && (
+            <div className="fixed inset-0 z-[21000] flex items-center justify-center p-4">
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={() => setShowReaderHelp(false)}
+                className="absolute inset-0 backdrop-blur-sm"
+                style={{ backgroundColor: 'rgba(0,0,0,0.72)' }}
+              />
+              <motion.div
+                initial={{ y: 50, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                exit={{ y: 50, opacity: 0 }}
+                className="relative w-full max-w-md rounded-3xl p-8 space-y-6 shadow-2xl max-h-[85vh] overflow-y-auto"
+                style={{
+                  backgroundColor: READER_THEMES[readerTheme].panelBg,
+                  border: `1px solid ${READER_THEMES[readerTheme].border}`,
+                  color: READER_THEMES[readerTheme].text,
+                }}
+              >
+                <div className="flex items-center justify-between gap-4">
+                  <h3 className="text-2xl font-black uppercase tracking-tight italic pr-4">{t.readerShortcutsTitle}</h3>
+                  <button
+                    type="button"
+                    onClick={() => setShowReaderHelp(false)}
+                    className="w-10 h-10 flex-shrink-0 flex items-center justify-center rounded-xl"
+                    style={{
+                      backgroundColor: READER_THEMES[readerTheme].panelAltBg,
+                      border: `1px solid ${READER_THEMES[readerTheme].border}`,
+                      color: READER_THEMES[readerTheme].muted,
+                    }}
+                  >
+                    <X size={20} />
+                  </button>
+                </div>
+                <p className="text-[10px] font-bold uppercase tracking-widest leading-relaxed whitespace-pre-line" style={{ color: READER_THEMES[readerTheme].muted }}>
+                  {t.readerShortcutsBody}
+                </p>
+                <p className="text-[9px] font-bold uppercase tracking-wider" style={{ color: READER_THEMES[readerTheme].muted }}>
+                  {t.readerShortcutsShowHint}
+                </p>
+                <div className="flex flex-col gap-3 sm:flex-row">
+                  <button
+                    type="button"
+                    className="flex-1 py-4 rounded-xl text-[10px] font-black uppercase tracking-widest"
+                    style={{ backgroundColor: READER_THEMES[readerTheme].accent, color: '#fff' }}
+                    onClick={() => setShowReaderHelp(false)}
+                  >
+                    {t.readerShortcutsOk}
+                  </button>
+                  <button
+                    type="button"
+                    className="flex-1 py-4 rounded-xl border text-[10px] font-black uppercase tracking-widest"
+                    style={{
+                      borderColor: READER_THEMES[readerTheme].border,
+                      backgroundColor: READER_THEMES[readerTheme].panelAltBg,
+                      color: READER_THEMES[readerTheme].text,
+                    }}
+                    onClick={() => {
+                      try {
+                        window.localStorage.setItem(READER_HELP_DISMISSED_KEY, '1');
+                      } catch {
+                        /* noop */
+                      }
+                      setShowReaderHelp(false);
+                    }}
+                  >
+                    {t.readerShortcutsDontShow}
+                  </button>
                 </div>
               </motion.div>
             </div>
@@ -1375,8 +1792,8 @@ export default function ComicReaderClient({ initialComic, initialChapters, sourc
         >
            {viewMode !== 'flow' && (
              <>
-               <div className="fixed inset-y-0 left-0 w-[25%] md:w-[20%] z-[10015] cursor-pointer" onClick={(e) => { e.stopPropagation(); readingDirection === 'ltr' ? handlePrevPage() : handleNextPage(); }} />
-               <div className="fixed inset-y-0 right-0 w-[25%] md:w-[20%] z-[10015] cursor-pointer" onClick={(e) => { e.stopPropagation(); readingDirection === 'ltr' ? handleNextPage() : handlePrevPage(); }} />
+               <div className="fixed inset-y-0 left-0 w-[25%] md:w-[20%] z-[10015] cursor-pointer" onClick={(e) => { e.stopPropagation(); if (readingDirection === 'ltr') handlePrevPage(); else handleNextPage(); }} />
+               <div className="fixed inset-y-0 right-0 w-[25%] md:w-[20%] z-[10015] cursor-pointer" onClick={(e) => { e.stopPropagation(); if (readingDirection === 'ltr') handleNextPage(); else handlePrevPage(); }} />
                <div className="fixed inset-y-0 left-[25%] right-[25%] md:left-[20%] md:right-[20%] z-[10015] cursor-pointer" onClick={(e) => { e.stopPropagation(); setUiVisible(prev => !prev); }} />
              </>
            )}
@@ -1412,7 +1829,7 @@ export default function ComicReaderClient({ initialComic, initialChapters, sourc
                 </div>
              </div>
            ) : (
-              <div className={`mx-auto flex flex-col items-center transition-all duration-500 ${viewMode === 'flow' ? 'w-full pt-0 pb-20' : 'min-h-[calc(100vh-40px)] justify-center py-10 md:py-20'}`}>
+              <div style={comicZoomWrapStyle} className={`mx-auto flex flex-col items-center transition-all duration-500 ${viewMode === 'flow' ? 'w-full pt-0 pb-20' : 'min-h-[calc(100vh-40px)] justify-center py-10 md:py-20'}`}>
                 {viewMode === 'classic' ? (
                    <div className="relative flex items-center justify-center w-full min-h-[80vh]">
                      {!pageReady ? (
@@ -1422,8 +1839,9 @@ export default function ComicReaderClient({ initialComic, initialChapters, sourc
                      ) : (
                        <motion.img
                          key={`classic-${currentPage}`}
-                         initial={{ opacity: 0 }}
-                         animate={{ opacity: 1 }}
+                         initial={{ opacity: 0, x: readingDirection === 'ltr' ? 14 : -14 }}
+                         animate={{ opacity: 1, x: 0 }}
+                         transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
                          src={pages[currentPage]}
                          style={{
                            maxWidth: isMobile ? '100%' : '80vw',
