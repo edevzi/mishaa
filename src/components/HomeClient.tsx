@@ -144,13 +144,17 @@ function SafeCoverImage({
 }: SafeCoverImageProps) {
   const [currentSrc, setCurrentSrc] = useState(() => resolveImageSrc(src));
 
+  useEffect(() => {
+    setCurrentSrc(resolveImageSrc(src));
+  }, [src]);
+
   return (
     <Image
       src={currentSrc}
       alt={alt}
       fill
       sizes={sizes}
-      preload={priority}
+      priority={priority}
       unoptimized
       onError={() => {
         if (currentSrc !== DEFAULT_IMAGE_SRC) {
@@ -292,6 +296,11 @@ export default function HomeClient({
   const carouselPausedRef = useRef(false);
   const heroCarouselPausedRef = useRef(false);
   const seenHomeKeysRef = useRef<Set<string>>(new Set());
+  /** SSR trending — stable hero pool until personalization finishes (avoids 2–3 title swaps in ~1s). */
+  const bootstrapHeroTrendingRef = useRef<LibraryComic[]>(
+    Array.isArray(initialData?.trending) ? [...(initialData!.trending as LibraryComic[])] : [],
+  );
+  const [preferencesReady, setPreferencesReady] = useState(false);
   const [heroSlideIndex, setHeroSlideIndex] = useState(0);
 
   const loadMoreInfinite = useCallback(async () => {
@@ -425,7 +434,7 @@ export default function HomeClient({
       persistHomePreferenceProfile(merged);
     };
 
-    void syncPreferenceProfile();
+    void syncPreferenceProfile().finally(() => setPreferencesReady(true));
     window.addEventListener(LIBRARY_ACTIVITY_EVENT, syncPreferenceProfile);
     window.addEventListener(BOOKMARKS_UPDATED_EVENT, syncPreferenceProfile);
     window.addEventListener('storage', syncPreferenceProfile);
@@ -537,9 +546,24 @@ export default function HomeClient({
   }, [isAgeVerified, preferenceProfile, shelfState]);
 
   const featuredCandidates = useMemo(() => {
-    const pool = activeTab === 'all'
-      ? (personalRecs.length > 0 ? personalRecs : shelfState.trending?.items || [])
-      : (activeTab === 'for-you' ? personalRecs : (shelfState[activeTab]?.items || []));
+    // Before prefs + account merge: keep SSR order so title/cover do not thrash on first paint.
+    if (!preferencesReady) {
+      const raw =
+        bootstrapHeroTrendingRef.current.length > 0
+          ? bootstrapHeroTrendingRef.current
+          : shelfState.trending?.items || [];
+      if (!raw.length) return [];
+      return dedupeComics(raw).slice(0, 10);
+    }
+
+    const pool =
+      activeTab === 'all'
+        ? personalRecs.length > 0
+          ? personalRecs
+          : shelfState.trending?.items || []
+        : activeTab === 'for-you'
+          ? personalRecs
+          : shelfState[activeTab]?.items || [];
     if (!pool.length) return [];
     const ranked = rankComicsForHome(pool, {
       profile: preferenceProfile,
@@ -557,7 +581,7 @@ export default function HomeClient({
         seededUnit(preferenceProfile.seed + 17, comicKey(b)),
     );
     return dedupeComics([...head, ...shuffledTail]).slice(0, cap);
-  }, [activeTab, isAgeVerified, preferenceProfile, shelfState, personalRecs]);
+  }, [preferencesReady, activeTab, isAgeVerified, preferenceProfile, shelfState, personalRecs]);
 
   const featuredCandidateKey = useMemo(
     () => featuredCandidates.map((c) => comicKey(c)).join(','),
@@ -569,7 +593,7 @@ export default function HomeClient({
   }, [featuredCandidateKey]);
 
   useEffect(() => {
-    if (featuredCandidates.length <= 1 || prefersReducedMotion) return;
+    if (!preferencesReady || featuredCandidates.length <= 1 || prefersReducedMotion) return;
 
     const id = window.setInterval(() => {
       if (heroCarouselPausedRef.current) return;
@@ -577,7 +601,7 @@ export default function HomeClient({
     }, 8200);
 
     return () => window.clearInterval(id);
-  }, [featuredCandidates.length, featuredCandidateKey, prefersReducedMotion]);
+  }, [preferencesReady, featuredCandidates.length, featuredCandidateKey, prefersReducedMotion]);
 
   const featuredComic =
     featuredCandidates[heroSlideIndex] || featuredCandidates[0] || null;
@@ -684,7 +708,7 @@ export default function HomeClient({
               </motion.div>
             ) : featuredComic ? (
               <motion.div
-                key={comicKey(featuredComic)}
+                key="home-hero"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}

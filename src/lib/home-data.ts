@@ -314,7 +314,9 @@ export async function getHomeData(lang: MangaLanguage = 'en', options: HomeDataO
           id: mangaDexId || item.id.toString(),
           title,
           description: item.description?.replace(/<[^>]*>?/gm, '').substring(0, 150) || 'Global trending pick',
-          coverUrl: item.coverImage.extraLarge || item.coverImage.large,
+          // Medium first: extraLarge spikes LCP/time-to-paint on mobile (Telegram-style slow hero loads).
+          coverUrl:
+            item.coverImage.medium || item.coverImage.large || item.coverImage.extraLarge || '/logo.png',
           bannerUrl: item.bannerImage || undefined,
           source: 'mangadex' as const,
           href: mangaDexId ? `/library/mangadex/${mangaDexId}` : item.siteUrl || '/library',
