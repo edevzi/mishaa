@@ -1,7 +1,14 @@
 @import "tailwindcss";
 
-/* Single site theme: `dark:` matches `.dark` on an ancestor (see root layout). OS light/dark does not fork the UI. */
-@custom-variant dark (&:where(.dark, .dark *));
+/* System theme OR `.dark` on an ancestor (e.g. comic detail forces a dark shell on light OS). */
+@custom-variant dark {
+  @media (prefers-color-scheme: dark) {
+    @slot;
+  }
+  &:where(.dark, .dark *) {
+    @slot;
+  }
+}
 
 @theme {
   --font-sans: var(--font-outfit);
@@ -44,26 +51,41 @@
 }
 
 html {
-  color-scheme: dark;
+  color-scheme: light dark;
   min-height: 100%;
   min-height: 100dvh;
   background:
-    radial-gradient(circle at top left, rgba(255, 90, 31, 0.16), transparent 24%),
-    radial-gradient(circle at top right, rgba(115, 247, 255, 0.12), transparent 20%),
-    radial-gradient(circle at bottom, rgba(255, 211, 107, 0.08), transparent 18%),
-    linear-gradient(180deg, #090a0f 0%, #06070b 100%);
+    radial-gradient(circle at top left, rgba(255, 90, 31, 0.07), transparent 26%),
+    radial-gradient(circle at top right, rgba(115, 247, 255, 0.05), transparent 22%),
+    linear-gradient(180deg, #fafafa 0%, #f0f0f5 100%);
+}
+
+@media (prefers-color-scheme: dark) {
+  html {
+    background:
+      radial-gradient(circle at top left, rgba(255, 90, 31, 0.16), transparent 24%),
+      radial-gradient(circle at top right, rgba(115, 247, 255, 0.12), transparent 20%),
+      radial-gradient(circle at bottom, rgba(255, 211, 107, 0.08), transparent 18%),
+      linear-gradient(180deg, #090a0f 0%, #06070b 100%);
+  }
 }
 
 body {
   min-height: 100%;
   min-height: 100dvh;
   background: transparent;
-  color: var(--text-primary);
+  color: #111827;
   font-family: var(--font-sans);
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
   cursor: auto;
   scroll-behavior: smooth;
+}
+
+@media (prefers-color-scheme: dark) {
+  body {
+    color: var(--text-primary);
+  }
 }
 
 body.studio-light {

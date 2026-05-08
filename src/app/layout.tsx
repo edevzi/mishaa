@@ -53,7 +53,10 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
-  themeColor: "#090a0f",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#fafafa" },
+    { media: "(prefers-color-scheme: dark)", color: "#090a0f" },
+  ],
 };
 
 export const metadata: Metadata = {
@@ -145,7 +148,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`dark ${syne.variable} ${outfit.variable} ${bricolage.variable} ${jetBrainsMono.variable} ${staatliches.variable} ${bangers.variable} h-full min-h-dvh antialiased`}
+      className={`${syne.variable} ${outfit.variable} ${bricolage.variable} ${jetBrainsMono.variable} ${staatliches.variable} ${bangers.variable} h-full min-h-dvh antialiased`}
     >
       <body className="min-h-dvh flex flex-col bg-transparent pb-[env(safe-area-inset-bottom)]">
         <a
