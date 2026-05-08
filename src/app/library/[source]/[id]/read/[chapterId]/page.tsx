@@ -1,4 +1,5 @@
-export const runtime = "edge";
+/** Node serverless avoids Vercel’s ~1 MB Edge bundle cap (this route pulls in large comic action code). */
+export const runtime = "nodejs";
 import type { Metadata } from 'next';
 import { cookies } from 'next/headers';
 import { cache } from 'react';

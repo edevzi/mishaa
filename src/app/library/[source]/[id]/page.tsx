@@ -1,4 +1,5 @@
-export const runtime = "edge";
+/** Node serverless avoids Vercel Edge size limits alongside heavy comic/AniList/MangaDex code. */
+export const runtime = "nodejs";
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { cookies } from 'next/headers';

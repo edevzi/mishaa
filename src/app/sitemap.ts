@@ -75,7 +75,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   }
 
   try {
-    const mangaPages = await Promise.all(
+    const mangaResults = await Promise.allSettled(
       Array.from({ length: MANGA_SITEMAP_MAX_PAGES }, (_, page) =>
         searchComics({
           source: 'mangadex',
@@ -84,6 +84,17 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         }),
       ),
     );
+
+    const mangaPages = mangaResults
+      .filter((r): r is PromiseFulfilledResult<Awaited<ReturnType<typeof searchComics>>> => r.status === 'fulfilled')
+      .map((r) => r.value);
+
+    if (mangaPages.length === 0 && mangaResults.some((r) => r.status === 'rejected')) {
+      console.error(
+        'Sitemap: all MangaDex listing fetches failed',
+        mangaResults.find((r) => r.status === 'rejected'),
+      );
+    }
 
     for (const page of mangaPages) {
       for (const item of page.items) {
