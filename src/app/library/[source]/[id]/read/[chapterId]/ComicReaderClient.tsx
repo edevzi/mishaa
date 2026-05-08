@@ -1147,7 +1147,7 @@ export default function ComicReaderClient({ initialComic, initialChapters, sourc
         ref={readerRef} 
         initial={{ opacity: 0 }} 
         animate={{ opacity: 1 }} 
-        className="fixed inset-0 z-[10000] flex flex-col overflow-hidden select-none [-webkit-tap-highlight-color:transparent]"
+        className="fixed inset-0 z-[10000] flex min-h-0 flex-col overflow-hidden select-none [-webkit-tap-highlight-color:transparent]"
         style={{
           backgroundColor: READER_THEMES[readerTheme].shellBg,
           color: READER_THEMES[readerTheme].text,
@@ -1795,7 +1795,7 @@ export default function ComicReaderClient({ initialComic, initialChapters, sourc
 
         <div
           ref={canvasRef}
-          className="flex-1 w-full overflow-y-auto relative scroll-smooth touch-pan-y"
+          className="relative h-full min-h-0 flex-1 w-full overflow-y-auto scroll-smooth touch-pan-y"
           style={{
             backgroundColor: READER_THEMES[readerTheme].canvasBg,
             scrollbarGutter: 'stable',
@@ -1843,11 +1843,18 @@ export default function ComicReaderClient({ initialComic, initialChapters, sourc
                 </div>
              </div>
            ) : (
-              <div style={comicZoomWrapStyle} className={`mx-auto flex w-full flex-col items-center transition-all duration-500 ${viewMode === 'flow' ? 'pt-0 pb-20' : 'min-h-[calc(100vh-40px)] justify-center py-10 md:py-20'}`}>
+              <div
+                style={comicZoomWrapStyle}
+                className={`mx-auto flex w-full flex-col items-center transition-all duration-500 ${
+                  viewMode === 'flow'
+                    ? 'pt-0 pb-20'
+                    : 'box-border min-h-full justify-center px-3 py-4 sm:px-4 sm:py-6'
+                }`}
+              >
                 {viewMode === 'classic' ? (
-                   <div className="relative flex items-center justify-center w-full min-h-[80vh]">
+                   <div className="relative flex w-full items-center justify-center">
                      {!pageReady ? (
-                       <div className="flex items-center justify-center w-full min-h-[80vh]">
+                       <div className="flex min-h-[min(50vh,28rem)] w-full items-center justify-center py-12">
                          <div className="w-14 h-14 border-2 border-[#ff4d00]/30 border-t-[#ff4d00] rounded-full animate-spin" />
                        </div>
                      ) : (
@@ -1868,9 +1875,9 @@ export default function ComicReaderClient({ initialComic, initialChapters, sourc
                      )}
                    </div>
                 ) : viewMode === 'journal' ? (
-                   <div className="mx-auto flex min-h-[85vh] w-full max-w-[min(100%,98vw)] items-stretch justify-center gap-0">
+                   <div className="mx-auto flex w-full max-w-[min(100%,98vw)] items-stretch justify-center gap-0">
                       {!pageReady ? (
-                        <div className="flex items-center justify-center w-full min-h-[85vh]">
+                        <div className="flex min-h-[min(50vh,28rem)] w-full items-center justify-center py-12">
                           <div className="w-14 h-14 border-2 border-[#ff4d00]/30 border-t-[#ff4d00] rounded-full animate-spin" />
                         </div>
                       ) : currentPage === 0 && isSpreadCover ? (
