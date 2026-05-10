@@ -36,6 +36,7 @@ export default function FAQPageClient() {
     { q: t.q8, a: t.a8 },
     { q: t.q10, a: t.a10 },
     { q: t.q11, a: t.a11 },
+    { q: t.q12, a: t.a12 },
   ];
 
   return (

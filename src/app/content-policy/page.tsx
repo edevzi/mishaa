@@ -34,6 +34,11 @@ export default function ContentPolicyPage() {
           body: 'Items that violate policy, are broken, or create legal risk may be hidden from search and listings. We aim to keep the library useful and safe for legitimate users.',
         },
         {
+          eyebrow: 'Regional experience',
+          title: 'Consent and age copy by coarse location',
+          body: 'We derive an approximate country from your CDN edge hint to gate optional analytics, and to prepend EU- or East-Asia-style adult-gate notes. Country lists ship in repo config so counsel can review them alongside Privacy whenever you materially enter new markets.',
+        },
+        {
           eyebrow: 'User Controls',
           title: 'You control your local data',
           body: 'Bookmarks, reading history, language preferences, and age verification live in your browser. You can clear them from Settings at any time.',

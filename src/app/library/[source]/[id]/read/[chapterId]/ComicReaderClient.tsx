@@ -19,6 +19,7 @@ import {
 import AgeGateOverlay from '@/components/AgeGateOverlay';
 import { isAdultComic, persistAgeVerification, readAgeVerification } from '@/lib/age-verification';
 import { translations, Lang } from '@/lib/translations';
+import { useLibraryAgeDescription } from '@/hooks/useLibraryAgeDescription';
 import { readStorageItem, writeStorageItem } from '@/lib/browser-storage';
 import { readReadingHistory, upsertReadingHistory } from '@/lib/library-storage';
 import { trackEvent } from '@/lib/analytics';
@@ -183,6 +184,10 @@ export default function ComicReaderClient({ initialComic, initialChapters, sourc
   const [lang, setLang] = useState<Lang>('en');
   const [mangaLanguage] = useState<MangaLanguage>(readStoredMangaLanguage);
   const t = translations[lang].library;
+  const ageDescription = useLibraryAgeDescription(t.ageDesc, {
+    ageDescEastAsia: t.ageDescEastAsia,
+    ageDescEurope: t.ageDescEurope,
+  });
 
   // Reader State
   const [pages, setPages] = useState<string[]>([]);
@@ -1060,7 +1065,7 @@ export default function ComicReaderClient({ initialComic, initialChapters, sourc
         <AnimatePresence>
           <AgeGateOverlay
             title={t.restricted}
-            description={t.ageDesc}
+            description={ageDescription}
             confirmLabel={t.verifyBtn}
             cancelLabel={t.cancelBtn}
             confirmAction={handleAgeVerify}
@@ -1133,7 +1138,7 @@ export default function ComicReaderClient({ initialComic, initialChapters, sourc
         {showAgeGate && (
           <AgeGateOverlay
             title={t.restricted}
-            description={t.ageDesc}
+            description={ageDescription}
             confirmLabel={t.verifyBtn}
             cancelLabel={t.cancelBtn}
             confirmAction={handleAgeVerify}

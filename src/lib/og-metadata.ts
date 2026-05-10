@@ -94,6 +94,6 @@ export function buildComicOpenGraphImage(
     url,
     width: 512,
     height: 728,
-    alt: title ? `${title} — cover` : 'Comic cover',
+    alt: title ? `${title} — cover art on iComics.wiki` : 'Comic cover on iComics.wiki',
   };
 }

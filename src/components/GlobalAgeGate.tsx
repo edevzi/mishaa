@@ -1,17 +1,16 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { usePathname } from 'next/navigation';
 import { AnimatePresence } from 'framer-motion';
 import AgeGateOverlay from './AgeGateOverlay';
 import { readAgeVerification, persistAgeVerification } from '@/lib/age-verification';
 import { translations, Lang } from '@/lib/translations';
 import { readStorageItem } from '@/lib/browser-storage';
+import { useLibraryAgeDescription } from '@/hooks/useLibraryAgeDescription';
 
 export default function GlobalAgeGate() {
   const [showGate, setShowGate] = useState(false);
   const [lang, setLang] = useState<Lang>('en');
-  const pathname = usePathname();
 
   useEffect(() => {
     // Check for language
@@ -47,13 +46,17 @@ export default function GlobalAgeGate() {
   };
 
   const t = translations[lang]?.library || translations['en'].library;
+  const ageDescription = useLibraryAgeDescription(t.ageDesc, {
+    ageDescEastAsia: t.ageDescEastAsia,
+    ageDescEurope: t.ageDescEurope,
+  });
 
   return (
     <AnimatePresence>
       {showGate && (
         <AgeGateOverlay
           title={t.restricted || "AGE RESTRICTED"}
-          description={t.ageDesc || "YOU MUST BE AT LEAST 18 YEARS OLD TO ACCESS THIS CONTENT."}
+          description={ageDescription}
           confirmLabel={t.verifyBtn || "I AM 18+"}
           cancelLabel={t.cancelBtn || "EXIT"}
           confirmAction={handleVerify}

@@ -1,14 +1,18 @@
 import type { Metadata, Viewport } from "next";
 import { Suspense } from "react";
+import { headers } from "next/headers";
 import { Syne, Outfit, Bricolage_Grotesque, JetBrains_Mono, Staatliches, Bangers } from "next/font/google";
 import "./globals.css";
 import { getPublicSiteUrl } from "@/lib/og-metadata";
 import { ICS_SITE_DISPLAY_NAME } from "@/lib/seo/page-metadata";
 import SmoothAnimations from "@/components/SmoothAnimations";
+import RegionalShell from "@/components/RegionalShell";
+import CookieConsentBanner from "@/components/CookieConsentBanner";
 import GlobalAgeGate from "@/components/GlobalAgeGate";
 import AnalyticsBridge from "@/components/AnalyticsBridge";
 import JsonLd from "@/components/JsonLd";
 import { buildOrganizationJsonLd, buildWebSiteJsonLd } from "@/lib/seo/global-jsonld";
+import { readRegionSignalsFromHeaders } from "@/lib/regional/geo-headers";
 
 const SITE_ORIGIN = getPublicSiteUrl().replace(/\/$/, "");
 
@@ -73,6 +77,11 @@ export const metadata: Metadata = {
   metadataBase: new URL(SITE_ORIGIN),
   alternates: {
     canonical: SITE_ORIGIN,
+    /** Primary page language; same URL for all regions (no hreflang per-locale variants yet). */
+    languages: {
+      en: SITE_ORIGIN,
+      'x-default': SITE_ORIGIN,
+    },
     types: {
       "application/rss+xml": `${SITE_ORIGIN}/feed.xml`,
     },
@@ -137,33 +146,43 @@ export const metadata: Metadata = {
   }
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const hdrs = await headers();
+  const { analyticsConsentRequired, eastAsiaAgeCopy, europeAgeCopy } = readRegionSignalsFromHeaders(hdrs);
+
   return (
     <html
       lang="en"
       className={`${syne.variable} ${outfit.variable} ${bricolage.variable} ${jetBrainsMono.variable} ${staatliches.variable} ${bangers.variable} h-full min-h-dvh antialiased`}
     >
       <body className="min-h-dvh flex flex-col bg-transparent pb-[env(safe-area-inset-bottom)]">
-        <a
-          href="#main-content"
-          className="sr-only focus:not-sr-only fixed left-4 top-4 z-[99999] rounded-xl bg-white px-4 py-3 text-[10px] font-black uppercase tracking-[0.35em] text-black"
+        <RegionalShell
+          analyticsConsentRequired={analyticsConsentRequired}
+          eastAsiaAgeCopy={eastAsiaAgeCopy}
+          europeAgeCopy={europeAgeCopy}
         >
-          Skip to content
-        </a>
-        <SmoothAnimations />
-        <GlobalAgeGate />
-        <JsonLd data={buildOrganizationJsonLd()} />
-        <JsonLd data={buildWebSiteJsonLd()} />
-        <div id="main-content" className="flex-1">
-          <Suspense fallback={null}>
-            <AnalyticsBridge />
-          </Suspense>
-          {children}
-        </div>
+          <a
+            href="#main-content"
+            className="sr-only focus:not-sr-only fixed left-4 top-4 z-[99999] rounded-xl bg-white px-4 py-3 text-[10px] font-black uppercase tracking-[0.35em] text-black"
+          >
+            Skip to content
+          </a>
+          <SmoothAnimations />
+          <GlobalAgeGate />
+          <JsonLd data={buildOrganizationJsonLd()} />
+          <JsonLd data={buildWebSiteJsonLd()} />
+          <div id="main-content" className="flex-1">
+            <Suspense fallback={null}>
+              <AnalyticsBridge />
+            </Suspense>
+            {children}
+          </div>
+          <CookieConsentBanner />
+        </RegionalShell>
       </body>
     </html>
   );

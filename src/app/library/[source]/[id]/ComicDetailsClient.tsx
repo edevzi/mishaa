@@ -11,6 +11,7 @@ import AgeGateOverlay from '@/components/AgeGateOverlay';
 import RichTextContent from '@/components/RichTextContent';
 import { isAdultComic, persistAgeVerification, readAgeVerification } from '@/lib/age-verification';
 import { translations, Lang } from '@/lib/translations';
+import { useLibraryAgeDescription } from '@/hooks/useLibraryAgeDescription';
 import { readStorageItem, writeStorageItem } from '@/lib/browser-storage';
 import { removeBookmark, upsertBookmark, BOOKMARKS_UPDATED_EVENT, LIBRARY_ACTIVITY_EVENT, readReadingHistory } from '@/lib/library-storage';
 import { trackEvent } from '@/lib/analytics';
@@ -74,6 +75,10 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
   const [lang, setLang] = useState<Lang>('en');
   const [mangaLanguage, setMangaLanguage] = useState<MangaLanguage>(readStoredMangaLanguage);
   const t = translations[lang].library;
+  const ageDescription = useLibraryAgeDescription(t.ageDesc, {
+    ageDescEastAsia: t.ageDescEastAsia,
+    ageDescEurope: t.ageDescEurope,
+  });
 
   // UI State
   const [isAgeVerified, setIsAgeVerified] = useState(() => Boolean(initialAgeVerified));
@@ -356,7 +361,7 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
         <AnimatePresence>
           <AgeGateOverlay
             title={t.restricted}
-            description={t.ageDesc}
+            description={ageDescription}
             confirmLabel={t.verifyBtn}
             cancelLabel={t.cancelBtn}
             confirmAction={handleAgeVerify}
@@ -384,7 +389,7 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
           {showAgeGate && (
             <AgeGateOverlay
               title={t.restricted}
-              description={t.ageDesc}
+              description={ageDescription}
               confirmLabel={t.verifyBtn}
               cancelLabel={t.cancelBtn}
               confirmAction={handleAgeVerify}
@@ -561,6 +566,9 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
                 <h1 className="text-4xl md:text-7xl font-black italic uppercase tracking-tighter leading-[0.88] text-neutral-900 dark:text-white">
                   {comic.title}
                 </h1>
+                <p className="max-w-3xl text-neutral-600 dark:text-white/45 text-sm md:text-base leading-relaxed">
+                  {t.titlePageSeoIntro.replace(/\{\{title\}\}/g, comic.title)}
+                </p>
                 <p className="max-w-3xl text-neutral-600 dark:text-white/55 text-base md:text-lg leading-relaxed">
                   {comic.description}
                 </p>
@@ -737,7 +745,7 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
         {showAgeGate && (
           <AgeGateOverlay
             title={t.restricted}
-            description={t.ageDesc}
+            description={ageDescription}
             confirmLabel={t.verifyBtn}
             cancelLabel={t.cancelBtn}
             confirmAction={handleAgeVerify}
@@ -912,6 +920,10 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
                 >
                   {comic.title}
                 </h1>
+
+                <p className="text-neutral-600 dark:text-white/45 text-sm md:text-base leading-relaxed">
+                  {t.titlePageSeoIntro.replace(/\{\{title\}\}/g, comic.title)}
+                </p>
 
               <div className="flex flex-wrap gap-2 pt-4">
                 {comic.genres.map(genre => (

@@ -1,3 +1,6 @@
+import { readClientCookie } from '@/lib/cookie-client';
+import { getAnalyticsConsentDecision } from '@/lib/analytics-consent';
+
 export type AnalyticsEventName =
   | 'page_view'
   | 'comic_start_reading'
@@ -10,8 +13,15 @@ export type AnalyticsEventName =
 
 export type AnalyticsPayload = Record<string, string | number | boolean | null | undefined>;
 
+export function shouldSendAnalyticsEvents(): boolean {
+  if (typeof window === 'undefined') return false;
+  if (readClientCookie('ics_analytics_consent_required') !== '1') return true;
+  return getAnalyticsConsentDecision() === 'granted';
+}
+
 export const trackEvent = (name: AnalyticsEventName, payload: AnalyticsPayload = {}) => {
   if (typeof window === 'undefined') return;
+  if (!shouldSendAnalyticsEvents()) return;
 
   const body = JSON.stringify({
     name,

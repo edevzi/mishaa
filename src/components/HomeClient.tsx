@@ -44,6 +44,7 @@ import {
   type HomePreferenceProfile,
 } from '@/lib/home-personalization';
 import type { HomeShelfComic } from '@/lib/home-data';
+import { useLibraryAgeDescription } from '@/hooks/useLibraryAgeDescription';
 
 // --- Types ---
 type ComicSource = 'mangadex' | 'marvel' | 'nhentai';
@@ -289,6 +290,11 @@ export default function HomeClient({
   const [homeShelfSearch, setHomeShelfSearch] = useState('');
   const [uiLang, setUiLang] = useState<Lang>('en');
   const shelfCopy = translations[uiLang].hero;
+  const libraryCopy = translations[uiLang].library;
+  const homeAgeDescription = useLibraryAgeDescription(libraryCopy.ageDesc, {
+    ageDescEastAsia: libraryCopy.ageDescEastAsia,
+    ageDescEurope: libraryCopy.ageDescEurope,
+  });
   const [mangaLanguage, setMangaLanguage] = useState<MangaLanguage>(() => initialMangaLanguage);
   const [personalRecs, setPersonalRecs] = useState<LibraryComic[]>([]);
   const [isRecsLoading, setIsRecsLoading] = useState(false);
@@ -735,7 +741,7 @@ export default function HomeClient({
                             <>
                               <SafeCoverImage
                                 src={featuredBackgroundSrc}
-                                alt=""
+                                alt={`${featuredComic.title} — featured series background`}
                                 priority
                                 sizes="100vw"
                                 className="object-cover object-center opacity-[0.35]"
@@ -1139,10 +1145,10 @@ export default function HomeClient({
       <AnimatePresence>
         {showAgeGate && (
           <AgeGateOverlay
-            title="AGE RESTRICTED"
-            description="YOU MUST BE AT LEAST 18 YEARS OLD TO ACCESS THIS CONTENT."
-            confirmLabel="I AM 18+"
-            cancelLabel="EXIT"
+            title={libraryCopy.restricted}
+            description={homeAgeDescription}
+            confirmLabel={libraryCopy.verifyBtn}
+            cancelLabel={libraryCopy.cancelBtn}
             confirmAction={handleVerify}
             cancelAction={() => setShowAgeGate(false)}
           />

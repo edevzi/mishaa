@@ -55,7 +55,7 @@ export default function AgeGateOverlay({
         <h2 className="mb-4 text-5xl font-black uppercase leading-none tracking-tighter text-neutral-900 italic dark:text-white max-md:text-3xl">
           {renderTitle(title)}
         </h2>
-        <p className="mb-10 text-[10px] uppercase leading-relaxed tracking-[0.3em] text-neutral-500 dark:text-white/40 max-md:mb-6">
+        <p className="mb-10 whitespace-pre-line text-[10px] uppercase leading-relaxed tracking-[0.3em] text-neutral-500 dark:text-white/40 max-md:mb-6">
           {description}
         </p>
 

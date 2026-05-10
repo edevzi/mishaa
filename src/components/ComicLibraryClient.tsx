@@ -19,6 +19,7 @@ import {
   mapBooruSearchResults,
 } from '@/lib/booru';
 import { translations, Lang } from '@/lib/translations';
+import { useLibraryAgeDescription } from '@/hooks/useLibraryAgeDescription';
 import { readStorageItem } from '@/lib/browser-storage';
 import { 
   MANGA_LANGUAGE_OPTIONS,
@@ -155,6 +156,10 @@ export default function ComicLibraryClient({ initialAgeVerified = false }: Comic
     () => false,
   );
   const t_lib = translations[lang].library;
+  const libraryAgeDescription = useLibraryAgeDescription(t_lib.ageDesc, {
+    ageDescEastAsia: t_lib.ageDescEastAsia,
+    ageDescEurope: t_lib.ageDescEurope,
+  });
   const visibleCategories = isAgeVerified && nsfwEnabled
     ? CATEGORIES
     : CATEGORIES.filter((category) => !category.nsfw);
@@ -1187,7 +1192,7 @@ export default function ComicLibraryClient({ initialAgeVerified = false }: Comic
         {showAgeGate && (
           <AgeGateOverlay
             title={t_lib.restricted}
-            description={t_lib.ageDesc}
+            description={libraryAgeDescription}
             confirmLabel={t_lib.verifyBtn}
             cancelLabel={t_lib.cancelBtn}
             confirmAction={handleAgeVerify}

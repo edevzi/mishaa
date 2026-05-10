@@ -156,6 +156,9 @@ export const translations = {
       q11: 'HOW CAN I TELL THIS IS THE REAL ICOMICS.WIKI?',
       a11:
         'Check your address bar reads https://icomics.wiki. Our FAQ and the /icomics-wiki explainer restate how we relate (or don’t) to unrelated apps or fan wikis. Official community links appear in the site footer.',
+      q12: 'DOES THE SITE DIFFER BY COUNTRY FOR COOKIES, ANALYTICS, OR LANGUAGES?',
+      a12:
+        'The indexed site is one canonical HTTPS origin (icomics.wiki). The reader toggles English and Russian in the UI. Coarse CDN country data may trigger an analytics consent banner and extra adult-gate sentences in regions where our policy assumes opt‑in telemetry (including much of Europe, Korea, Japan, and Greater China)—see Privacy and Content Policy. We do not add hreflang links for languages until there are distinct URLs.',
       stillQuestions: 'Still have questions?',
       stillDesc: 'Connect with our support team for any assistance.',
       dept: 'Support',
@@ -493,10 +496,17 @@ export const translations = {
     library: {
       read: 'READ',
       restricted: 'RESTRICTED',
-      ageDesc: 'This archive contains explicit material intended for adult audiences only. You must be 18+ to access.',
+      ageDesc:
+        'This archive contains explicit material intended for adult audiences only. You must be 18+ to access.',
+      ageDescEastAsia:
+        'Rules for adult digital content depend on where you live. Continuing means you confirm you meet the lawful minimum age in your country or region—leave if that is not true for you.',
+      ageDescEurope:
+        'Misrepresenting your age to access adult material can breach local law where you live (including many European countries). Proceed only if access is lawful for you.',
       verifyBtn: 'I AM 18 OR OLDER',
       cancelBtn: 'CANCEL',
       backToLibrary: 'Back to library',
+      titlePageSeoIntro:
+        '{{title}} on iComics.wiki — synopsis, genres, and related picks on this page; chapters or issues below for browser reading with progress. Sources & age: Guides.',
       bookmark: 'Bookmark',
       bookmarked: 'Bookmarked',
       share: 'Share',
@@ -704,6 +714,9 @@ export const translations = {
       q11: 'КАК ОТЛИЧИТЬ НАСТОЯЩИЙ ICOMICS.WIKI?',
       a11:
         'В адресной строке должно быть https://icomics.wiki. Разъяснения — в FAQ и на странице /icomics-wiki. Официальные ссылки сообщества — в подвале сайта.',
+      q12: 'МЕНЯЕТСЯ ЛИ САЙТ В РАЗНЫХ СТРАНАХ — COOKIES, АНАЛИТИКА, ЯЗЫК?',
+      a12:
+        'Для поисковиков главный вход — один canonical HTTPS (icomics.wiki). Интерфейс переключается между английским и русским. По грубой стране CDN могут показаться баннер согласия на аналитику и дополнительные фразы на воротах 18+ в регионах, где по политике продукта аналитика по умолчанию opt‑in (в т.ч. значимая часть Европы, Корея, Япония, Большой Китай) — см. Privacy и Content Policy. Отдельные hreflang не ставим, пока нет отдельных URL.',
       stillQuestions: 'Остались вопросы?',
       stillDesc: 'Свяжитесь с нашей командой поддержки для любой помощи.',
       dept: 'Поддержка',
@@ -1043,10 +1056,17 @@ export const translations = {
     library: {
       read: 'ЧИТАТЬ',
       restricted: 'ОГРАНИЧЕНО',
-      ageDesc: 'Этот архив содержит материалы только для взрослых. Вам должно быть 18+, чтобы получить доступ.',
+      ageDesc:
+        'Этот архив содержит материалы только для взрослых. Вам должно быть 18+, чтобы получить доступ.',
+      ageDescEastAsia:
+        'Правила доступа к материалам для взрослых различаются по странам. Продолжая, вы подтверждаете, что достигли минимального законного возраста по местным нормам — иначе не продолжайте.',
+      ageDescEurope:
+        'Ложное указание возраста для доступа к контенту для взрослых может нарушать местные правила (в т.ч. в ряде стран Европы). Продолжайте только если доступ для вас законен.',
       verifyBtn: 'МНЕ ЕСТЬ 18 ЛЕТ',
       cancelBtn: 'ОТМЕНА',
       backToLibrary: 'Назад в библиотеку',
+      titlePageSeoIntro:
+        '{{title}} на iComics.wiki — синопсис, жанры и похожие тайтлы на этой странице; ниже главы или выпуски для чтения в браузере с прогрессом. Источники и возраст: раздел Guides.',
       bookmark: 'Закладка',
       bookmarked: 'В закладках',
       share: 'Поделиться',

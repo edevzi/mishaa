@@ -1,12 +1,16 @@
 import { getPublicSiteUrl } from '@/lib/og-metadata';
 import { ICS_SITE_DISPLAY_NAME } from '@/lib/seo/page-metadata';
 
+const INDEXED_LANGUAGES = ['en-US', 'ru-RU'] as const;
+
 /** Site-wide Organization — emitted once from root layout. */
 export function buildOrganizationJsonLd() {
   const u = getPublicSiteUrl().replace(/\/$/, '');
   return {
     '@context': 'https://schema.org',
     '@type': 'Organization',
+    inLanguage: [...INDEXED_LANGUAGES],
+    availableLanguage: ['en', 'ru'],
     name: ICS_SITE_DISPLAY_NAME,
     alternateName: ['iComics wiki', 'icomics.wiki'],
     url: u,
@@ -25,6 +29,8 @@ export function buildWebSiteJsonLd() {
   return {
     '@context': 'https://schema.org',
     '@type': 'WebSite',
+    inLanguage: [...INDEXED_LANGUAGES],
+    availableLanguage: ['en', 'ru'],
     name: ICS_SITE_DISPLAY_NAME,
     alternateName: ['icomics wiki', 'iComics wiki online library'],
     url: u,

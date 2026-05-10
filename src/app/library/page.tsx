@@ -23,14 +23,12 @@ export async function generateMetadata({
     ? `Search “${queryTrimmed.slice(0, 160)}” in the iComics.wiki library (${shelf}). Open any title for chapters, synopsis, and the fullscreen reader.`
     : `Browse “${shelf}” on icomics.wiki — manga & adult-friendly wiki-style catalog: covers, genres, chapters, synced progress via MangaDex, NHentai and other shelves; superhero (Marvel) is optional—not the featured pillar.`;
 
-  const libraryCanonical =
-    tab && !queryTrimmed
-      ? `${siteUrl}/library?tab=${encodeURIComponent(tab)}`
-      : `${siteUrl}/library`;
+  /** One hub URL for indexing — shelf tabs are UI facets, not separate landing pages (avoids thin-index dilution). */
+  const libraryHubUrl = `${siteUrl}/library`;
 
   const ogTwitter = openGraphTwitterFromLogo({
     origin: siteUrl,
-    pageAbsoluteUrl: libraryCanonical,
+    pageAbsoluteUrl: libraryHubUrl,
     openGraphTitle: title,
     description,
   });
@@ -40,7 +38,7 @@ export async function generateMetadata({
     description,
     ...ogTwitter,
     alternates: {
-      canonical: libraryCanonical,
+      canonical: libraryHubUrl,
     },
   };
 
@@ -49,10 +47,10 @@ export async function generateMetadata({
     return {
       ...base,
       robots: { index: false, follow: true },
-      alternates: { canonical: `${siteUrl}/library` },
+      alternates: { canonical: libraryHubUrl },
       openGraph: {
         ...base.openGraph,
-        url: `${siteUrl}/library`,
+        url: libraryHubUrl,
       },
     };
   }
