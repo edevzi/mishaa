@@ -136,6 +136,7 @@ export const koPart3: DeepPartial<typeof en> = {
     legal: '법률',
     readingHub: '리딩 허브',
     settingsLink: '설정',
+    linkToUs: '보도·링크',
     privacyPolicy: '개인정보처리방침',
     termsShort: '약관',
     contentPolicy: '콘텐츠 정책',

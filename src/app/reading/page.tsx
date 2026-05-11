@@ -6,6 +6,7 @@ export const metadata = staticPageMetadata({
   description:
     'Start here for icomics.wiki: guides for the manga/manhwa/webtoon fullscreen browser reader, RSS for chapters, FAQs & Support—and why “iComics wiki” here is not other apps or Fandom hosts.',
   path: '/reading',
+  localeAlternates: true,
 });
 
 export default function ReadingHubPage() {

@@ -6,27 +6,40 @@ import JsonLd from '@/components/JsonLd';
 import { getPublicSiteUrl } from '@/lib/og-metadata';
 import { openGraphTwitterFromLogo } from '@/lib/seo/page-metadata';
 import { Suspense } from 'react';
+import { UI_LANG_COOKIE } from '@/lib/i18n/cookies';
+import { translations } from '@/lib/translations';
+import {
+  hreflangAlternates,
+  openGraphLocaleForUiLang,
+  resolveUiLang,
+  truncateMeta,
+} from '@/lib/seo/ui-locale-public';
 
 export async function generateMetadata({
   searchParams,
 }: {
-  searchParams: Promise<{ tab?: string; q?: string }>;
+  searchParams: Promise<{ tab?: string; q?: string; ui?: string }>;
 }): Promise<Metadata> {
-  const { tab, q } = await searchParams;
+  const sp = await searchParams;
+  const { tab, q, ui } = sp;
+  const cookieStore = await cookies();
+  const uiLang = resolveUiLang(cookieStore.get(UI_LANG_COOKIE)?.value, ui);
+  const t = translations[uiLang];
+
   const siteUrl = getPublicSiteUrl().replace(/\/$/, '');
   const tabTrimmed = typeof tab === 'string' ? tab.trim() : '';
   const shelf = tabTrimmed || '';
   const queryTrimmed = typeof q === 'string' ? q.trim() : '';
   const queryLabel = queryTrimmed ? ` · ${queryTrimmed.slice(0, 80)}` : '';
 
-  const baseLibraryTitle = 'Manga, hentai & manhwa — MangaDex-style library (browser)';
+  const baseLibraryTitle = `${t.nav.library} — ${t.hero.title}`;
   const title = shelf
     ? `${shelf} · manga, hentai & manhwa shelf${queryLabel}`
     : `${baseLibraryTitle}${queryLabel}`;
 
   const description = queryTrimmed
     ? `Search “${queryTrimmed.slice(0, 160)}” in this manga & hentai browser library (${shelf || 'all shelves'}). MangaDex-style matches, chapters, fullscreen reader on icomics.wiki.`
-    : `Browse manga, hentai & manhwa online—MangaDex-style discovery, vertical webtoons, age‑verified adult / hentai‑oriented shelves, NHentai & allied sources: covers, genres, chapter list, bookmarks. Independent reader at icomics.wiki—not MangaDex.org.`;
+    : truncateMeta(t.hero.desc);
 
   /** One hub URL for indexing — shelf tabs are UI facets, not separate landing pages (avoids thin-index dilution). */
   const libraryHubUrl = `${siteUrl}/library`;
@@ -36,6 +49,7 @@ export async function generateMetadata({
     pageAbsoluteUrl: libraryHubUrl,
     openGraphTitle: title,
     description,
+    openGraphLocale: openGraphLocaleForUiLang(uiLang),
   });
 
   const base: Metadata = {
@@ -44,6 +58,7 @@ export async function generateMetadata({
     ...ogTwitter,
     alternates: {
       canonical: libraryHubUrl,
+      languages: hreflangAlternates(siteUrl, '/library'),
     },
   };
 
@@ -52,7 +67,10 @@ export async function generateMetadata({
     return {
       ...base,
       robots: { index: false, follow: true },
-      alternates: { canonical: libraryHubUrl },
+      alternates: {
+        canonical: libraryHubUrl,
+        languages: hreflangAlternates(siteUrl, '/library'),
+      },
       openGraph: {
         ...base.openGraph,
         url: libraryHubUrl,

@@ -137,6 +137,7 @@ export const zhPart3: DeepPartial<typeof en> = {
     legal: '法律',
     readingHub: '阅读中心',
     settingsLink: '设置',
+    linkToUs: '媒体与链接',
     privacyPolicy: '隐私政策',
     termsShort: '条款',
     contentPolicy: '内容政策',

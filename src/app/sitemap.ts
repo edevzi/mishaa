@@ -2,6 +2,8 @@ import { MetadataRoute } from 'next';
 import { searchComics, getChapters } from '@/actions/comic';
 import { getPublicSiteUrl } from '@/lib/og-metadata';
 import { GUIDES_ORDER } from '@/lib/guides/registry';
+import { UI_LANGS } from '@/lib/i18n/lang';
+import { UI_LANG_SEARCH_PARAM } from '@/lib/seo/hreflang-urls';
 
 /** MangaDex listing pages merged into sitemap (36 titles per page via SEARCH_PAGE_LIMIT). */
 const MANGA_SITEMAP_MAX_PAGES = 55;
@@ -24,6 +26,38 @@ function routeEntry(
   };
 }
 
+/** UI-language discovery URLs (`?ui=`) for major hubs — pairs with hreflang alternates in metadata. */
+const HUB_ROUTES_FOR_UI_VARIANT: `/${string}`[] = [
+  '/',
+  '/library',
+  '/reading',
+  '/guides',
+  '/icomics-wiki',
+  '/faq',
+  '/about',
+  '/contact',
+  '/link-to-us',
+];
+
+function addUiVariantHubUrls(map: Map<string, MetadataRoute.Sitemap[0]>, origin: string) {
+  for (const route of HUB_ROUTES_FOR_UI_VARIANT) {
+    const absoluteBase = route === '/' ? `${origin}/` : `${origin}${route}`;
+    for (const lang of UI_LANGS) {
+      const u = new URL(absoluteBase);
+      u.searchParams.set(UI_LANG_SEARCH_PARAM, lang);
+      const url = u.href;
+      if (!map.has(url)) {
+        map.set(url, {
+          url,
+          lastModified: new Date(),
+          changeFrequency: 'weekly',
+          priority: 0.55,
+        });
+      }
+    }
+  }
+}
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = getPublicSiteUrl().replace(/\/$/, '');
 
@@ -35,6 +69,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     '/comic',
     '/library',
     '/contact',
+    '/link-to-us',
     '/faq',
     '/support',
     '/superheroes',
@@ -62,7 +97,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
             ? 0.9
             : route === '/icomics-wiki'
               ? 0.8
-              : route === '/faq' || route === '/contact'
+              : route === '/faq' || route === '/contact' || route === '/link-to-us'
               ? 0.72
               : route.startsWith('/guides') || route === '/reading'
                 ? 0.75
@@ -74,6 +109,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   for (const entry of staticRoutes) {
     byUrl.set(entry.url, entry);
   }
+  addUiVariantHubUrls(byUrl, baseUrl);
 
   try {
     const mangaResults = await Promise.allSettled(
@@ -130,6 +166,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     return [...byUrl.values()];
   } catch (e) {
     console.error('Sitemap generation error:', e);
-    return staticRoutes;
+    const fallback = new Map(staticRoutes.map((entry) => [entry.url, entry]));
+    addUiVariantHubUrls(fallback, baseUrl);
+    return [...fallback.values()];
   }
 }

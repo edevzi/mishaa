@@ -14,6 +14,7 @@ export const jaPart6: DeepPartial<typeof en> = {
     legal: '法的情報',
     readingHub: '読書ハブ',
     settingsLink: '設定',
+    linkToUs: 'プレス・リンク',
     privacyPolicy: 'プライバシーポリシー',
     termsShort: '利用規約',
     contentPolicy: 'コンテンツポリシー',

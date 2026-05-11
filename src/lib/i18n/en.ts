@@ -430,6 +430,7 @@ export const en = {
       legal: 'Legal',
       readingHub: 'Reading hub',
       settingsLink: 'Settings',
+      linkToUs: 'Press & links',
       privacyPolicy: 'Privacy Policy',
       termsShort: 'Terms',
       contentPolicy: 'Content Policy',

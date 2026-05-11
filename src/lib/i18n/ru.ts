@@ -433,6 +433,7 @@ export const ru = {
       legal: 'Правовое',
       readingHub: 'Хаб чтения',
       settingsLink: 'Настройки',
+      linkToUs: 'Для прессы и ссылок',
       privacyPolicy: 'Конфиденциальность',
       termsShort: 'Условия',
       contentPolicy: 'Политика контента',

@@ -2,50 +2,33 @@ import type { Metadata } from 'next';
 import { cookies, headers } from 'next/headers';
 import HomeClient from '@/components/HomeClient';
 import { getPublicSiteUrl } from '@/lib/og-metadata';
-import { openGraphTwitterFromLogo } from '@/lib/seo/page-metadata';
 import { getHomeData } from '@/lib/home-data';
 import type { MangaLanguage } from '@/lib/manga-language';
-
-const site = getPublicSiteUrl().replace(/\/$/, '');
-
-const HOME_META_DESCRIPTION =
-  'Read manga, hentai & doujin, manhwa & webtoons in your browser—search Japanese, Korean & Chinese titles (native script or romanization), plus English & Russian. MangaDex-style catalog metadata, fullscreen chapters, bookmarks. Age‑verified 18+ shelves. UI: EN, RU, JA, KO, ZH. icomics.wiki—independent reader, not MangaDex.org.';
-
-export const metadata: Metadata = {
-  title: 'Manga, hentai & manhwa online — MangaDex-style browser reader',
-  description: HOME_META_DESCRIPTION,
-  keywords: [
-    'manga online',
-    'hentai manga',
-    'read manga browser',
-    'MangaDex',
-    'manhwa',
-    'webtoon',
-    'adult manga',
-    'doujinshi online',
-    'manga hentai',
-    'icomics.wiki',
-  ],
-  ...openGraphTwitterFromLogo({
-    origin: site,
-    pageAbsoluteUrl: site,
-    openGraphTitle: 'Manga, hentai & manhwa — read online (MangaDex-style catalog, browser)',
-    twitterTitle: 'Manga, hentai & manhwa online · MangaDex-style reader',
-    description: HOME_META_DESCRIPTION,
-    openGraphDescription:
-      'Manga, hentai & manhwa—search JP/KR/CN/EN/RU titles (romanization OK). MangaDex-style browser library, chapters, bookmarks. 18+ after age check. Not MangaDex.org.',
-    twitterDescription:
-      'Manga, hentai & manhwa online—Japanese, Korean, Chinese & romanized search. MangaDex-style reader. Age‑gated adult shelves. Not the MangaDex app.',
-  }),
-  alternates: {
-    canonical: site,
-  },
-};
-
 import { UI_LANG_COOKIE } from '@/lib/i18n/cookies';
 import { isUiLang } from '@/lib/i18n/lang';
 import { uiLangToPreferredMangaLanguage } from '@/lib/i18n/ui-lang-to-manga';
 import { translations } from '@/lib/translations';
+import {
+  buildHomeMetadata,
+  resolveUiLang,
+} from '@/lib/seo/ui-locale-public';
+
+const site = getPublicSiteUrl().replace(/\/$/, '');
+
+export async function generateMetadata({
+  searchParams,
+}: {
+  searchParams: Promise<{ lang?: string; ui?: string }>;
+}): Promise<Metadata> {
+  const sp = await searchParams;
+  const cookieStore = await cookies();
+  const uiLang = resolveUiLang(cookieStore.get(UI_LANG_COOKIE)?.value, sp.ui);
+  return buildHomeMetadata({
+    site,
+    uiLang,
+    uiSearchParam: isUiLang(sp.ui) ? sp.ui : undefined,
+  });
+}
 
 const MANGA_QUERY_LANGS: MangaLanguage[] = [
   'en',
@@ -89,7 +72,6 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ l
 
   return (
     <>
-      {/* Real <h1> in initial HTML for crawlers (hero lives in a Client Component). */}
       <h1 className="sr-only">{homePageH1}</h1>
       <HomeClient
         initialData={initialData}

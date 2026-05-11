@@ -39,6 +39,7 @@ export function guidesIndexMetadata(): Metadata {
     description:
       'Short how‑tos for the icomics.wiki manga reader: first visit setup, manga vs manhwa vs vertical webtoon layouts, catalogs and age‑gated shelves. Focused browser help—not iOS storefront apps.',
     path: '/guides',
+    localeAlternates: true,
   });
 }
 
@@ -52,5 +53,6 @@ export function guideArticleMetadata(slug: string): Metadata {
     title: g.title,
     description: g.description,
     path: `/guides/${g.slug}`,
+    localeAlternates: true,
   });
 }

@@ -69,6 +69,7 @@ export default function Footer() {
                 <Link href="/guides" className="transition-all hover:translate-x-2 hover:text-[#ff4d00] dark:hover:text-white">{t.guides}</Link>
                 <Link href="/reading" className="transition-all hover:translate-x-2 hover:text-[#ff4d00] dark:hover:text-white">{t.readingHub}</Link>
                 <Link href="/support" className="transition-all hover:translate-x-2 hover:text-[#ff4d00] dark:hover:text-white">{t.customer}</Link>
+                <Link href="/link-to-us" className="transition-all hover:translate-x-2 hover:text-[#ff4d00] dark:hover:text-white">{t.linkToUs}</Link>
                 <Link href="/settings" className="transition-all hover:translate-x-2 hover:text-[#ff4d00] dark:hover:text-white">{t.settingsLink}</Link>
                 <a href={TELEGRAM_CHANNEL_URL} target="_blank" rel="noreferrer" className="transition-all hover:translate-x-2 hover:text-[#ff4d00] dark:hover:text-white">{t.telegramChannel}</a>
               </div>

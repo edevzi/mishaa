@@ -3,6 +3,7 @@ import JsonLd from '@/components/JsonLd';
 import { getPublicSiteUrl } from '@/lib/og-metadata';
 import { buildFaqPageJsonLd } from '@/lib/seo/build-faq-jsonld';
 import { openGraphTwitterFromLogo } from '@/lib/seo/page-metadata';
+import { mergeHreflangAlternates } from '@/lib/seo/ui-locale-public';
 import FAQPageClient from './FAQPageClient';
 
 const faqDesc =
@@ -11,17 +12,21 @@ const faqDesc =
 export async function generateMetadata(): Promise<Metadata> {
   const site = getPublicSiteUrl().replace(/\/$/, '');
   const canonical = `${site}/faq`;
-  return {
-    title: 'FAQ — iComics.wiki reader help & wiki branding explained',
-    description: faqDesc,
-    alternates: { canonical },
-    ...openGraphTwitterFromLogo({
-      origin: site,
-      pageAbsoluteUrl: canonical,
-      openGraphTitle: 'FAQ — iComics.wiki help, branding & library topics',
+  return mergeHreflangAlternates(
+    {
+      title: 'FAQ — iComics.wiki reader help & wiki branding explained',
       description: faqDesc,
-    }),
-  };
+      alternates: { canonical },
+      ...openGraphTwitterFromLogo({
+        origin: site,
+        pageAbsoluteUrl: canonical,
+        openGraphTitle: 'FAQ — iComics.wiki help, branding & library topics',
+        description: faqDesc,
+      }),
+    },
+    site,
+    '/faq',
+  );
 }
 
 export default function FAQPage() {

@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { UI_LANG_COOKIE } from '@/lib/i18n/cookies';
+import { isUiLang } from '@/lib/i18n/lang';
+import { UI_LANG_SEARCH_PARAM } from '@/lib/seo/hreflang-urls';
 import { withIcsGeoRequestHeaders } from '@/lib/regional/geo-headers';
 import { suggestedUiLangFromCountry } from '@/lib/i18n/suggested-ui-lang';
 import { resolveRegionSignals } from '@/lib/regional/resolve-region';
@@ -31,7 +33,12 @@ export function middleware(request: NextRequest) {
   const signals = resolveRegionSignals(country);
   res.cookies.set('ics_analytics_consent_required', signals.analyticsConsentRequired ? '1' : '0', cookieDefaults);
 
-  if (!request.cookies.get(UI_LANG_COOKIE)?.value) {
+  const uiParam = request.nextUrl.searchParams.get(UI_LANG_SEARCH_PARAM);
+  const fromUiQuery = isUiLang(uiParam) ? uiParam : null;
+
+  if (fromUiQuery) {
+    res.cookies.set(UI_LANG_COOKIE, fromUiQuery, cookieDefaults);
+  } else if (!request.cookies.get(UI_LANG_COOKIE)?.value) {
     const suggested = suggestedUiLangFromCountry(country);
     res.cookies.set(UI_LANG_COOKIE, suggested, cookieDefaults);
   }

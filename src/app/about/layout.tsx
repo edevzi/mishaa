@@ -7,6 +7,7 @@ export const metadata: Metadata = staticPageMetadata({
   description:
     'What iComics.wiki is: a reader‑first manga, manhwa & vertical webtoon browser library (incl. age‑aware shelves)—not the iOS iComics file app or unrelated Fandom wikis. Mission and transparency.',
   path: '/about',
+  localeAlternates: true,
 });
 
 export default function AboutLayout({ children }: { children: ReactNode }) {

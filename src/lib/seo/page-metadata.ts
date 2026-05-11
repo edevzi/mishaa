@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { buildSiteLogoOgImage, getPublicSiteUrl } from '@/lib/og-metadata';
+import { hreflangAlternates } from '@/lib/seo/hreflang-urls';
 
 /** Product name for `siteName` / JSON-LD (keep in sync across OG + breadcrumbs). */
 export const ICS_SITE_DISPLAY_NAME = 'iComics.wiki' as const;
@@ -25,6 +26,8 @@ export function openGraphTwitterFromLogo(input: {
   openGraphDescription?: string;
   twitterDescription?: string;
   ogType?: 'website' | 'article';
+  /** BCP 47 + region for Open Graph (`en_US`, `ja_JP`, …). */
+  openGraphLocale?: string;
 }): Pick<Metadata, 'openGraph' | 'twitter'> {
   const logo = buildSiteLogoOgImage(input.origin);
   const ogTitle = input.openGraphTitle;
@@ -40,7 +43,7 @@ export function openGraphTwitterFromLogo(input: {
       description: ogDesc,
       url: input.pageAbsoluteUrl,
       siteName: ICS_SITE_DISPLAY_NAME,
-      locale: ICS_OG_LOCALE,
+      locale: input.openGraphLocale ?? ICS_OG_LOCALE,
       type: input.ogType ?? 'website',
       images: [logo],
     },
@@ -59,14 +62,17 @@ export function staticPageMetadata(opts: {
   description: string;
   path: string;
   robots?: Metadata['robots'];
+  /** Adds `?ui=` hreflang alternates for every supported UI language. */
+  localeAlternates?: boolean;
 }): Metadata {
-  const url = `${normalizedOrigin()}${opts.path.startsWith('/') ? opts.path : `/${opts.path}`}`;
+  const origin = normalizedOrigin();
+  const url = `${origin}${opts.path.startsWith('/') ? opts.path : `/${opts.path}`}`;
   const base: Metadata = {
     title: opts.title,
     description: opts.description,
     alternates: { canonical: url },
     ...openGraphTwitterFromLogo({
-      origin: normalizedOrigin(),
+      origin,
       pageAbsoluteUrl: url,
       openGraphTitle: opts.title,
       description: opts.description,
@@ -74,6 +80,12 @@ export function staticPageMetadata(opts: {
   };
   if (opts.robots !== undefined) {
     base.robots = opts.robots;
+  }
+  if (opts.localeAlternates) {
+    base.alternates = {
+      ...base.alternates,
+      languages: hreflangAlternates(origin, opts.path.startsWith('/') ? opts.path : `/${opts.path}`),
+    };
   }
   return base;
 }

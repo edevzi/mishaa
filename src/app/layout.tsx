@@ -67,11 +67,6 @@ export const metadata: Metadata = {
   metadataBase: new URL(SITE_ORIGIN),
   alternates: {
     canonical: SITE_ORIGIN,
-    /** Primary page language; same URL for all regions (no hreflang per-locale variants yet). */
-    languages: {
-      en: SITE_ORIGIN,
-      'x-default': SITE_ORIGIN,
-    },
     types: {
       "application/rss+xml": `${SITE_ORIGIN}/feed.xml`,
     },

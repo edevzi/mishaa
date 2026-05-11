@@ -7,6 +7,7 @@ export const metadata: Metadata = staticPageMetadata({
   description:
     'Contact iComics.wiki — feedback, partnerships, and reader support for the browser manga, manhwa & vertical webtoon library at icomics.wiki.',
   path: '/contact',
+  localeAlternates: true,
 });
 
 export default function ContactLayout({ children }: { children: ReactNode }) {
