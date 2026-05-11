@@ -1506,8 +1506,8 @@ export default function ComicReaderClient({ initialComic, initialChapters, sourc
               >
                 <div className="flex items-center justify-between">
                   <div>
-                    <div className="text-[10px] font-black uppercase tracking-[0.4em]" style={{ color: READER_THEMES[readerTheme].accent }}>Reader</div>
-                    <h3 className="mt-1 text-2xl font-black uppercase tracking-tight italic">Reader Settings</h3>
+                    <div className="text-[10px] font-black uppercase tracking-[0.4em]" style={{ color: READER_THEMES[readerTheme].accent }}>{t.readerEyebrow}</div>
+                    <h3 className="mt-1 text-2xl font-black uppercase tracking-tight italic">{t.readerSettingsModalTitle}</h3>
                   </div>
                   <button
                     onClick={() => setShowSettings(false)}
@@ -1525,24 +1525,24 @@ export default function ComicReaderClient({ initialComic, initialChapters, sourc
                 <div className="space-y-8">
                   {/* Theme Selector */}
                   <div className="space-y-4">
-                    <div className="text-[10px] font-black uppercase tracking-[0.2em]" style={{ color: READER_THEMES[readerTheme].muted }}>Interface Theme</div>
+                    <div className="text-[10px] font-black uppercase tracking-[0.2em]" style={{ color: READER_THEMES[readerTheme].muted }}>{t.readerInterfaceThemeLabel}</div>
                     <div className="grid grid-cols-3 gap-3">
                       {[
-                        { id: 'dark', bg: 'bg-black', label: 'Dark' },
-                        { id: 'sepia', bg: 'bg-[#f4ecd8]', label: 'Sepia' },
-                        { id: 'light', bg: 'bg-white', label: 'Light' }
-                      ].map(t => (
+                        { id: 'dark', bg: 'bg-black', label: t.readerThemeDark },
+                        { id: 'sepia', bg: 'bg-[#f4ecd8]', label: t.readerThemeSepia },
+                        { id: 'light', bg: 'bg-white', label: t.readerThemeLight }
+                      ].map((themeOption) => (
                         <button 
-                          key={t.id} 
-                          onClick={() => { setReaderTheme(t.id as ReaderTheme); localStorage.setItem('reader_theme', t.id); }}
+                          key={themeOption.id} 
+                          onClick={() => { setReaderTheme(themeOption.id as ReaderTheme); localStorage.setItem('reader_theme', themeOption.id); }}
                           className="flex flex-col items-center gap-2 p-3 border transition-all"
-                          style={readerTheme === t.id
+                          style={readerTheme === themeOption.id
                             ? { borderColor: READER_THEMES[readerTheme].accent, backgroundColor: READER_THEMES[readerTheme].accentSoft }
                             : { borderColor: READER_THEMES[readerTheme].border, backgroundColor: READER_THEMES[readerTheme].panelAltBg }
                           }
                         >
-                          <div className={`w-8 h-8 rounded-full ${t.bg} border border-white/10`} />
-                          <span className="text-[9px] font-black uppercase tracking-widest" style={{ color: readerTheme === t.id ? READER_THEMES[readerTheme].text : READER_THEMES[readerTheme].muted }}>{t.label}</span>
+                          <div className={`w-8 h-8 rounded-full ${themeOption.bg} border border-white/10`} />
+                          <span className="text-[9px] font-black uppercase tracking-widest" style={{ color: readerTheme === themeOption.id ? READER_THEMES[readerTheme].text : READER_THEMES[readerTheme].muted }}>{themeOption.label}</span>
                         </button>
                       ))}
                     </div>
@@ -1550,7 +1550,7 @@ export default function ComicReaderClient({ initialComic, initialChapters, sourc
 
                   {/* Reading Direction */}
                   <div className="space-y-4">
-                    <div className="text-[10px] font-black uppercase tracking-[0.2em]" style={{ color: READER_THEMES[readerTheme].muted }}>Reading Direction</div>
+                    <div className="text-[10px] font-black uppercase tracking-[0.2em]" style={{ color: READER_THEMES[readerTheme].muted }}>{t.readerReadingDirectionLabel}</div>
                     <div className="grid grid-cols-2 gap-3">
                       <button 
                         onClick={() => { setReadingDirection('ltr'); localStorage.setItem('reading_direction', 'ltr'); }}
@@ -1560,7 +1560,7 @@ export default function ComicReaderClient({ initialComic, initialChapters, sourc
                           : { borderColor: READER_THEMES[readerTheme].border, backgroundColor: READER_THEMES[readerTheme].panelAltBg, color: READER_THEMES[readerTheme].muted }
                         }
                       >
-                        Left to Right
+                        {t.readerDirectionLtr}
                       </button>
                       <button 
                         onClick={() => { setReadingDirection('rtl'); localStorage.setItem('reading_direction', 'rtl'); }}
@@ -1570,33 +1570,33 @@ export default function ComicReaderClient({ initialComic, initialChapters, sourc
                           : { borderColor: READER_THEMES[readerTheme].border, backgroundColor: READER_THEMES[readerTheme].panelAltBg, color: READER_THEMES[readerTheme].muted }
                         }
                       >
-                        Right to Left
+                        {t.readerDirectionRtl}
                       </button>
                     </div>
                   </div>
 
                   {/* View Modes */}
                   <div className="space-y-4">
-                    <div className="text-[10px] font-bold uppercase tracking-[0.2em]" style={{ color: READER_THEMES[readerTheme].muted }}>Layout Settings</div>
+                    <div className="text-[10px] font-bold uppercase tracking-[0.2em]" style={{ color: READER_THEMES[readerTheme].muted }}>{t.readerLayoutSectionTitle}</div>
                     <div className="grid grid-cols-3 gap-2">
                        <button onClick={() => setViewMode('classic')} className="py-4 text-[9px] font-black uppercase tracking-widest border transition-all" style={viewMode === 'classic'
                          ? { borderColor: READER_THEMES[readerTheme].accent, backgroundColor: READER_THEMES[readerTheme].accentSoft, color: READER_THEMES[readerTheme].text }
                          : { borderColor: READER_THEMES[readerTheme].border, backgroundColor: READER_THEMES[readerTheme].panelAltBg, color: READER_THEMES[readerTheme].muted }
-                       }>Classic</button>
+                       }>{t.readerViewClassic}</button>
                        <button onClick={() => setViewMode('journal')} className="py-4 text-[9px] font-black uppercase tracking-widest border transition-all" style={viewMode === 'journal'
                          ? { borderColor: READER_THEMES[readerTheme].accent, backgroundColor: READER_THEMES[readerTheme].accentSoft, color: READER_THEMES[readerTheme].text }
                          : { borderColor: READER_THEMES[readerTheme].border, backgroundColor: READER_THEMES[readerTheme].panelAltBg, color: READER_THEMES[readerTheme].muted }
-                       }>Journal</button>
+                       }>{t.readerViewJournal}</button>
                        <button onClick={() => setViewMode('flow')} className="py-4 text-[9px] font-black uppercase tracking-widest border transition-all" style={viewMode === 'flow'
                          ? { borderColor: READER_THEMES[readerTheme].accent, backgroundColor: READER_THEMES[readerTheme].accentSoft, color: READER_THEMES[readerTheme].text }
                          : { borderColor: READER_THEMES[readerTheme].border, backgroundColor: READER_THEMES[readerTheme].panelAltBg, color: READER_THEMES[readerTheme].muted }
-                       }>Flow</button>
+                       }>{t.readerViewFlow}</button>
                     </div>
                   </div>
 
                   {/* Page overview (thumbnail grid) */}
                   <div className="space-y-4">
-                    <div className="text-[10px] font-black uppercase tracking-[0.2em]" style={{ color: READER_THEMES[readerTheme].muted }}>Page Overview</div>
+                    <div className="text-[10px] font-black uppercase tracking-[0.2em]" style={{ color: READER_THEMES[readerTheme].muted }}>{t.readerPageOverviewLabel}</div>
                     <button
                       type="button"
                       onClick={() => {
@@ -1611,7 +1611,7 @@ export default function ComicReaderClient({ initialComic, initialChapters, sourc
                       }}
                     >
                       <List size={16} />
-                      All pages (thumbnails)
+                      {t.readerAllPagesThumbnailsCta}
                     </button>
                   </div>
 
@@ -1633,7 +1633,7 @@ export default function ComicReaderClient({ initialComic, initialChapters, sourc
 
                   {/* Fullscreen */}
                   <div className="space-y-4">
-                    <div className="text-[10px] font-black uppercase tracking-[0.2em]" style={{ color: READER_THEMES[readerTheme].muted }}>Fullscreen</div>
+                    <div className="text-[10px] font-black uppercase tracking-[0.2em]" style={{ color: READER_THEMES[readerTheme].muted }}>{t.readerFullscreenSectionTitle}</div>
                     <button
                       onClick={() => void toggleFullscreen()}
                       className="w-full py-4 border text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2"
@@ -1643,7 +1643,7 @@ export default function ComicReaderClient({ initialComic, initialChapters, sourc
                       }
                     >
                       {isFullscreen ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
-                      {isFullscreen ? 'Exit Fullscreen' : 'Enter Fullscreen'}
+                      {isFullscreen ? t.readerModalExitFullscreen : t.readerModalEnterFullscreen}
                     </button>
                   </div>
                 </div>

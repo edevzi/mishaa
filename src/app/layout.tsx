@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Suspense } from "react";
-import { headers } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { Syne, Outfit, Bricolage_Grotesque, JetBrains_Mono, Staatliches, Bangers } from "next/font/google";
 import "./globals.css";
 import { getPublicSiteUrl } from "@/lib/og-metadata";
@@ -13,6 +13,16 @@ import AnalyticsBridge from "@/components/AnalyticsBridge";
 import JsonLd from "@/components/JsonLd";
 import { buildOrganizationJsonLd, buildWebSiteJsonLd } from "@/lib/seo/global-jsonld";
 import { readRegionSignalsFromHeaders } from "@/lib/regional/geo-headers";
+import { translations } from "@/lib/translations";
+import { isUiLang } from "@/lib/i18n/lang";
+import LocaleBootstrap from "@/components/LocaleBootstrap";
+import { UI_LANG_COOKIE } from "@/lib/i18n/cookies";
+
+function htmlLangFromUiCookie(value: string | undefined): string {
+  if (!isUiLang(value)) return "en";
+  if (value === "zh") return "zh-Hans";
+  return value;
+}
 
 const SITE_ORIGIN = getPublicSiteUrl().replace(/\/$/, "");
 
@@ -105,9 +115,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: `${ICS_SITE_DISPLAY_NAME} — manga & manhwa browser reader`,
+    title: `${ICS_SITE_DISPLAY_NAME} — manga, manhwa & webtoons in browser`,
     description:
-      "Read manga and manhwa online: library search, fullscreen chapters, bookmarks, RSS, and wiki-style help—not the indie iOS iComics file app.",
+      "Read manga, manhwa & webtoons online: searchable library, fullscreen reader, bookmarks, multilingual UI, RSS & FAQ—not the unrelated iOS iComics file app.",
     images: [`${SITE_ORIGIN}/logo.png`],
   },
   robots: {
@@ -153,10 +163,15 @@ export default async function RootLayout({
 }>) {
   const hdrs = await headers();
   const { analyticsConsentRequired, eastAsiaAgeCopy, europeAgeCopy } = readRegionSignalsFromHeaders(hdrs);
+  const cookieStore = await cookies();
+  const htmlLang = htmlLangFromUiCookie(cookieStore.get(UI_LANG_COOKIE)?.value);
+  const uiForCopy = cookieStore.get(UI_LANG_COOKIE)?.value;
+  const copyLang = isUiLang(uiForCopy) ? uiForCopy : "en";
+  const skipToContentLabel = translations[copyLang].common.skipToContent;
 
   return (
     <html
-      lang="en"
+      lang={htmlLang}
       className={`${syne.variable} ${outfit.variable} ${bricolage.variable} ${jetBrainsMono.variable} ${staatliches.variable} ${bangers.variable} h-full min-h-dvh antialiased`}
     >
       <body className="min-h-dvh flex flex-col bg-transparent pb-[env(safe-area-inset-bottom)]">
@@ -169,9 +184,10 @@ export default async function RootLayout({
             href="#main-content"
             className="sr-only focus:not-sr-only fixed left-4 top-4 z-[99999] rounded-xl bg-white px-4 py-3 text-[10px] font-black uppercase tracking-[0.35em] text-black"
           >
-            Skip to content
+            {skipToContentLabel}
           </a>
           <SmoothAnimations />
+          <LocaleBootstrap />
           <GlobalAgeGate />
           <JsonLd data={buildOrganizationJsonLd()} />
           <JsonLd data={buildWebSiteJsonLd()} />

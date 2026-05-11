@@ -9,6 +9,7 @@ export function buildOrganizationJsonLd() {
   return {
     '@context': 'https://schema.org',
     '@type': 'Organization',
+    '@id': `${u}#organization`,
     inLanguage: [...INDEXED_LANGUAGES],
     availableLanguage: ['en', 'ru'],
     name: ICS_SITE_DISPLAY_NAME,
@@ -16,7 +17,7 @@ export function buildOrganizationJsonLd() {
     url: u,
     logo: `${u}/logo.png`,
     description:
-      'Browser library for manga, manhwa, and web — catalog search, fullscreen reader, bookmarks, bilingual UI, Telegram, guides & RSS.',
+      'Online reader for manga, manhwa, webtoons, and gated shelves—catalog search, fullscreen chapters, bookmarks, bilingual UI, Telegram community, guides & RSS.',
     disambiguatingDescription:
       'This domain hosts the icomics.wiki reader — not the iOS “iComics” comic file app, not Hey Kids Comics on Fandom, and not Marvel’s discontinued Icon Comics line.',
     sameAs: ['https://t.me/icomicsuz'],
@@ -29,16 +30,21 @@ export function buildWebSiteJsonLd() {
   return {
     '@context': 'https://schema.org',
     '@type': 'WebSite',
+    '@id': `${u}#website`,
     inLanguage: [...INDEXED_LANGUAGES],
     availableLanguage: ['en', 'ru'],
     name: ICS_SITE_DISPLAY_NAME,
     alternateName: ['icomics wiki', 'iComics wiki online library'],
     url: u,
+    publisher: { '@id': `${u}#organization` },
     description:
-      'Official icomics.wiki — browse catalogs with age gates, read chapters fullscreen, resume where you stopped. FAQs & feed explain how we differ from the old iOS iComics app.',
+      'Official icomics.wiki — browse manga, manhwa, webtoons, and age‑gated catalogs; fullscreen reader, bookmarks, resume where supported; FAQ explains brand disambiguation from the unrelated iOS iComics reader.',
     potentialAction: {
       '@type': 'SearchAction',
-      target: `${u}/library?q={search_term_string}`,
+      target: {
+        '@type': 'EntryPoint',
+        urlTemplate: `${u}/library?q={search_term_string}`,
+      },
       'query-input': 'required name=search_term_string',
     },
   };

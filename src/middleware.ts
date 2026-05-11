@@ -1,13 +1,15 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { UI_LANG_COOKIE } from '@/lib/i18n/cookies';
 import { withIcsGeoRequestHeaders } from '@/lib/regional/geo-headers';
+import { suggestedUiLangFromCountry } from '@/lib/i18n/suggested-ui-lang';
 import { resolveRegionSignals } from '@/lib/regional/resolve-region';
 
 const COOKIE_SECURE = process.env.NODE_ENV === 'production';
 
 const cookieDefaults = {
   path: '/' as const,
-  maxAge: 60 * 60 * 24 * 14,
+  maxAge: 60 * 60 * 24 * 400,
   sameSite: 'lax' as const,
   secure: COOKIE_SECURE,
 };
@@ -28,6 +30,11 @@ export function middleware(request: NextRequest) {
   const country = request.headers.get('x-vercel-ip-country') ?? '';
   const signals = resolveRegionSignals(country);
   res.cookies.set('ics_analytics_consent_required', signals.analyticsConsentRequired ? '1' : '0', cookieDefaults);
+
+  if (!request.cookies.get(UI_LANG_COOKIE)?.value) {
+    const suggested = suggestedUiLangFromCountry(country);
+    res.cookies.set(UI_LANG_COOKIE, suggested, cookieDefaults);
+  }
 
   return res;
 }

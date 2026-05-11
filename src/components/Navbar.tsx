@@ -8,6 +8,9 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, Menu, UserCircle2, Settings2 } from 'lucide-react';
 import { translations, Lang } from '@/lib/translations';
 import { readStorageItem, writeStorageItem } from '@/lib/browser-storage';
+import { persistUiLangCookie } from '@/lib/i18n/ui-lang-cookie-client';
+import { uiLangToPreferredMangaLanguage } from '@/lib/i18n/ui-lang-to-manga';
+import { persistStoredMangaLanguage } from '@/lib/manga-language';
 
 interface SessionUser {
   id: string;
@@ -83,12 +86,22 @@ export default function Navbar({ surface = 'catalog' }: NavbarProps) {
     { name: t.support, href: '/support' },
   ];
 
-  const handleLangChange = (l: string) => {
-    const newLang = l.toLowerCase() as Lang;
-    setLang(newLang);
-    writeStorageItem('lang', newLang);
-    window.dispatchEvent(new CustomEvent('langChange', { detail: newLang }));
+  const handleLangChange = (nextLang: Lang) => {
+    if (!translations[nextLang]) return;
+    setLang(nextLang);
+    writeStorageItem('lang', nextLang);
+    persistUiLangCookie(nextLang);
+    persistStoredMangaLanguage(uiLangToPreferredMangaLanguage(nextLang));
+    window.dispatchEvent(new CustomEvent('langChange', { detail: nextLang }));
   };
+
+  const langSwitcher: { short: string; code: Lang }[] = [
+    { short: 'EN', code: 'en' },
+    { short: 'JA', code: 'ja' },
+    { short: 'KO', code: 'ko' },
+    { short: 'ZH', code: 'zh' },
+    { short: 'RU', code: 'ru' },
+  ];
 
   const isCatalog = surface === 'catalog';
 
@@ -158,16 +171,16 @@ export default function Navbar({ surface = 'catalog' }: NavbarProps) {
 
           {/* New Language Switcher */}
           <div className="flex items-center gap-1 rounded-full border border-neutral-200 bg-neutral-100/90 p-1 backdrop-blur-md dark:border-white/5 dark:bg-white/[0.025]">
-            {['EN', 'RU'].map((l) => (
+            {langSwitcher.map(({ short, code }) => (
               <button
-                key={l}
-                onClick={() => handleLangChange(l)}
-                className={`rounded-full px-3.5 py-2 text-[8px] font-black tracking-widest transition-all ${lang === l.toLowerCase()
+                key={code}
+                onClick={() => handleLangChange(code)}
+                className={`rounded-full px-2.5 py-2 text-[8px] font-black tracking-widest transition-all ${lang === code
                   ? 'bg-[#ff5a1f] text-white shadow-lg'
                   : 'text-neutral-500 hover:text-neutral-900 hover:bg-neutral-200/80 dark:text-white/30 dark:hover:text-white dark:hover:bg-white/5'
                   }`}
               >
-                {l}
+                {short}
               </button>
             ))}
           </div>
@@ -197,20 +210,20 @@ export default function Navbar({ surface = 'catalog' }: NavbarProps) {
                   <div className="w-56 rounded-2xl border border-neutral-200 bg-white p-2 shadow-2xl backdrop-blur-xl dark:border-white/10 dark:bg-[#0a0a0c]">
                     <div className="mb-2 border-b border-neutral-100 px-4 py-3 dark:border-white/5">
                       <p className="text-[10px] font-black uppercase tracking-tight text-neutral-900 dark:text-white">{user.firstName} {user.lastName}</p>
-                      <span className="text-[10px] font-black uppercase tracking-[0.4em] text-[#ff4d00]">Library Edition</span>
+                      <span className="text-[10px] font-black uppercase tracking-[0.4em] text-[#ff4d00]">{t.libraryEditionBadge}</span>
                     </div>
                     <Link href="/profile" className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest text-neutral-600 transition-all hover:bg-neutral-100 hover:text-neutral-900 dark:text-white/50 dark:hover:bg-white/5 dark:hover:text-white">
-                      <UserCircle2 size={14} /> Profile
+                      <UserCircle2 size={14} /> {t.accountProfile}
                     </Link>
                     <Link href="/settings" className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest text-neutral-600 transition-all hover:bg-neutral-100 hover:text-neutral-900 dark:text-white/50 dark:hover:bg-white/5 dark:hover:text-white">
-                      <Settings2 size={14} /> Settings
+                      <Settings2 size={14} /> {t.accountSettings}
                     </Link>
                     <div className="my-2 h-px bg-neutral-100 dark:bg-white/5" />
                     <button
                       onClick={handleLogout}
                       className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest text-red-500 hover:bg-red-500/10 transition-all"
                     >
-                      <X size={14} /> Log out
+                      <X size={14} /> {t.accountLogOut}
                     </button>
                   </div>
                 </div>
@@ -257,16 +270,16 @@ export default function Navbar({ surface = 'catalog' }: NavbarProps) {
               ))}
 
               <div className="flex items-center gap-2 rounded-2xl border border-neutral-200 bg-neutral-50 p-1 dark:border-white/10 dark:bg-white/5">
-                {['EN', 'RU'].map((l) => (
+                {langSwitcher.map(({ short, code }) => (
                   <button
-                    key={l}
-                    onClick={() => { handleLangChange(l); setIsOpen(false); }}
-                    className={`flex-1 rounded-xl py-3 text-[10px] font-black tracking-widest transition-all ${lang === l.toLowerCase()
+                    key={code}
+                    onClick={() => { handleLangChange(code); setIsOpen(false); }}
+                    className={`flex-1 rounded-xl py-3 text-[9px] font-black tracking-widest transition-all ${lang === code
                       ? 'bg-[#ff5a1f] text-white'
                       : 'text-neutral-500 hover:bg-neutral-200/80 hover:text-neutral-900 dark:text-white/35 dark:hover:bg-white/5 dark:hover:text-white'
                       }`}
                   >
-                    {l}
+                    {short}
                   </button>
                 ))}
               </div>
@@ -277,7 +290,7 @@ export default function Navbar({ surface = 'catalog' }: NavbarProps) {
                 onClick={() => setIsOpen(false)}
                 className="w-full rounded-2xl border border-white/10 bg-white py-5 text-center text-[10px] font-black uppercase tracking-[0.3em] text-black transition-colors hover:bg-[#ff5a1f] hover:text-white"
               >
-                {user ? 'Profile' : t.registry}
+                {user ? t.accountProfile : t.registry}
               </Link>
               {user && (
                 <>
@@ -285,7 +298,7 @@ export default function Navbar({ surface = 'catalog' }: NavbarProps) {
                     onClick={() => { handleLogout(); setIsOpen(false); }}
                     className="w-full rounded-2xl border border-red-500/20 bg-red-500/5 py-5 text-center text-[10px] font-black uppercase tracking-[0.3em] text-red-500 transition-colors hover:bg-red-500 hover:text-white"
                   >
-                    Log out
+                    {t.accountLogOut}
                   </button>
                 </>
               )}

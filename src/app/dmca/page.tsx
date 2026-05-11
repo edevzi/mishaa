@@ -6,7 +6,7 @@ import { staticPageMetadata } from '@/lib/seo/page-metadata';
 export const metadata: Metadata = staticPageMetadata({
   title: 'DMCA & copyright',
   description:
-    'Copyright and DMCA information for iComics.wiki — how to submit takedown notices and what we need to process claims.',
+    'Copyright and DMCA information for the iComics.wiki manga, manhwa & webtoon browser reader — how to submit takedown notices and what we need to process claims.',
   path: '/dmca',
 });
 

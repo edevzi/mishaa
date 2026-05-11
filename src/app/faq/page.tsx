@@ -6,7 +6,7 @@ import { openGraphTwitterFromLogo } from '@/lib/seo/page-metadata';
 import FAQPageClient from './FAQPageClient';
 
 const faqDesc =
-  'Answers for icomics.wiki readers: browsing the manga library, age gate, bookmarks, RSS, optional account, HTTPS domain check, and how this site differs from the iOS iComics file app and unrelated “iComics wiki” Fandom wikis.';
+  'Answers for icomics.wiki readers: browsing manga, manhwa & vertical webtoons; age gate; bookmarks; RSS; optional account; HTTPS domain check; and how this site differs from the iOS iComics file app and unrelated “iComics wiki” Fandom wikis.';
 
 export async function generateMetadata(): Promise<Metadata> {
   const site = getPublicSiteUrl().replace(/\/$/, '');

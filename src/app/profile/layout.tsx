@@ -4,7 +4,8 @@ import { staticPageMetadata } from '@/lib/seo/page-metadata';
 
 export const metadata: Metadata = staticPageMetadata({
   title: 'Your profile',
-  description: 'Manage your public profile and avatar on iComics.wiki.',
+  description:
+    'Manage your public profile and avatar for the iComics.wiki manga, manhwa & webtoon browser reader.',
   path: '/profile',
   robots: { index: false, follow: true },
 });

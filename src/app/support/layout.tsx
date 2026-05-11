@@ -5,7 +5,7 @@ import { staticPageMetadata } from '@/lib/seo/page-metadata';
 export const metadata: Metadata = staticPageMetadata({
   title: 'Support',
   description:
-    'Help with iComics.wiki — broken chapters, account issues, content reports, and how to get unstuck while reading.',
+    'Help with iComics.wiki — broken chapters, account issues, content reports, and how to get unstuck while reading manga, manhwa, or vertical webtoons in the fullscreen browser.',
   path: '/support',
 });
 

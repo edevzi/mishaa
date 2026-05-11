@@ -6,7 +6,7 @@ import { staticPageMetadata } from '@/lib/seo/page-metadata';
 export const metadata: Metadata = staticPageMetadata({
   title: 'Terms & Conditions',
   description:
-    'Terms of use for iComics.wiki — acceptable use, access limits, accounts, and your responsibilities when using the reader.',
+    'Terms of use for iComics.wiki — acceptable use, access limits, accounts, and your responsibilities when using the browser manga, manhwa & webtoon reader.',
   path: '/terms',
 });
 

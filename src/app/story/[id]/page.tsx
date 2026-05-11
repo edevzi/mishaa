@@ -26,7 +26,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   const description =
     story.globalContext?.replace(/\s+/g, " ").trim().slice(0, 160) ||
-    `Read "${titleText}" — a cinematic comic story on iComics.wiki.`;
+    `Read "${titleText}" — cinematic comic storytelling on iComics.wiki, alongside manga, manhwa & vertical webtoons in the browser reader.`;
 
   const canonical = `${site}/story/${id}`;
 

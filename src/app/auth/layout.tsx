@@ -4,7 +4,8 @@ import { staticPageMetadata } from '@/lib/seo/page-metadata';
 
 export const metadata: Metadata = staticPageMetadata({
   title: 'Sign in',
-  description: 'Sign in or create an account for bookmarks and synced preferences on iComics.wiki.',
+  description:
+    'Sign in or create an account for bookmarks and synced preferences across manga, manhwa & webtoons on iComics.wiki.',
   path: '/auth',
   robots: { index: false, follow: true },
 });

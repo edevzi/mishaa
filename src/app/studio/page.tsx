@@ -8,7 +8,7 @@ export const runtime = "nodejs";
 export const metadata: Metadata = staticPageMetadata({
   title: 'Creative Studio',
   description:
-    'Creative Studio is not available yet — browse the library and reading hub in the meantime.',
+    'Creative Studio is not available yet — browse the manga, manhwa & vertical webtoon library and Reading hub in the meantime.',
   path: '/studio',
   robots: { index: false, follow: true },
 });

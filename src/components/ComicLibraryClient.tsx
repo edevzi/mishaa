@@ -156,6 +156,8 @@ export default function ComicLibraryClient({ initialAgeVerified = false }: Comic
     () => false,
   );
   const t_lib = translations[lang].library;
+  const t_cat = translations[lang].catalog;
+  const t_hero = translations[lang].hero;
   const libraryAgeDescription = useLibraryAgeDescription(t_lib.ageDesc, {
     ageDescEastAsia: t_lib.ageDescEastAsia,
     ageDescEurope: t_lib.ageDescEurope,
@@ -759,10 +761,10 @@ export default function ComicLibraryClient({ initialAgeVerified = false }: Comic
                           {loading && fetchSearchQueryTrimmed.length >= 3 ? (
                             <div className="p-8 text-center">
                               <Loader2 className="w-5 h-5 text-[#ff4d00] animate-spin mx-auto mb-3" />
-                              <span className="text-[9px] font-black uppercase tracking-[0.5em] text-neutral-400 dark:text-white/10">Searching</span>
+                              <span className="text-[9px] font-black uppercase tracking-[0.5em] text-neutral-400 dark:text-white/10">{t_hero.quickSearchSearching}</span>
                             </div>
                           ) : autoCompletePreview.length === 0 ? (
-                            <div className="p-8 text-center text-[9px] font-black uppercase tracking-[0.5em] text-neutral-400 dark:text-white/10">No matches</div>
+                            <div className="p-8 text-center text-[9px] font-black uppercase tracking-[0.5em] text-neutral-400 dark:text-white/10">{t_hero.quickSearchNone}</div>
                           ) : (
                             autoCompletePreview.map(comic => (
                               <button 
@@ -806,13 +808,13 @@ export default function ComicLibraryClient({ initialAgeVerified = false }: Comic
 
               <div className="grid gap-3 md:grid-cols-[1.4fr_1fr_auto]">
                 <div className="flex items-center gap-2 rounded-2xl border border-neutral-200 bg-neutral-100/80 px-4 py-3 dark:border-white/10 dark:bg-white/5">
-                  <span className="text-[8px] font-black uppercase tracking-[0.35em] text-neutral-500 dark:text-white/30">Filter</span>
+                  <span className="text-[8px] font-black uppercase tracking-[0.35em] text-neutral-500 dark:text-white/30">{t_cat.filterLabel}</span>
                   <select
                     value={sourceFilter}
                     onChange={(e) => setSourceFilter(e.target.value as typeof sourceFilter)}
                     className="flex-1 bg-transparent text-[10px] font-black uppercase tracking-[0.25em] text-neutral-900 outline-none dark:text-white"
                   >
-                    <option value="all">All sources</option>
+                    <option value="all">{t_cat.allSources}</option>
                     <option value="mangadex">MangaDex</option>
                     <option value="marvel">Marvel</option>
                     <option value="archive">Archive</option>
@@ -829,17 +831,17 @@ export default function ComicLibraryClient({ initialAgeVerified = false }: Comic
                 </div>
 
                 <div className="flex items-center gap-2 rounded-2xl border border-neutral-200 bg-neutral-100/80 px-4 py-3 dark:border-white/10 dark:bg-white/5">
-                  <span className="text-[8px] font-black uppercase tracking-[0.35em] text-neutral-500 dark:text-white/30">Sort</span>
+                  <span className="text-[8px] font-black uppercase tracking-[0.35em] text-neutral-500 dark:text-white/30">{t_cat.sortLabel}</span>
                   <select
                     value={sortOrder}
                     onChange={(e) => setSortOrder(e.target.value as typeof sortOrder)}
                     className="flex-1 bg-transparent text-[10px] font-black uppercase tracking-[0.25em] text-neutral-900 outline-none dark:text-white"
                   >
-                    <option value="featured">Featured</option>
-                    <option value="recent">Recently read</option>
-                    <option value="saved">Saved first</option>
-                    <option value="title-asc">Title A-Z</option>
-                    <option value="title-desc">Title Z-A</option>
+                    <option value="featured">{t_cat.sortFeatured}</option>
+                    <option value="recent">{t_cat.recentlyRead}</option>
+                    <option value="saved">{t_cat.savedFirst}</option>
+                    <option value="title-asc">{t_cat.titleAsc}</option>
+                    <option value="title-desc">{t_cat.titleDesc}</option>
                   </select>
                 </div>
 
@@ -851,7 +853,7 @@ export default function ComicLibraryClient({ initialAgeVerified = false }: Comic
                       : 'border-neutral-200 bg-black/[0.04] text-neutral-500 hover:border-neutral-400 hover:text-neutral-900 dark:border-white/10 dark:bg-white/5 dark:text-white/40 dark:hover:border-white/30 dark:hover:text-white'
                   }`}
                 >
-                  Saved Only
+                  {t_cat.savedOnly}
                 </button>
               </div>
             </div>

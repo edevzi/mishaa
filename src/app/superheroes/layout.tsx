@@ -5,7 +5,7 @@ import { staticPageMetadata } from '@/lib/seo/page-metadata';
 export const metadata: Metadata = staticPageMetadata({
   title: 'Superhero catalog',
   description:
-    'Explore superhero characters and related comics on iComics.wiki — browse profiles tied to the reader library.',
+    'Explore superhero characters and comic tie‑ins on iComics.wiki — profiles linked into the manga, manhwa & webtoon browser library.',
   path: '/superheroes',
 });
 

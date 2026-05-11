@@ -6,7 +6,7 @@ import { staticPageMetadata } from '@/lib/seo/page-metadata';
 export const metadata: Metadata = staticPageMetadata({
   title: 'Content policy',
   description:
-    'Content safety policy for iComics.wiki — adult age gate, reports, moderation, and how we handle unsafe or infringing material.',
+    'Content safety policy for iComics.wiki — adult age gate, reports, moderation, and how we handle unsafe or infringing material in manga, manhwa & vertical webtoon listings.',
   path: '/content-policy',
 });
 

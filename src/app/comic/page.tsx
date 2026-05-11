@@ -5,7 +5,7 @@ import { staticPageMetadata } from '@/lib/seo/page-metadata';
 export const metadata: Metadata = staticPageMetadata({
   title: 'AI Comic Creator',
   description:
-    'Create sequential comic panels with AI-assisted image generation — story-first workflow on iComics.wiki.',
+    'Create sequential, manga‑style comic panels with AI-assisted image generation — experimentation on iComics.wiki alongside the manga, manhwa & vertical webtoon browser reader.',
   path: '/comic',
 });
 

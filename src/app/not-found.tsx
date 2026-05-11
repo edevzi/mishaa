@@ -14,7 +14,8 @@ const quickLinks = [
   {
     href: "/reading",
     label: "Reading hub",
-    description: "Guides, formats, and tips for reading on iComics.wiki.",
+    description:
+      "Guides for manga/manhwa/webtoon formats, fullscreen browser tips, RSS & FAQs on iComics.wiki.",
   },
 ];
 

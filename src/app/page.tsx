@@ -9,31 +9,56 @@ import type { MangaLanguage } from '@/lib/manga-language';
 const site = getPublicSiteUrl().replace(/\/$/, '');
 
 const HOME_META_DESCRIPTION =
-  'Search and read manga, manhwa, and webtoons in your browser—MangaDex-scale titles plus age‑verified & hentai‑style catalogs, bookmarks, synced progress, guides, and RSS. Official icomics.wiki (not the iOS “iComics” comic file app).';
+  'Browse manga, manhwa, vertical webtoons, and optional age‑gated catalogs in one browser reader—quick search (e.g. MangaDex‑style IDs), fullscreen chapters, bookmarks, progress where syncing is on, English/Russian UI, guides & RSS on icomics.wiki. Official site—not the DRM iOS “iComics” comic file app.';
 
 export const metadata: Metadata = {
-  title: 'Read manga & manhwa online — browser library',
+  title: 'Manga, manhwa & webtoons online — icomics.wiki reader',
   description: HOME_META_DESCRIPTION,
   ...openGraphTwitterFromLogo({
     origin: site,
     pageAbsoluteUrl: site,
-    openGraphTitle: 'Manga & manhwa reader — browse chapters on iComics.wiki',
-    twitterTitle: 'Manga & manhwa reader | iComics.wiki',
+    openGraphTitle: 'Read manga, manhwa & webtoons in your browser',
+    twitterTitle: 'Online manga, manhwa & webtoons | icomics.wiki',
     description: HOME_META_DESCRIPTION,
     openGraphDescription:
-      'Official icomics.wiki: search manga, manhwa, and webtoons; save progress and use fullscreen reading. Learn how we differ from the iOS iComics app in FAQ.',
+      'One reader for manga, manhwa, webtoons, and verified adult shelves: search titles, fullscreen chapters, bookmarks, multilingual UI. Brand disambiguation: FAQ & /icomics-wiki—not the unrelated iOS iComics app.',
     twitterDescription:
-      'Browser manga/manhwa library with bookmarks, RSS, guides—official icomics.wiki (disambiguated in FAQ /icomics-wiki).',
+      'Manga / manhwa / webtoon browser library—bookmarks, progress, RSS, guides. Official icomics.wiki.',
   }),
   alternates: {
     canonical: site,
   },
 };
 
-const normalizeLanguage = (value: string | undefined): MangaLanguage => {
-  return value === 'en' || value === 'ru' || value === 'es' || value === 'fr'
-    ? value
-    : 'en';
+import { UI_LANG_COOKIE } from '@/lib/i18n/cookies';
+import { isUiLang } from '@/lib/i18n/lang';
+import { uiLangToPreferredMangaLanguage } from '@/lib/i18n/ui-lang-to-manga';
+
+const MANGA_QUERY_LANGS: MangaLanguage[] = [
+  'en',
+  'ja',
+  'ko',
+  'ru',
+  'es',
+  'fr',
+  'de',
+  'pt-br',
+  'zh',
+  'zh-hk',
+  'th',
+  'it',
+  'all',
+];
+
+const normalizeLanguage = (
+  queryLang: string | undefined,
+  uiCookie: string | undefined
+): MangaLanguage => {
+  if (queryLang && (MANGA_QUERY_LANGS as readonly string[]).includes(queryLang)) {
+    return queryLang as MangaLanguage;
+  }
+  if (isUiLang(uiCookie)) return uiLangToPreferredMangaLanguage(uiCookie);
+  return 'en';
 };
 
 export default async function Page({ searchParams }: { searchParams: Promise<{ lang?: string }> }) {
@@ -43,7 +68,8 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ l
   const userAgent = headerList.get('user-agent') || '';
   const includeAdultContent = cookieStore.get('age_verified')?.value === 'true';
   const initialIsTouchDevice = /Android|iPhone|iPad|iPod|Mobile/i.test(userAgent);
-  const initialMangaLanguage = normalizeLanguage(lang);
+  const uiCookie = cookieStore.get(UI_LANG_COOKIE)?.value;
+  const initialMangaLanguage = normalizeLanguage(lang, uiCookie);
   const initialData = await getHomeData(initialMangaLanguage, { includeAdultContent });
 
   return (

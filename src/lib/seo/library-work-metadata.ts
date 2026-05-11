@@ -8,6 +8,24 @@ export function stripMarkupForMeta(text: string | undefined | null): string {
     .trim();
 }
 
+/** Human-readable work type for titles & meta (keep in sync with library detail route). */
+export function libraryWorkTypeLabel(source: string): string {
+  switch (source) {
+    case 'mangadex':
+      return 'Manga';
+    case 'marvel':
+      return 'Marvel comic';
+    case 'nhentai':
+      return 'Doujin';
+    case 'superhero':
+      return 'Superhero';
+    case 'archive':
+      return 'Archive comic';
+    default:
+      return 'Comic';
+  }
+}
+
 /** User-visible document title segments (layout template adds `| iComics.wiki`). */
 export function buildWorkMetadataTitle(opts: {
   workTitle: string;
@@ -53,7 +71,7 @@ export function buildWorkMetaDescription(opts: {
   if (typeof opts.chapterCount === 'number' && opts.chapterCount > 0) {
     tail += ` ${opts.chapterCount} chapters in the catalog.`;
   }
-  tail += ` Read ${opts.typeLabel.toLowerCase()} online on ${opts.siteBrand}.`;
+  tail += ` Fullscreen browser reader — manga, manhwa & vertical webtoons on ${opts.siteBrand}.`;
 
   const head = `${title} —`;
   let body = `${head} ${core}`.replace(/\s+/g, ' ').trim();
@@ -82,7 +100,7 @@ export function buildChapterMetadataTitle(opts: {
   if (ch) {
     return `${opts.workTitle} — Ch. ${ch} (${type})`;
   }
-  return `${opts.workTitle} — read ${type.toLowerCase()} online`;
+  return `${opts.workTitle} — read ${type.toLowerCase()} online in your browser`;
 }
 
 export function buildChapterMetaDescription(opts: {
@@ -97,8 +115,8 @@ export function buildChapterMetaDescription(opts: {
   const maxLen = opts.maxLen ?? 300;
   const ch = opts.chapterLabel?.trim();
   const lead = ch
-    ? `${opts.workTitle}, chapter ${ch}: read this ${opts.typeLabel.toLowerCase()} in the fullscreen browser reader on ${opts.siteBrand}.`
-    : `${opts.workTitle}: read this ${opts.typeLabel.toLowerCase()} on ${opts.siteBrand}.`;
+    ? `${opts.workTitle}, chapter ${ch}: read online in the fullscreen browser on ${opts.siteBrand} — ${opts.typeLabel.toLowerCase()} from the manga, manhwa & webtoon catalog.`
+    : `${opts.workTitle}: read online on ${opts.siteBrand} — fullscreen browser manga, manhwa & webtoon reader.`;
 
   let extra = stripMarkupForMeta(opts.synopsisHtml);
   if (extra.length > 40) {

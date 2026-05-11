@@ -13,12 +13,14 @@ import {
   isMangaDexUuid,
   resolveMangaDexIdFromTitle,
 } from '@/lib/mangadex';
-import { buildComicOpenGraphImage, getPublicSiteUrl, toAbsoluteAssetUrl } from '@/lib/og-metadata';
+import { buildComicOpenGraphImage, getPublicSiteUrl } from '@/lib/og-metadata';
 import { ICS_SITE_DISPLAY_NAME, openGraphTwitterFromLogo } from '@/lib/seo/page-metadata';
 import {
   buildWorkMetaDescription,
   buildWorkMetadataTitle,
+  libraryWorkTypeLabel,
 } from '@/lib/seo/library-work-metadata';
+import { buildComicCoverImageObjects } from '@/lib/seo/comic-jsonld';
 
 export const runtime = 'nodejs';
 
@@ -113,7 +115,7 @@ function buildAggregateRating(comicData: ComicSeoData): Record<string, unknown> 
 }
 
 const DEFAULT_DESCRIPTION =
-  'Read this series online on iComics.wiki — synopsis, genre tags, full chapter index, fullscreen reader with synced progress.';
+  'Read this series on iComics.wiki — synopsis, genre tags, full chapter index, and a fullscreen browser reader with synced progress. Catalog spans manga, manhwa & vertical webtoons.';
 
 export async function generateMetadata({ params }: MetadataProps): Promise<Metadata> {
   const { source, id } = await params;
@@ -124,7 +126,7 @@ export async function generateMetadata({ params }: MetadataProps): Promise<Metad
     const origin = getPublicSiteUrl().replace(/\/$/, '');
     const staleUrl = `${origin}/library/${source}/${id}`;
     const headDescription =
-      'This bookmark used an older MangaDex ID. Discover the series again via the manga library search or catalogue on iComics.wiki.';
+      'This bookmark used an older MangaDex ID. Discover the series again via the manga/manhwa/webtoon library search on iComics.wiki.';
     return {
       metadataBase: new URL(origin),
       title: `Outdated manga link · ${ICS_SITE_DISPLAY_NAME}`,
@@ -135,9 +137,9 @@ export async function generateMetadata({ params }: MetadataProps): Promise<Metad
         openGraphTitle: 'Outdated manga link',
         twitterTitle: `Outdated manga link | ${ICS_SITE_DISPLAY_NAME}`,
         openGraphDescription:
-          `Open ${ICS_SITE_DISPLAY_NAME} to browse manga, manhwa, and comics this URL no longer resolves.`,
+          `Open ${ICS_SITE_DISPLAY_NAME} to browse manga, manhwa & vertical webtoons — this URL no longer resolves.`,
         twitterDescription:
-          'This URL no longer resolves. Browse the manga and comics library for current catalog links.',
+          'Stale link. Browse the manga, manhwa & webtoon library for current catalog entries.',
       }),
       alternates: {
         canonical: staleUrl,
@@ -153,18 +155,7 @@ export async function generateMetadata({ params }: MetadataProps): Promise<Metad
   const siteUrl = getPublicSiteUrl();
   const canonicalUrl = `${siteUrl}/library/${source}/${resolvedId}`;
 
-  const typeLabel =
-    source === 'mangadex'
-      ? 'Manga'
-      : source === 'marvel'
-        ? 'Marvel comic'
-        : source === 'nhentai'
-          ? 'Doujin'
-          : source === 'superhero'
-            ? 'Superhero'
-            : source === 'archive'
-              ? 'Archive comic'
-              : 'Comic';
+  const typeLabel = libraryWorkTypeLabel(source);
 
   const aniList = comic?.aniListData;
   const jikan = comic?.jikanData;
@@ -257,80 +248,103 @@ export default async function Page({ params }: { params: Promise<RouteParams> })
     getComicDetails(source, resolvedId),
     getCachedChapters(source, resolvedId),
   ]);
+
   const comicData = initialComic as ComicSeoData | null;
   const siteOrigin = getPublicSiteUrl().replace(/\/$/, '');
   const canonicalWorkUrl = `${siteOrigin}/library/${source}/${resolvedId}`;
-
-  const genreLine = Array.from(
-    new Set([
-      ...(comicData?.genres || []),
-      ...(comicData?.aniListData?.genres || []),
-      ...(comicData?.jikanData?.genres?.map((genre) => genre.name).filter((name): name is string => Boolean(name)) ||
-        []),
-    ]),
-  ).join(', ');
-
+  const typeLabel = libraryWorkTypeLabel(source);
   const aggregateRating = comicData ? buildAggregateRating(comicData) : null;
 
-  const comicSchema = comicData
-    ? {
-        '@context': 'https://schema.org',
-        '@type': 'Book',
-        name: comicData.title,
+  const webPageId = `${canonicalWorkUrl}#webpage`;
+  const bookId = `${canonicalWorkUrl}#book`;
+  const breadcrumbId = `${canonicalWorkUrl}#breadcrumb`;
+  const genreTags = comicData
+    ? Array.from(
+        new Set([
+          ...(comicData.genres || []),
+          ...(comicData.aniListData?.genres || []),
+          ...(comicData.jikanData?.genres?.map((genre) => genre.name).filter((name): name is string => Boolean(name)) ||
+            []),
+        ]),
+      ).filter(Boolean)
+    : [];
+
+  const coverImageObjects = comicData ? buildComicCoverImageObjects(comicData.coverUrl, siteOrigin, comicData.title) : [];
+
+  /** Single graph links WebPage ↔ Book and matches site-wide `#website` / `#organization` @ids. */
+  const workGraphLd = {
+    '@context': 'https://schema.org',
+    '@graph': [
+      {
+        '@type': 'WebPage',
+        '@id': webPageId,
         url: canonicalWorkUrl,
-        description:
-          typeof comicData.description === 'string'
-            ? comicData.description.replace(/<[^>]*>/g, '').trim().slice(0, 5000)
-            : undefined,
-        ...(comicData.coverUrl
-          ? { image: toAbsoluteAssetUrl(comicData.coverUrl, siteOrigin) }
+        name: comicData?.title || `${typeLabel} · ${ICS_SITE_DISPLAY_NAME}`,
+        ...(comicData && typeof comicData.description === 'string'
+          ? {
+              description: comicData.description.replace(/<[^>]*>/g, '').trim().slice(0, 500),
+            }
           : {}),
-        author: {
-          '@type': 'Person',
-          name:
-            comicData.author ||
-            comicData.jikanData?.authors?.[0]?.name ||
-            'Various',
-        },
-        publisher: {
-          '@type': 'Organization',
+        isPartOf: {
+          '@type': 'WebSite',
+          '@id': `${siteOrigin}#website`,
           name: ICS_SITE_DISPLAY_NAME,
           url: siteOrigin,
         },
-        ...(genreLine ? { genre: genreLine } : {}),
-        ...(aggregateRating ? { aggregateRating } : {}),
-      }
-    : null;
-
-  const breadcrumbSchema = {
-    '@context': 'https://schema.org',
-    '@type': 'BreadcrumbList',
-    itemListElement: [
-      {
-        '@type': 'ListItem',
-        position: 1,
-        name: 'Home',
-        item: siteOrigin,
+        publisher: { '@id': `${siteOrigin}#organization` },
+        ...(comicData
+          ? {
+              mainEntity: { '@id': bookId },
+              ...(coverImageObjects[0] ? { primaryImageOfPage: coverImageObjects[0] } : {}),
+            }
+          : {}),
       },
+      ...(comicData
+        ? [
+            {
+              '@type': 'Book',
+              '@id': bookId,
+              name: comicData.title,
+              url: canonicalWorkUrl,
+              mainEntityOfPage: { '@id': webPageId },
+              description:
+                typeof comicData.description === 'string'
+                  ? comicData.description.replace(/<[^>]*>/g, '').trim().slice(0, 5000)
+                  : undefined,
+              ...(coverImageObjects.length ? { image: coverImageObjects } : {}),
+              author: {
+                '@type': 'Person',
+                name:
+                  comicData.author ||
+                  comicData.jikanData?.authors?.[0]?.name ||
+                  'Various',
+              },
+              publisher: { '@id': `${siteOrigin}#organization` },
+              ...(genreTags.length ? { genre: genreTags } : {}),
+              ...(aggregateRating ? { aggregateRating } : {}),
+            },
+          ]
+        : []),
       {
-        '@type': 'ListItem',
-        position: 2,
-        name: 'Library',
-        item: `${siteOrigin}/library`,
-      },
-      {
-        '@type': 'ListItem',
-        position: 3,
-        name: comicData?.title || 'Comic',
-        item: canonicalWorkUrl,
+        '@type': 'BreadcrumbList',
+        '@id': breadcrumbId,
+        itemListElement: [
+          { '@type': 'ListItem', position: 1, name: 'Home', item: siteOrigin },
+          { '@type': 'ListItem', position: 2, name: 'Library', item: `${siteOrigin}/library` },
+          {
+            '@type': 'ListItem',
+            position: 3,
+            name: comicData?.title || 'Comic',
+            item: canonicalWorkUrl,
+          },
+        ],
       },
     ],
   };
-  
+
   return (
     <article>
-      {comicSchema && <JsonLd data={comicSchema} />}
-      {breadcrumbSchema && <JsonLd data={breadcrumbSchema} />}
+      <JsonLd data={workGraphLd} />
       <ComicDetailsClient 
       initialComic={initialComic} 
       initialChapters={initialChapters}

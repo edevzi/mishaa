@@ -23,6 +23,8 @@ import {
   persistStoredMangaLanguage,
   readStoredMangaLanguage,
 } from '@/lib/manga-language';
+import { persistUiLangCookie } from '@/lib/i18n/ui-lang-cookie-client';
+import { uiLangToPreferredMangaLanguage } from '@/lib/i18n/ui-lang-to-manga';
 import { clearAgeVerification, persistAgeVerification, readAgeVerification } from '@/lib/age-verification';
 import {
   BOOKMARKS_STORAGE_KEY,
@@ -74,6 +76,8 @@ export default function SettingsPage() {
   const applyLang = (nextLang: Lang) => {
     setLang(nextLang);
     writeStorageItem('lang', nextLang);
+    persistUiLangCookie(nextLang);
+    persistStoredMangaLanguage(uiLangToPreferredMangaLanguage(nextLang));
     window.dispatchEvent(new CustomEvent('langChange', { detail: nextLang }));
   };
 
@@ -111,6 +115,9 @@ export default function SettingsPage() {
 
   const interfaceLangButtons: { code: Lang; label: string }[] = [
     { code: 'en', label: s.langEnglish },
+    { code: 'ja', label: s.langJapanese },
+    { code: 'ko', label: s.langKorean },
+    { code: 'zh', label: s.langChinese },
     { code: 'ru', label: s.langRussian },
   ];
 

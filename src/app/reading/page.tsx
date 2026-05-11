@@ -4,7 +4,7 @@ import { staticPageMetadata } from '@/lib/seo/page-metadata';
 export const metadata = staticPageMetadata({
   title: 'Reading hub — guides, RSS & progress',
   description:
-    'Start here for icomics.wiki: step‑by‑step guides, RSS for new chapters, FAQs, Support, and why “iComics wiki” on this domain is not other apps or wiki hosts.',
+    'Start here for icomics.wiki: guides for the manga/manhwa/webtoon fullscreen browser reader, RSS for chapters, FAQs & Support—and why “iComics wiki” here is not other apps or Fandom hosts.',
   path: '/reading',
 });
 

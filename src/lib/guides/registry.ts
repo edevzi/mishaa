@@ -14,7 +14,7 @@ export const GUIDES_ORDER: GuideDef[] = [
     slug: 'getting-started',
     title: 'Getting started with the iComics.wiki reader',
     description:
-      'How to browse the library, open a series, start reading chapters, and use basic navigation on phone and desktop.',
+      'How to browse the library, open manga/manhwa/webtoon series, start chapters, and use the fullscreen browser reader on phone and desktop.',
     publishedIso: '2026-05-08T12:00:00.000Z',
   },
   {

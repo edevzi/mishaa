@@ -11,7 +11,7 @@ export function buildWikiLandingPageJsonLd() {
     name: `${ICS_SITE_DISPLAY_NAME} — online comic & manga wiki library`,
     url: pageUrl,
     description:
-      'Official explainer for icomics.wiki: a web reader catalog and help hub. Not the iOS iComics file app; not Fandom’s Hey Kids Comics wiki.',
+      'Official explainer for icomics.wiki: manga, manhwa & vertical webtoons in a browser chapter reader. Not the iOS iComics file app; not Fandom’s Hey Kids Comics wiki.',
     isPartOf: {
       '@type': 'WebSite',
       name: ICS_SITE_DISPLAY_NAME,

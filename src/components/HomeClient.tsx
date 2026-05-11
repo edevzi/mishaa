@@ -754,13 +754,19 @@ export default function HomeClient({
 
                         <div className="relative z-10 grid gap-8 px-6 py-8 sm:px-10 sm:py-10 lg:grid-cols-[1.05fr_0.95fr] lg:items-center lg:gap-12 lg:px-12 lg:py-12">
                       <div className="relative z-20 max-w-2xl lg:py-8">
-                        <p className="text-[10px] font-semibold uppercase tracking-[0.35em] text-neutral-500 dark:text-white/55">
-                          {featuredComic.source}
+                        <h1 className="mt-1 text-3xl font-bold uppercase leading-[1.08] tracking-tight text-neutral-900 sm:text-4xl xl:text-5xl dark:text-white">
+                          {shelfCopy.pageH1}
+                        </h1>
+                        <p className="mt-3 max-w-xl text-sm font-medium leading-relaxed text-neutral-600 dark:text-white/65 sm:text-[0.95rem]">
+                          {shelfCopy.desc}
+                        </p>
+                        <p className="mt-6 text-[10px] font-semibold uppercase tracking-[0.35em] text-neutral-500 dark:text-white/55">
+                          {shelfCopy.featuredSeries} · {featuredComic.source}
                         </p>
 
-                        <h1 className="mt-4 min-h-[2.4em] text-4xl font-bold uppercase leading-[1.05] tracking-tight text-neutral-900 sm:min-h-[2.2em] sm:text-5xl xl:text-6xl dark:text-white">
+                        <h2 className="mt-2 min-h-[2.4em] text-4xl font-bold uppercase leading-[1.05] tracking-tight text-neutral-900 sm:min-h-[2.2em] sm:text-5xl xl:text-6xl dark:text-white">
                           {featuredComic.title}
-                        </h1>
+                        </h2>
 
                         {heroRating?.showBlock ? (
                           <div className="mt-6 flex min-h-[2.25rem] flex-wrap items-baseline gap-x-3 gap-y-1">
@@ -780,7 +786,7 @@ export default function HomeClient({
                           className="group mt-9 inline-block focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#ff5a1f]"
                         >
                           <span className="inline-flex -skew-x-6 bg-[#ff5a1f] px-8 py-3 text-[11px] font-bold uppercase tracking-[0.2em] text-white shadow-lg transition-transform group-hover:-translate-y-0.5 group-active:translate-y-0">
-                            <span className="skew-x-6">Read now</span>
+                            <span className="skew-x-6">{shelfCopy.readFeaturedCta}</span>
                           </span>
                         </Link>
                       </div>
@@ -826,7 +832,37 @@ export default function HomeClient({
                   </div>
                 </div>
               </motion.div>
-            ) : null}
+            ) : (
+              <motion.div
+                key="home-hero-fallback"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+                className="relative w-full"
+              >
+                <div className="bg-gradient-to-b from-neutral-100 via-white to-white pb-10 pt-4 dark:from-neutral-950 dark:via-neutral-950 dark:to-[#06070b]">
+                  <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+                    <div className="border border-neutral-200 bg-neutral-50 px-8 py-12 sm:px-10 sm:py-14 dark:border-white/10 dark:bg-black/40">
+                      <h1 className="max-w-3xl text-3xl font-bold uppercase leading-[1.08] tracking-tight text-neutral-900 sm:text-4xl xl:text-5xl dark:text-white">
+                        {shelfCopy.pageH1}
+                      </h1>
+                      <p className="mt-4 max-w-xl text-sm font-medium leading-relaxed text-neutral-600 dark:text-white/65 sm:text-[0.95rem]">
+                        {shelfCopy.desc}
+                      </p>
+                      <Link
+                        href="/library"
+                        className="group mt-10 inline-block focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#ff5a1f]"
+                      >
+                        <span className="inline-flex -skew-x-6 bg-[#ff5a1f] px-8 py-3 text-[11px] font-bold uppercase tracking-[0.2em] text-white shadow-lg transition-transform group-hover:-translate-y-0.5 group-active:translate-y-0">
+                          <span className="skew-x-6">{shelfCopy.cta}</span>
+                        </span>
+                      </Link>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            )}
           </AnimatePresence>
         </section>
         {/* Shelves Layout */}

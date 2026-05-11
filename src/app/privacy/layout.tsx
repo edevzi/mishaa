@@ -5,7 +5,7 @@ import { staticPageMetadata } from '@/lib/seo/page-metadata';
 export const metadata: Metadata = staticPageMetadata({
   title: 'Privacy Policy',
   description:
-    'How iComics.wiki handles your data, cookies, age verification, and privacy choices when you use the reader.',
+    'How iComics.wiki handles your data, cookies, age verification, and privacy choices when you browse manga, manhwa & vertical webtoons in the browser reader.',
   path: '/privacy',
 });
 

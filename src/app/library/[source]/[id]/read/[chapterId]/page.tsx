@@ -5,9 +5,11 @@ import JsonLd from '@/components/JsonLd';
 import ComicReaderClient from './ComicReaderClient';
 import { getComicDetails, getChapters } from '@/actions/comic';
 import { buildComicOpenGraphImage, getPublicSiteUrl } from '@/lib/og-metadata';
+import { buildComicCoverImageObjects } from '@/lib/seo/comic-jsonld';
 import {
   buildChapterMetaDescription,
   buildChapterMetadataTitle,
+  libraryWorkTypeLabel,
 } from '@/lib/seo/library-work-metadata';
 import { ICS_SITE_DISPLAY_NAME } from '@/lib/seo/page-metadata';
 
@@ -42,8 +44,7 @@ export async function generateMetadata({ params }: MetadataProps): Promise<Metad
   const chapter = (chapters as ChapterRow[] | null)?.find((c) => c.id === chapterId);
   const chLabel = chapter?.chapterNum || chapter?.title;
 
-  const typeLabel =
-    source === 'mangadex' ? 'Manga' : source === 'marvel' ? 'Marvel comic' : 'Comic';
+  const typeLabel = libraryWorkTypeLabel(source);
   const baseTitle = comic?.title || 'Comic';
 
   const totalChapters = Array.isArray(chapters) ? chapters.length : 0;
@@ -64,9 +65,10 @@ export async function generateMetadata({ params }: MetadataProps): Promise<Metad
           siteBrand: ICS_SITE_DISPLAY_NAME,
           totalChapters: totalChapters > 0 ? totalChapters : undefined,
         })
-      : `${baseTitle}${chLabel ? ` — chapter ${chLabel}` : ''}: read online on ${ICS_SITE_DISPLAY_NAME} in the fullscreen browser reader.`;
+      : `${baseTitle}${chLabel ? ` — chapter ${chLabel}` : ''}: read online on ${ICS_SITE_DISPLAY_NAME} in the fullscreen browser — manga, manhwa & webtoon catalog.`;
 
   const ogImage = buildComicOpenGraphImage(comic?.coverUrl, siteUrl, comic?.title);
+  const genreTags = Array.from(new Set(((comic as { genres?: string[] } | null)?.genres ?? []).filter(Boolean)));
 
   return {
     metadataBase: new URL(siteUrl),
@@ -80,6 +82,8 @@ export async function generateMetadata({ params }: MetadataProps): Promise<Metad
       locale: 'en_US',
       type: 'article',
       images: [ogImage],
+      section: typeLabel,
+      tags: genreTags.length ? genreTags : [typeLabel, 'Comics', 'Reading'],
     },
     twitter: {
       card: 'summary_large_image',
@@ -116,26 +120,75 @@ export default async function Page({ params }: { params: Promise<RouteParams> })
   const chapterRow = (initialChapters as ChapterRow[] | null)?.find((c) => c.id === currentChapterId);
   const chLabel = chapterRow?.chapterNum || chapterRow?.title;
   const comicTitle = initialComic?.title || 'Comic';
+  const typeLabel = libraryWorkTypeLabel(source);
+  const totalChapters = Array.isArray(initialChapters) ? initialChapters.length : 0;
+  const chapterPageName = buildChapterMetadataTitle({
+    workTitle: comicTitle,
+    chapterLabel: chLabel,
+    typeLabel,
+  });
+  const chapterPageDescription =
+    initialComic?.title?.trim()
+      ? buildChapterMetaDescription({
+          workTitle: initialComic.title.trim(),
+          chapterLabel: chLabel,
+          typeLabel,
+          synopsisHtml: initialComic.description,
+          siteBrand: ICS_SITE_DISPLAY_NAME,
+          totalChapters: totalChapters > 0 ? totalChapters : undefined,
+        })
+      : `${comicTitle}${chLabel ? ` — chapter ${chLabel}` : ''}: read online on ${ICS_SITE_DISPLAY_NAME} in the fullscreen browser — manga, manhwa & webtoon catalog.`;
 
-  const breadcrumbSchema = {
+  const chapterCoverImages = buildComicCoverImageObjects(initialComic?.coverUrl, siteOrigin, initialComic?.title);
+
+  const chapterJsonLd = {
     '@context': 'https://schema.org',
-    '@type': 'BreadcrumbList',
-    itemListElement: [
-      { '@type': 'ListItem', position: 1, name: 'Home', item: siteOrigin },
-      { '@type': 'ListItem', position: 2, name: 'Library', item: `${siteOrigin}/library` },
-      { '@type': 'ListItem', position: 3, name: comicTitle, item: workUrl },
+    '@graph': [
       {
-        '@type': 'ListItem',
-        position: 4,
-        name: chLabel ? `Chapter ${chLabel}` : 'Chapter',
-        item: canonicalChapterUrl,
+        '@type': 'BreadcrumbList',
+        '@id': `${canonicalChapterUrl}#breadcrumb`,
+        itemListElement: [
+          { '@type': 'ListItem', position: 1, name: 'Home', item: siteOrigin },
+          { '@type': 'ListItem', position: 2, name: 'Library', item: `${siteOrigin}/library` },
+          { '@type': 'ListItem', position: 3, name: comicTitle, item: workUrl },
+          {
+            '@type': 'ListItem',
+            position: 4,
+            name: chLabel ? `Chapter ${chLabel}` : 'Chapter',
+            item: canonicalChapterUrl,
+          },
+        ],
+      },
+      {
+        '@type': 'WebPage',
+        '@id': `${canonicalChapterUrl}#webpage`,
+        name: chapterPageName,
+        description: chapterPageDescription,
+        url: canonicalChapterUrl,
+        isPartOf: {
+          '@type': 'WebSite',
+          '@id': `${siteOrigin}#website`,
+          name: ICS_SITE_DISPLAY_NAME,
+          url: siteOrigin,
+        },
+        publisher: { '@id': `${siteOrigin}#organization` },
+        ...(initialComic?.title?.trim()
+          ? {
+              about: {
+                '@type': 'Book',
+                name: initialComic.title.trim(),
+                url: workUrl,
+              },
+            }
+          : {}),
+        ...(chapterCoverImages[0] ? { primaryImageOfPage: chapterCoverImages[0] } : {}),
       },
     ],
   };
 
   return (
     <>
-      <JsonLd data={breadcrumbSchema} />
+      <JsonLd data={chapterJsonLd} />
       <ComicReaderClient
         initialComic={initialComic}
         initialChapters={initialChapters}

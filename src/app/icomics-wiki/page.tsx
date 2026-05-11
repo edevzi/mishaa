@@ -11,7 +11,7 @@ export async function generateMetadata(): Promise<Metadata> {
   const site = getPublicSiteUrl().replace(/\/$/, '');
   const canonical = `${site}${path}`;
   const description =
-    '“iComics wiki” here means icomics.wiki: the manga, manhwa, and webtoon browser library—not the discontinued iOS comic file manager, not hey kids comics Fan wikis, and not unrelated app stores listings. Confirm you are on https://icomics.wiki, then use search and guides.';
+    '“iComics wiki” here means icomics.wiki: the manga, manhwa & vertical webtoon browser library with a fullscreen chapter reader—not the discontinued iOS comic file manager, not hey kids comics Fan wikis, and not unrelated app store listings. Confirm you are on https://icomics.wiki, then use search and guides.';
   return {
     title: 'What “iComics wiki” is (and is not) — official icomics.wiki',
     description,
