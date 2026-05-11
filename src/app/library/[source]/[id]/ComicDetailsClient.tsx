@@ -65,6 +65,8 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
   const router = useRouter();
   const [readNavPending, startReadNavTransition] = useTransition();
   const [pendingReadChapterId, setPendingReadChapterId] = useState<string | null>(null);
+  /** Avoid duplicate “opening reader…” when primary Read and Continue target the same chapter. */
+  const [pendingReadVia, setPendingReadVia] = useState<'primary' | 'continue' | 'list' | null>(null);
 
   const [comic, setComic] = useState<ComicDetail | null>(initialComic);
   const [chapters, setChapters] = useState<ComicChapter[]>(initialChapters || []);
@@ -327,8 +329,9 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
   }, [chapters, lastReadChapter]);
 
   const navigateToReaderChapter = useCallback(
-    (chapterId: string) => {
+    (chapterId: string, via: 'primary' | 'continue' | 'list') => {
       setPendingReadChapterId(chapterId);
+      setPendingReadVia(via);
       startReadNavTransition(() => {
         router.push(`/library/${source}/${id}/read/${chapterId}`);
       });
@@ -344,7 +347,7 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
         comicTitle: comic?.title || id,
         chapterId: nextReadChapterId,
       });
-      navigateToReaderChapter(nextReadChapterId);
+      navigateToReaderChapter(nextReadChapterId, 'primary');
     } else {
       // Professional approach: Scroll to the chapters section to show the explanation
       const chaptersSection = document.getElementById('chapters-section');
@@ -829,10 +832,15 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
                  <motion.button 
                    type="button"
                    onClick={startReading}
-                   aria-busy={readNavPending && nextReadChapterId != null && pendingReadChapterId === nextReadChapterId}
+                   aria-busy={
+                     readNavPending &&
+                     pendingReadVia === 'primary' &&
+                     nextReadChapterId != null &&
+                     pendingReadChapterId === nextReadChapterId
+                   }
                    whileHover={{ scale: 1.02 }}
                    whileTap={{ scale: 0.98 }}
-                   className="group relative flex items-center justify-center gap-3 overflow-hidden bg-neutral-900 py-6 font-black uppercase tracking-[0.5em] text-[12px] text-white shadow-lg transition-all dark:bg-white dark:text-black dark:shadow-[0_20px_40px_rgba(255,255,255,0.1)]"
+                   className="group relative flex items-center justify-center gap-3 overflow-hidden border border-transparent bg-neutral-900 py-6 font-black uppercase tracking-[0.5em] text-[12px] text-white shadow-lg transition-all dark:border-white/12 dark:bg-white/[0.07] dark:text-white dark:shadow-[0_16px_40px_rgba(0,0,0,0.45)] dark:backdrop-blur-sm"
                  >
                    <motion.div 
                      animate={{ 
@@ -840,15 +848,23 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
                        scale: [1, 1.5, 1]
                      }}
                      transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-                     className="absolute inset-0 bg-[#ff4d00] blur-3xl z-0"
+                     className="absolute inset-0 bg-[#ff4d00] blur-3xl z-0 opacity-70 dark:opacity-40"
                    />
                    <span className="relative z-10 flex items-center gap-3">
-                     {readNavPending && nextReadChapterId != null && pendingReadChapterId === nextReadChapterId ? (
-                       <Loader2 className="h-4 w-4 shrink-0 animate-spin" aria-hidden />
+                     {readNavPending &&
+                     pendingReadVia === 'primary' &&
+                     nextReadChapterId != null &&
+                     pendingReadChapterId === nextReadChapterId ? (
+                       <Loader2 className="h-4 w-4 shrink-0 animate-spin text-[#ff4d00] dark:text-[#ff4d00]" aria-hidden />
                      ) : (
                        <Play fill="currentColor" size={16} aria-hidden />
                      )}
-                     {readNavPending && nextReadChapterId != null && pendingReadChapterId === nextReadChapterId ? t.openingReader : t.read}
+                     {readNavPending &&
+                     pendingReadVia === 'primary' &&
+                     nextReadChapterId != null &&
+                     pendingReadChapterId === nextReadChapterId
+                       ? t.openingReader
+                       : t.read}
                    </span>
                  </motion.button>
                )}
@@ -860,15 +876,17 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
                  >
                    <button
                      type="button"
-                     onClick={() => navigateToReaderChapter(lastReadChapter.id)}
-                     aria-busy={readNavPending && pendingReadChapterId === lastReadChapter.id}
+                     onClick={() => navigateToReaderChapter(lastReadChapter.id, 'continue')}
+                     aria-busy={readNavPending && pendingReadVia === 'continue' && pendingReadChapterId === lastReadChapter.id}
                      className="flex w-full flex-col items-center justify-center gap-1 overflow-hidden border border-neutral-200 bg-neutral-100 py-4 font-black uppercase tracking-widest text-[9px] text-neutral-900 transition-all hover:bg-neutral-200/80 dark:border-white/15 dark:bg-white/10 dark:text-white dark:hover:bg-white/15"
                    >
                      <span className="flex items-center gap-2 text-[#ff4d00]">
-                       {readNavPending && pendingReadChapterId === lastReadChapter.id ? (
+                       {readNavPending && pendingReadVia === 'continue' && pendingReadChapterId === lastReadChapter.id ? (
                          <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin" aria-hidden />
                        ) : null}
-                       {readNavPending && pendingReadChapterId === lastReadChapter.id ? t.openingReader : t.continueReading}
+                       {readNavPending && pendingReadVia === 'continue' && pendingReadChapterId === lastReadChapter.id
+                         ? t.openingReader
+                         : t.continueReading}
                      </span>
                      <span className="w-full truncate px-4 text-center text-neutral-600 dark:text-white/50">{lastReadChapter.title}</span>
                      {typeof lastReadChapter.progressPercent === 'number' && (
@@ -1181,7 +1199,8 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
                       chapters.map((ch) => {
                         const sharedClass =
                           'group relative flex w-full items-center gap-4 border border-neutral-200 bg-white p-5 text-left transition-all hover:border-[#ff4d00]/45 hover:bg-[#ff4d00]/5 dark:border-white/8 dark:bg-white/5 dark:hover:bg-[#ff4d00]/10 md:p-6';
-                        const chapterOpening = readNavPending && pendingReadChapterId === ch.id;
+                        const chapterOpening =
+                          readNavPending && pendingReadVia === 'list' && pendingReadChapterId === ch.id;
                         const inner = (
                           <>
                             <div className="absolute inset-0 bg-gradient-to-r from-[#ff4d00]/5 to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
@@ -1243,7 +1262,7 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
                           <button
                             key={ch.id}
                             type="button"
-                            onClick={() => navigateToReaderChapter(ch.id)}
+                            onClick={() => navigateToReaderChapter(ch.id, 'list')}
                             aria-busy={chapterOpening}
                             aria-label={chapterOpening ? t.openingReader : undefined}
                             className={sharedClass}
