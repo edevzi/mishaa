@@ -385,6 +385,12 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
     }
   };
 
+  const primaryReadPending =
+    readNavPending &&
+    pendingReadVia === 'primary' &&
+    nextReadChapterId != null &&
+    pendingReadChapterId === nextReadChapterId;
+
 
   if (restrictedSource && !isAgeVerified) {
     return (
@@ -858,15 +864,12 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
                  <motion.button 
                    type="button"
                    onClick={startReading}
-                   aria-busy={
-                     readNavPending &&
-                     pendingReadVia === 'primary' &&
-                     nextReadChapterId != null &&
-                     pendingReadChapterId === nextReadChapterId
-                   }
+                   aria-busy={primaryReadPending}
                    whileHover={{ scale: 1.02 }}
                    whileTap={{ scale: 0.98 }}
-                   className="group relative flex items-center justify-center gap-3 overflow-hidden border border-transparent bg-neutral-900 py-6 font-black uppercase tracking-[0.5em] text-[12px] text-white shadow-lg transition-all dark:border-white/12 dark:bg-white/[0.07] dark:text-white dark:shadow-[0_16px_40px_rgba(0,0,0,0.45)] dark:backdrop-blur-sm"
+                   className={`group relative flex w-full min-h-0 items-center justify-center gap-2.5 overflow-hidden border border-transparent bg-neutral-900 font-black uppercase text-white shadow-lg transition-all dark:border-white/12 dark:bg-white/[0.07] dark:text-white dark:shadow-[0_16px_40px_rgba(0,0,0,0.45)] dark:backdrop-blur-sm ${
+                     primaryReadPending ? 'px-3 py-3.5' : 'px-4 py-[1.125rem]'
+                   }`}
                  >
                    <motion.div 
                      animate={{ 
@@ -876,21 +879,19 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
                      transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
                      className="absolute inset-0 bg-[#ff4d00] blur-3xl z-0 opacity-70 dark:opacity-40"
                    />
-                   <span className="relative z-10 flex items-center gap-3">
-                     {readNavPending &&
-                     pendingReadVia === 'primary' &&
-                     nextReadChapterId != null &&
-                     pendingReadChapterId === nextReadChapterId ? (
-                       <Loader2 className="h-4 w-4 shrink-0 animate-spin text-[#ff4d00] dark:text-[#ff4d00]" aria-hidden />
+                   <span
+                     className={`relative z-10 flex items-center justify-center gap-2.5 text-center ${
+                       primaryReadPending
+                         ? 'text-[10px] leading-snug tracking-[0.08em] max-w-[11.5rem] sm:max-w-none'
+                         : 'text-[12px] tracking-[0.38em]'
+                     }`}
+                   >
+                     {primaryReadPending ? (
+                       <Loader2 className="h-4 w-4 shrink-0 animate-spin text-[#ff4d00]" aria-hidden />
                      ) : (
-                       <Play fill="currentColor" size={16} aria-hidden />
+                       <Play fill="currentColor" size={16} className="shrink-0" aria-hidden />
                      )}
-                     {readNavPending &&
-                     pendingReadVia === 'primary' &&
-                     nextReadChapterId != null &&
-                     pendingReadChapterId === nextReadChapterId
-                       ? t.openingReader
-                       : t.read}
+                     {primaryReadPending ? t.openingReader : t.read}
                    </span>
                  </motion.button>
                )}
