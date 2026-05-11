@@ -34,6 +34,12 @@ import Image from 'next/image';
 import { imageUnoptimizedForSrc } from '@/lib/next-image-unoptimized';
 import Link from 'next/link';
 import { useDominantColor } from '@/hooks/use-dominant-color';
+import {
+  TelegramShareIcon,
+  XShareIcon,
+  WhatsAppShareIcon,
+  LinkShareIcon,
+} from '@/components/icons/ShareBrandIcons';
 
 
 const formatMarvelDate = (value?: string) => {
@@ -278,10 +284,30 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
   const socialShares = useMemo(
     () =>
       [
-        { id: 'telegram' as const, name: 'Telegram', icon: 'https://cdn.simpleicons.org/telegram/24A1DE' },
-        { id: 'twitter' as const, name: t.socialTwitterX, icon: 'https://cdn.simpleicons.org/x/1DA1F2' },
-        { id: 'whatsapp' as const, name: 'WhatsApp', icon: 'https://cdn.simpleicons.org/whatsapp/25D366' },
-        { id: 'copy' as const, name: t.socialCopyLink, icon: 'https://cdn.simpleicons.org/link/FFFFFF' },
+        {
+          id: 'telegram' as const,
+          name: 'Telegram',
+          Icon: TelegramShareIcon,
+          iconClass: 'text-[#24A1DE]',
+        },
+        {
+          id: 'twitter' as const,
+          name: t.socialTwitterX,
+          Icon: XShareIcon,
+          iconClass: 'text-neutral-800 dark:text-zinc-100',
+        },
+        {
+          id: 'whatsapp' as const,
+          name: 'WhatsApp',
+          Icon: WhatsAppShareIcon,
+          iconClass: 'text-[#25D366]',
+        },
+        {
+          id: 'copy' as const,
+          name: t.socialCopyLink,
+          Icon: LinkShareIcon,
+          iconClass: 'text-neutral-600 dark:text-zinc-200',
+        },
       ] as const,
     [t.socialTwitterX, t.socialCopyLink],
   );
@@ -1355,12 +1381,9 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
                     }}
                     className="flex flex-col items-center gap-3 group cursor-pointer border-0 bg-transparent p-0 text-left"
                   >
-                    <div className="w-14 h-14 bg-black/[0.04] dark:bg-white/5 border border-neutral-200 dark:border-white/10 rounded-2xl flex items-center justify-center group-hover:bg-[#ff4d00] group-hover:border-[#ff4d00] group-hover:-translate-y-1 transition-all shadow-lg">
-                      <img
-                        src={social.icon}
-                        className="h-6 w-6 opacity-90 dark:invert dark:group-hover:invert-0 transition-all group-hover:opacity-100"
-                        alt=""
-                        aria-hidden
+                    <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-neutral-200 bg-black/[0.04] shadow-lg transition-all group-hover:-translate-y-1 group-hover:border-[#ff4d00] group-hover:bg-[#ff4d00] dark:border-white/10 dark:bg-white/5">
+                      <social.Icon
+                        className={`h-6 w-6 shrink-0 ${social.iconClass} opacity-90 transition-[opacity,color] group-hover:text-white group-hover:opacity-100`}
                       />
                     </div>
                     <span className="text-[9px] font-black uppercase tracking-widest text-neutral-600 transition-colors group-hover:text-neutral-900 dark:text-white/30 dark:group-hover:text-white">
