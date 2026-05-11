@@ -700,6 +700,7 @@ export default function HomeClient({
               >
                 <div className="bg-gradient-to-b from-neutral-100 via-white to-white pb-12 pt-4 dark:from-neutral-950 dark:via-neutral-950 dark:to-[#06070b]">
                   <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+                    <h1 className="sr-only">{shelfCopy.pageH1}</h1>
                     <div className="grid gap-8 border border-neutral-200 bg-neutral-50 p-6 lg:grid-cols-[1.05fr_0.95fr] lg:gap-12 lg:p-10 dark:border-white/10 dark:bg-black/40">
                       <div className="space-y-5">
                         <div className="h-6 w-36 animate-pulse bg-neutral-200 dark:bg-white/10" />
@@ -764,9 +765,9 @@ export default function HomeClient({
 
                         <div className="relative z-10 grid gap-8 px-6 py-8 sm:px-10 sm:py-10 lg:grid-cols-[1.05fr_0.95fr] lg:items-center lg:gap-12 lg:px-12 lg:py-12">
                       <div className="relative z-20 max-w-2xl lg:py-8">
-                        <h2 className="mt-1 text-3xl font-bold uppercase leading-[1.08] tracking-tight text-neutral-900 sm:text-4xl xl:text-5xl dark:text-white">
+                        <h1 className="mt-1 text-3xl font-bold uppercase leading-[1.08] tracking-tight text-neutral-900 sm:text-4xl xl:text-5xl dark:text-white">
                           {shelfCopy.pageH1}
-                        </h2>
+                        </h1>
                         <p className="mt-3 max-w-xl text-sm font-medium leading-relaxed text-neutral-600 dark:text-white/65 sm:text-[0.95rem]">
                           {shelfCopy.desc}
                         </p>
@@ -774,9 +775,9 @@ export default function HomeClient({
                           {shelfCopy.featuredSeries} · {featuredComic.source}
                         </p>
 
-                        <h3 className="mt-2 min-h-[2.4em] text-4xl font-bold uppercase leading-[1.05] tracking-tight text-neutral-900 sm:min-h-[2.2em] sm:text-5xl xl:text-6xl dark:text-white">
+                        <h2 className="mt-2 min-h-[2.4em] text-4xl font-bold uppercase leading-[1.05] tracking-tight text-neutral-900 sm:min-h-[2.2em] sm:text-5xl xl:text-6xl dark:text-white">
                           {featuredComic.title}
-                        </h3>
+                        </h2>
 
                         {heroRating?.showBlock ? (
                           <div className="mt-6 flex min-h-[2.25rem] flex-wrap items-baseline gap-x-3 gap-y-1">
@@ -857,9 +858,9 @@ export default function HomeClient({
                 <div className="bg-gradient-to-b from-neutral-100 via-white to-white pb-10 pt-4 dark:from-neutral-950 dark:via-neutral-950 dark:to-[#06070b]">
                   <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
                     <div className="border border-neutral-200 bg-neutral-50 px-8 py-12 sm:px-10 sm:py-14 dark:border-white/10 dark:bg-black/40">
-                      <h2 className="max-w-3xl text-3xl font-bold uppercase leading-[1.08] tracking-tight text-neutral-900 sm:text-4xl xl:text-5xl dark:text-white">
+                      <h1 className="max-w-3xl text-3xl font-bold uppercase leading-[1.08] tracking-tight text-neutral-900 sm:text-4xl xl:text-5xl dark:text-white">
                         {shelfCopy.pageH1}
-                      </h2>
+                      </h1>
                       <p className="mt-4 max-w-xl text-sm font-medium leading-relaxed text-neutral-600 dark:text-white/65 sm:text-[0.95rem]">
                         {shelfCopy.desc}
                       </p>

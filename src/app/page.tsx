@@ -45,7 +45,6 @@ export const metadata: Metadata = {
 import { UI_LANG_COOKIE } from '@/lib/i18n/cookies';
 import { isUiLang } from '@/lib/i18n/lang';
 import { uiLangToPreferredMangaLanguage } from '@/lib/i18n/ui-lang-to-manga';
-import { translations, type Lang } from '@/lib/translations';
 
 const MANGA_QUERY_LANGS: MangaLanguage[] = [
   'en',
@@ -84,19 +83,13 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ l
   const uiCookie = cookieStore.get(UI_LANG_COOKIE)?.value;
   const initialMangaLanguage = normalizeLanguage(lang, uiCookie);
   const initialData = await getHomeData(initialMangaLanguage, { includeAdultContent });
-  const copyLang: Lang = isUiLang(uiCookie) ? uiCookie : 'en';
-  const homePrimaryHeading = translations[copyLang].hero.pageH1;
 
   return (
-    <>
-      {/* One H1 in initial HTML for crawlers (Bing/Google); visible hero title is h2 in HomeClient. */}
-      <h1 className="sr-only">{homePrimaryHeading}</h1>
-      <HomeClient
-        initialData={initialData}
-        initialAgeVerified={includeAdultContent}
-        initialIsTouchDevice={initialIsTouchDevice}
-        initialMangaLanguage={initialMangaLanguage}
-      />
-    </>
+    <HomeClient
+      initialData={initialData}
+      initialAgeVerified={includeAdultContent}
+      initialIsTouchDevice={initialIsTouchDevice}
+      initialMangaLanguage={initialMangaLanguage}
+    />
   );
 }

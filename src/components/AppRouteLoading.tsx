@@ -4,7 +4,7 @@ import LoadingRouteShell from '@/components/LoadingRouteShell';
 import { useResolvedLang } from '@/hooks/useResolvedLang';
 import { translations } from '@/lib/translations';
 
-/** Root segment loading (`/src/app/loading.tsx`) — label follows Settings language. */
+/** Full-page loading fallback (e.g. `Suspense` on select routes) — label follows Settings language. */
 export default function AppRouteLoading() {
   const lang = useResolvedLang();
   return (
