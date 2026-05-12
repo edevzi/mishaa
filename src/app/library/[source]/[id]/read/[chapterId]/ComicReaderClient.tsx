@@ -98,7 +98,10 @@ const READER_THEMES: Record<ReaderTheme, {
 const READER_ZOOM_STEP = 0.12;
 const READER_HELP_DISMISSED_KEY = 'reader_help_dismissed';
 const READER_ZOOM_STORAGE_KEY = 'reader_zoom';
+const READER_VIEW_MODE_KEY = 'reader_view_mode';
 const UI_SHEET_AUTO_HIDE_MS = 4500;
+/** Horizontal swipe distance (px) to flip pages on touch devices — lower feels easier on phones. */
+const READER_TOUCH_SWIPE_MIN_DX = 38;
 
 const preloadImageUrl = (src: string) =>
   new Promise<void>((resolve) => {
@@ -215,6 +218,8 @@ export default function ComicReaderClient({ initialComic, initialChapters, sourc
   const [savedPageIndex, setSavedPageIndex] = useState<number | null>(null);
   const [resumeOfferPage, setResumeOfferPage] = useState<number | null>(null);
   const [showReaderHelp, setShowReaderHelp] = useState(false);
+  /** False until queueMicrotask restores view mode / prefs so we do not overwrite localStorage with SSR default. */
+  const [readerUiPrefsReady, setReaderUiPrefsReady] = useState(false);
   
   const readerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLDivElement>(null);
@@ -287,8 +292,15 @@ export default function ComicReaderClient({ initialComic, initialChapters, sourc
     queueMicrotask(() => {
       const initialMobile = window.innerWidth < 768;
       setIsMobile(initialMobile);
-      if (initialMobile) {
-        setViewMode('flow');
+      try {
+        const savedVm = localStorage.getItem(READER_VIEW_MODE_KEY);
+        if (savedVm === 'flow' || savedVm === 'classic' || savedVm === 'journal') {
+          setViewMode(savedVm);
+        } else if (initialMobile) {
+          setViewMode('flow');
+        }
+      } catch {
+        if (initialMobile) setViewMode('flow');
       }
 
       const verified = initialAgeVerified || readAgeVerification();
@@ -320,6 +332,8 @@ export default function ComicReaderClient({ initialComic, initialChapters, sourc
       } catch {
         readerZoomRef.current = 1;
       }
+
+      setReaderUiPrefsReady(true);
     });
 
     window.addEventListener('resize', checkMobile);
@@ -329,6 +343,15 @@ export default function ComicReaderClient({ initialComic, initialChapters, sourc
       if (verificationTimer !== undefined) window.clearTimeout(verificationTimer);
     };
   }, [initialAgeVerified]);
+
+  useEffect(() => {
+    if (!readerUiPrefsReady) return;
+    try {
+      localStorage.setItem(READER_VIEW_MODE_KEY, viewMode);
+    } catch {
+      /* noop */
+    }
+  }, [viewMode, readerUiPrefsReady]);
 
   useEffect(() => {
     let cancelled = false;
@@ -757,9 +780,17 @@ export default function ComicReaderClient({ initialComic, initialChapters, sourc
     const theme = READER_THEMES[readerTheme];
     document.body.style.backgroundColor = theme.shellBg;
     document.body.style.color = theme.text;
+
+    const meta = document.createElement('meta');
+    meta.setAttribute('name', 'theme-color');
+    meta.setAttribute('content', theme.shellBg);
+    meta.setAttribute('data-reader-theme-sync', '');
+    document.head.appendChild(meta);
+
     return () => {
       document.body.style.backgroundColor = '';
       document.body.style.color = '';
+      meta.remove();
     };
   }, [readerTheme]);
 
@@ -827,7 +858,7 @@ export default function ComicReaderClient({ initialComic, initialChapters, sourc
 
     const dx = touch.clientX - touchStartRef.current.x;
     const dy = touch.clientY - touchStartRef.current.y;
-    if (Math.abs(dx) < 50 || Math.abs(dx) <= Math.abs(dy)) return;
+    if (Math.abs(dx) < READER_TOUCH_SWIPE_MIN_DX || Math.abs(dx) <= Math.abs(dy)) return;
 
     const currentChapterId = chapters[currentChapterIdx]?.id || chapterId;
     if (dx < 0) {
@@ -1091,7 +1122,7 @@ export default function ComicReaderClient({ initialComic, initialChapters, sourc
 
   if (restrictedSource && !isAgeVerified) {
     return (
-      <div className="min-h-screen overflow-hidden selection:text-white" style={{ backgroundColor: READER_THEMES[readerTheme].shellBg, color: READER_THEMES[readerTheme].text }}>
+      <div className="min-h-dvh overflow-hidden selection:text-white" style={{ backgroundColor: READER_THEMES[readerTheme].shellBg, color: READER_THEMES[readerTheme].text }}>
         <AnimatePresence>
           <AgeGateOverlay
             title={t.restricted}
@@ -1109,7 +1140,7 @@ export default function ComicReaderClient({ initialComic, initialChapters, sourc
 
   if (metadataLoading) {
     return (
-      <div className="relative min-h-screen overflow-hidden bg-[#020202] flex items-center justify-center">
+      <div className="relative min-h-dvh overflow-hidden bg-[#020202] flex items-center justify-center">
         <div className="pointer-events-none absolute inset-0">
           <motion.div
             className="absolute left-1/2 top-1/3 h-[min(100vmin,28rem)] w-[min(100vmin,28rem)] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#ff4d00]/15 blur-[120px]"
@@ -1855,7 +1886,7 @@ export default function ComicReaderClient({ initialComic, initialChapters, sourc
 
         <div
           ref={canvasRef}
-          className={`relative h-full min-h-0 flex-1 w-full overflow-y-auto scroll-smooth touch-pan-y ${
+          className={`relative h-full min-h-0 flex-1 w-full overflow-y-auto scroll-smooth touch-pan-y overscroll-y-contain ${
             viewMode !== 'flow' && pages.length > 0 && !readerLoading
               ? 'scroll-pb-[max(8.25rem,calc(7rem+env(safe-area-inset-bottom,0px)))] sm:scroll-pb-[max(6.75rem,calc(5.75rem+env(safe-area-inset-bottom,0px)))]'
               : ''
@@ -1870,9 +1901,36 @@ export default function ComicReaderClient({ initialComic, initialChapters, sourc
         >
            {viewMode !== 'flow' && (
              <>
-               <div className="fixed inset-y-0 left-0 w-[25%] md:w-[20%] z-[10015] cursor-pointer" onClick={(e) => { e.stopPropagation(); if (readingDirection === 'ltr') handlePrevPage(); else handleNextPage(); }} />
-               <div className="fixed inset-y-0 right-0 w-[25%] md:w-[20%] z-[10015] cursor-pointer" onClick={(e) => { e.stopPropagation(); if (readingDirection === 'ltr') handleNextPage(); else handlePrevPage(); }} />
-               <div className="fixed inset-y-0 left-[25%] right-[25%] md:left-[20%] md:right-[20%] z-[10015] cursor-pointer" onClick={(e) => { e.stopPropagation(); setUiVisible(prev => !prev); }} />
+               {/* Desktop: tap zones for page + UI. Mobile: pointer-events-none so vertical scroll reaches the canvas (swipe still changes page via onTouchEnd on parent). */}
+               <div
+                 className={`fixed inset-y-0 left-0 z-[10015] w-[25%] md:w-[20%] ${isMobile ? 'pointer-events-none' : 'cursor-pointer'}`}
+                 onClick={(e) => {
+                   if (isMobile) return;
+                   e.stopPropagation();
+                   if (readingDirection === 'ltr') handlePrevPage();
+                   else handleNextPage();
+                 }}
+                 aria-hidden
+               />
+               <div
+                 className={`fixed inset-y-0 right-0 z-[10015] w-[25%] md:w-[20%] ${isMobile ? 'pointer-events-none' : 'cursor-pointer'}`}
+                 onClick={(e) => {
+                   if (isMobile) return;
+                   e.stopPropagation();
+                   if (readingDirection === 'ltr') handleNextPage();
+                   else handlePrevPage();
+                 }}
+                 aria-hidden
+               />
+               <div
+                 className={`fixed inset-y-0 left-[25%] right-[25%] z-[10015] md:left-[20%] md:right-[20%] ${isMobile ? 'pointer-events-none' : 'cursor-pointer'}`}
+                 onClick={(e) => {
+                   if (isMobile) return;
+                   e.stopPropagation();
+                   setUiVisible((prev) => !prev);
+                 }}
+                 aria-hidden
+               />
              </>
            )}
 
@@ -1911,7 +1969,7 @@ export default function ComicReaderClient({ initialComic, initialChapters, sourc
                 style={comicZoomWrapStyle}
                 className={`mx-auto flex w-full flex-col items-center transition-all duration-500 ${
                   viewMode === 'flow'
-                    ? 'pt-0 pb-20'
+                    ? 'pt-0 pb-[max(5.5rem,env(safe-area-inset-bottom,0px)+4.5rem)] sm:pb-24'
                     : 'box-border min-h-full justify-center px-3 pt-4 pb-[max(8.25rem,calc(7rem+env(safe-area-inset-bottom,0px)))] sm:px-4 sm:pt-6 sm:pb-[max(7rem,calc(6rem+env(safe-area-inset-bottom,0px)))]'
                 }`}
               >
@@ -1930,7 +1988,7 @@ export default function ComicReaderClient({ initialComic, initialChapters, sourc
                          src={pages[currentPage]}
                          style={{
                            maxWidth: isMobile ? '100%' : '80vw',
-                           maxHeight: '90vh',
+                           maxHeight: isMobile ? 'min(92dvh, 56rem)' : '90vh',
                            border: `1px solid ${READER_THEMES[readerTheme].border}`,
                          }}
                          className="mx-auto block shadow-2xl rounded-sm object-contain"
@@ -1990,13 +2048,22 @@ export default function ComicReaderClient({ initialComic, initialChapters, sourc
                       {pages.map((p, i) => (
                         <div
                           key={i}
-                          className="relative w-full aspect-[2/3] border-b"
+                          className="relative w-full border-b flex justify-center"
                           style={{
                             backgroundColor: READER_THEMES[readerTheme].canvasBg,
                             borderColor: READER_THEMES[readerTheme].border,
                           }}
                         >
-                          <Image id={`page-${i}`} src={p} fill className="w-full h-auto object-contain relative z-10" alt={`Page ${i + 1}`} loading="lazy" unoptimized />
+                          {/* Native img preserves each page aspect ratio (webtoon / tall pages); fixed aspect-[2/3] forced letterboxing on phones. */}
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={p}
+                            alt={`Page ${i + 1}`}
+                            loading={i < 2 ? 'eager' : 'lazy'}
+                            decoding="async"
+                            draggable={false}
+                            className="block h-auto w-full max-w-full select-none object-contain"
+                          />
                         </div>
                       ))}
                       {currentChapterIdx < chapters.length - 1 && (

@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
 import { cache } from 'react';
@@ -23,6 +23,14 @@ import {
 import { buildComicCoverImageObjects } from '@/lib/seo/comic-jsonld';
 
 export const runtime = 'nodejs';
+
+/** Safari UI tint — align with ComicDetailsClient dark/light shells so the URL bar / home gutter does not contrast-strip from the page. */
+export const viewport: Viewport = {
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#fafafa' },
+    { media: '(prefers-color-scheme: dark)', color: '#020202' },
+  ],
+};
 
 const getComicDetails = cache(getComicDetailsAction);
 const getCachedChapters = cache(getChapters);

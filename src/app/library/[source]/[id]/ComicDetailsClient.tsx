@@ -394,7 +394,7 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
 
   if (restrictedSource && !isAgeVerified) {
     return (
-      <div className="min-h-screen bg-zinc-50 text-neutral-900 overflow-x-hidden selection:bg-[#ff4d00] selection:text-white dark:bg-[#020202] dark:text-white dark:selection:text-white">
+      <div className="min-h-dvh bg-zinc-50 text-neutral-900 overflow-x-hidden selection:bg-[#ff4d00] selection:text-white dark:bg-[#020202] dark:text-white dark:selection:text-white">
         <AnimatePresence>
           <AgeGateOverlay
             title={t.restricted}
@@ -411,7 +411,7 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
   }
 
   if (loading) return (
-    <div className="min-h-screen flex items-center justify-center bg-zinc-50 dark:bg-[#020202]">
+    <div className="min-h-dvh flex items-center justify-center bg-zinc-50 dark:bg-[#020202]">
       <div className="flex flex-col items-center gap-6">
         <Loader2 className="w-12 h-12 text-[#ff4d00] animate-spin" />
         <div className="text-[10px] font-bold uppercase tracking-[0.5em] text-neutral-400 dark:text-white/20">{t.loadingComic}</div>
@@ -421,7 +421,7 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
 
   if (!comic && showAgeGate) {
     return (
-      <div className="min-h-screen bg-zinc-50 text-neutral-900 overflow-x-hidden selection:bg-[#ff4d00] selection:text-white dark:bg-[#020202] dark:text-white dark:selection:text-white">
+      <div className="min-h-dvh bg-zinc-50 text-neutral-900 overflow-x-hidden selection:bg-[#ff4d00] selection:text-white dark:bg-[#020202] dark:text-white dark:selection:text-white">
         <AnimatePresence>
           {showAgeGate && (
             <AgeGateOverlay
@@ -443,7 +443,7 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
 
   if (comic.source === 'marvel' && !marvelIssue) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-zinc-50 dark:bg-[#020202]">
+      <div className="min-h-dvh flex items-center justify-center bg-zinc-50 dark:bg-[#020202]">
         <div className="flex flex-col items-center gap-6">
           <Loader2 className="w-12 h-12 text-[#ff4d00] animate-spin" />
           <div className="text-[10px] font-black uppercase tracking-[0.5em] text-neutral-400 dark:text-white/20">{t.loadingIssue}</div>
@@ -454,7 +454,7 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
 
   if (comic.source === 'marvel' && marvelIssue) {
     return (
-      <div className="min-h-screen bg-zinc-50 text-neutral-900 overflow-x-hidden selection:bg-[#ff4d00] selection:text-white dark:bg-[#050505] dark:text-white dark:selection:text-white">
+      <div className="min-h-dvh bg-zinc-50 text-neutral-900 overflow-x-hidden selection:bg-[#ff4d00] selection:text-white dark:bg-[#020202] dark:text-white dark:selection:text-white">
         <div className="fixed inset-0 z-0 h-[45vh] md:h-[65vh]">
           <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#050505]/85 to-[#050505] z-10" />
           <Image
@@ -761,13 +761,18 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
   }
 
   const titleLength = comic.title.trim().length;
-  const titleSizeClass = titleLength > 80
-    ? 'text-[clamp(1.35rem,2.4vw+0.6rem,2.65rem)]'
-    : titleLength > 55
-      ? 'text-[clamp(1.6rem,2.8vw+0.65rem,3.15rem)]'
-      : titleLength > 35
-        ? 'text-[clamp(1.85rem,3.2vw+0.7rem,3.85rem)]'
-        : 'text-[clamp(2rem,3.8vw+0.5rem,4.5rem)]';
+  const titleSizeClass =
+    titleLength > 120
+      ? 'text-[clamp(0.95rem,4.2vw+0.2rem,2.2rem)] sm:text-[clamp(1.15rem,2.6vw+0.45rem,2.5rem)]'
+      : titleLength > 80
+        ? 'text-[clamp(1.1rem,3.8vw+0.35rem,2.5rem)] sm:text-[clamp(1.35rem,2.4vw+0.6rem,2.65rem)]'
+        : titleLength > 55
+          ? 'text-[clamp(1.35rem,3.4vw+0.5rem,2.95rem)] sm:text-[clamp(1.6rem,2.8vw+0.65rem,3.15rem)]'
+          : titleLength > 35
+            ? 'text-[clamp(1.55rem,3vw+0.55rem,3.35rem)] sm:text-[clamp(1.85rem,3.2vw+0.7rem,3.85rem)]'
+            : 'text-[clamp(1.75rem,3.5vw+0.45rem,3.85rem)] sm:text-[clamp(2rem,3.8vw+0.5rem,4.5rem)]';
+  const titleTrackingClass =
+    titleLength > 70 ? 'tracking-normal sm:tracking-tight md:tracking-tighter' : 'tracking-tight md:tracking-tighter';
   const pageBackdropStyle = {
     backgroundImage: `
       radial-gradient(circle at 18% 18%, rgba(${dominantColor}, 0.15), transparent 30%),
@@ -785,7 +790,7 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
   };
 
   return (
-    <div className="min-h-screen overflow-x-hidden bg-zinc-50 text-neutral-900 selection:bg-[#ff4d00] selection:text-white dark:bg-[#020202] dark:text-white dark:selection:text-white">
+    <div className="min-h-dvh overflow-x-hidden bg-zinc-50 text-neutral-900 selection:bg-[#ff4d00] selection:text-white dark:bg-[#020202] dark:text-white dark:selection:text-white">
       {/* Age Gate Overlay */}
       <AnimatePresence>
         {showAgeGate && (
@@ -956,20 +961,21 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
           {/* Main Info */}
           <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }} className="min-w-0 space-y-6">
             <div className="min-w-0 space-y-5">
-              <div className="flex flex-wrap items-center gap-4">
-                 <div className="flex items-center gap-2 rounded-full border border-neutral-200 bg-neutral-100 px-4 py-2 dark:border-white/15 dark:bg-white/10">
-                    <Star size={12} className="text-[#ff4d00]" fill="#ff4d00" /><span className="text-[12px] font-black tracking-tighter text-neutral-900 dark:text-white">{comic.rating}</span>
+              <div className="flex min-w-0 max-w-full flex-wrap items-center gap-x-4 gap-y-3">
+                 <div className="flex shrink-0 items-center gap-2 rounded-full border border-neutral-200 bg-neutral-100 px-4 py-2 dark:border-white/15 dark:bg-white/10">
+                    <Star size={12} className="shrink-0 text-[#ff4d00]" fill="#ff4d00" /><span className="text-[12px] font-black tracking-tighter text-neutral-900 dark:text-white">{comic.rating}</span>
                  </div>
-                 <div className="rounded-full border border-neutral-200 bg-neutral-100 px-4 py-2 text-[10px] font-black uppercase tracking-[0.3em] text-neutral-600 dark:border-white/15 dark:bg-white/10 dark:text-white/45">
+                 <div className="shrink-0 rounded-full border border-neutral-200 bg-neutral-100 px-4 py-2 text-[10px] font-black uppercase tracking-[0.3em] text-neutral-600 dark:border-white/15 dark:bg-white/10 dark:text-white/45">
                     {comic.source}
                  </div>
-                 <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.3em] text-neutral-600 dark:text-white/45"><Clock size={12} /> {comic.year || 'N/A'}</div>
+                 <div className="flex shrink-0 items-center gap-2 text-[10px] font-black uppercase tracking-[0.3em] text-neutral-600 dark:text-white/45"><Clock size={12} className="shrink-0" aria-hidden /> {comic.year || 'N/A'}</div>
                  {comic.author && (
-                   <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.3em] text-neutral-600 dark:text-white/45">
-                     <span className="text-[#ff4d00]">{t.authorLabel}</span> {comic.author}
+                   <div className="flex min-w-0 w-full basis-full flex-col gap-1 text-[10px] font-black uppercase tracking-[0.3em] text-neutral-600 dark:text-white/45 sm:basis-auto sm:max-w-[min(100%,42rem)] sm:flex-row sm:items-baseline sm:gap-2">
+                     <span className="shrink-0 text-[#ff4d00]">{t.authorLabel}</span>
+                     <span className="min-w-0 wrap-anywhere leading-snug normal-case tracking-normal">{comic.author}</span>
                    </div>
                  )}
-                 <div className="rounded-full border border-[#ff4d00]/30 bg-[#ff4d00]/10 px-4 py-2 text-[10px] font-black uppercase tracking-widest text-[#ff4d00] dark:border-[#ff4d00]/30">{comic.status}</div>
+                 <div className="shrink-0 rounded-full border border-[#ff4d00]/30 bg-[#ff4d00]/10 px-4 py-2 text-[10px] font-black uppercase tracking-widest text-[#ff4d00] dark:border-[#ff4d00]/30">{comic.status}</div>
               </div>
 
               {comic.source === 'mangadex' && comic.mangaDexStats && (
@@ -1006,18 +1012,18 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
               
                 <h1 
                   itemProp="name"
-                  className={`${titleSizeClass} w-full min-w-0 max-w-full font-black italic uppercase tracking-tight text-neutral-900 md:tracking-tighter leading-[1.05] text-balance wrap-anywhere dark:text-white`}
+                  className={`${titleSizeClass} ${titleTrackingClass} w-full min-w-0 max-w-full hyphens-auto font-black italic uppercase text-neutral-900 md:leading-[1.05] leading-snug text-balance wrap-anywhere dark:text-white`}
                 >
                   {comic.title}
                 </h1>
 
-                <p className="text-neutral-600 dark:text-white/45 text-sm md:text-base leading-relaxed">
+                <p className="wrap-anywhere hyphens-auto text-pretty text-neutral-600 dark:text-white/45 text-sm md:text-base leading-relaxed">
                   {t.titlePageSeoIntro.replace(/\{\{title\}\}/g, comic.title)}
                 </p>
 
-              <div className="flex flex-wrap gap-2 pt-4">
+              <div className="flex min-w-0 max-w-full flex-wrap gap-2 pt-4">
                 {comic.genres.map(genre => (
-                  <span key={genre} className="cursor-default rounded-md border border-neutral-200 bg-neutral-100 px-4 py-2 text-[9px] font-black uppercase tracking-[0.15em] text-neutral-800 transition-all hover:border-neutral-400 hover:text-neutral-900 dark:border-white/15 dark:bg-white/10 dark:text-zinc-300 dark:hover:border-white/30 dark:hover:text-white">
+                  <span key={genre} className="cursor-default max-w-[min(100%,100vw-2rem)] wrap-anywhere rounded-md border border-neutral-200 bg-neutral-100 px-4 py-2 text-center text-[9px] font-black uppercase tracking-[0.15em] text-neutral-800 transition-all hover:border-neutral-400 hover:text-neutral-900 dark:border-white/15 dark:bg-white/10 dark:text-zinc-300 dark:hover:border-white/30 dark:hover:text-white">
                     {genre}
                   </span>
                 ))}
