@@ -85,16 +85,23 @@ export async function buildMangaDexRelatedRails(
       .map((t) => t.id)
       .filter(Boolean);
 
-    for (const tagId of tagIds.slice(0, 4)) {
+    // Tag searches are independent of each other — run them concurrently so the
+    // fallback costs one round-trip instead of up to four serial ones.
+    const tagResults = await Promise.allSettled(
+      tagIds.slice(0, 4).map((tagId) =>
+        searchMangaDexComicsPage({
+          page: 0,
+          query: '',
+          mangaLanguage,
+          includedTagIds: [tagId],
+          ratings: ratingsList,
+        }),
+      ),
+    );
+    for (const result of tagResults) {
       if (out.length >= 12) break;
-      const res = await searchMangaDexComicsPage({
-        page: 0,
-        query: '',
-        mangaLanguage,
-        includedTagIds: [tagId],
-        ratings: ratingsList,
-      });
-      for (const item of res.items) {
+      if (result.status !== 'fulfilled') continue;
+      for (const item of result.value.items) {
         push({
           id: item.id,
           title: item.title,

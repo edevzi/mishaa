@@ -75,6 +75,7 @@ export async function getComicDetails(
   source: string,
   id: string,
   mangaLanguage: MangaLanguage = DEFAULT_MANGA_LANGUAGE,
+  options?: { enrich?: boolean },
 ): Promise<ComicDetail | null> {
   try {
     if (isRestrictedLibrarySource(source) && !(await hasAgeVerification())) {
@@ -172,10 +173,25 @@ export async function getComicDetails(
       const genres = manga.attributes.tags
         .map((t: MangaDexTag) => resolveMangaDexLocalizedText(t.attributes.name, mangaLanguage))
         .filter(Boolean);
-      const aniListData = manga.attributes.links?.al
-        ? await fetchAniListManga(manga.attributes.links.al)
-        : null;
-      const related = await buildMangaDexRelatedRails(manga, aniListData, mangaLanguage);
+      // Enrichment (AniList rating, MAL stats, related rails) is render-blocking for
+      // the detail page, so run the three branches concurrently instead of serially.
+      // The reader passes `enrich: false` — it never shows any of this data.
+      const enrich = options?.enrich !== false;
+      const aniListPromise =
+        enrich && manga.attributes.links?.al
+          ? fetchAniListManga(manga.attributes.links.al).catch(() => null)
+          : Promise.resolve(null);
+      const [aniListData, jikanData, related] = await Promise.all([
+        aniListPromise,
+        enrich && manga.attributes.links?.mal
+          ? fetchJikanManga(manga.attributes.links.mal).catch(() => null)
+          : Promise.resolve(null),
+        enrich
+          ? aniListPromise
+              .then((ani) => buildMangaDexRelatedRails(manga, ani, mangaLanguage))
+              .catch(() => [])
+          : Promise.resolve([]),
+      ]);
 
       if (manga.attributes.links?.al) {
         cacheMangaDexIdResolution(String(manga.attributes.links.al), manga.id);
@@ -196,7 +212,7 @@ export async function getComicDetails(
         aniListId: manga.attributes.links?.al,
         malId: manga.attributes.links?.mal,
         aniListData,
-        jikanData: manga.attributes.links?.mal ? await fetchJikanManga(manga.attributes.links.mal) : null,
+        jikanData,
         related,
         mangaDexStats,
       };
@@ -313,18 +329,11 @@ export async function getChapters(
       const mangaDexId = await resolveMangaDexLookupId(source, id);
       const translatedLanguages = getMangaDexTranslatedLanguages(mangaLanguage);
 
-      let aggregatePayload: { volumes?: Record<string, AggVolume> } | null = null;
-      try {
-        aggregatePayload = (await fetchJsonThroughProxy(
-          `manga/${mangaDexId}/aggregate`,
-          `https://api.mangadex.org/manga/${mangaDexId}/aggregate`,
-        )) as { volumes?: Record<string, AggVolume> };
-      } catch {
-        aggregatePayload = null;
-      }
-
-      const aggVolumes =
-        aggregatePayload && typeof aggregatePayload.volumes === 'object' ? aggregatePayload.volumes : undefined;
+      // Aggregate is only consumed after the feed rows arrive — fetch both concurrently.
+      const aggregatePromise = fetchJsonThroughProxy(
+        `manga/${mangaDexId}/aggregate`,
+        `https://api.mangadex.org/manga/${mangaDexId}/aggregate`,
+      ).catch(() => null) as Promise<{ volumes?: Record<string, AggVolume> } | null>;
 
       const appendFeedIncludes = (params: URLSearchParams) => {
         params.append('includes[]', 'scanlation_group');
@@ -370,6 +379,10 @@ export async function getChapters(
       }
 
       console.log(`[MangaDex] Total chapters found: ${data.data?.length || 0}`);
+
+      const aggregatePayload = await aggregatePromise;
+      const aggVolumes =
+        aggregatePayload && typeof aggregatePayload.volumes === 'object' ? aggregatePayload.volumes : undefined;
 
       const rawRows = Array.isArray(data.data) ? data.data : [];
       const deduped = dedupeMangaDexFeedChapters(rawRows, aggVolumes, langsForDedupe);

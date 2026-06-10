@@ -24,7 +24,13 @@ export const viewport: Viewport = {
   ],
 };
 
-const getComicDetailsCached = cache(getComicDetails);
+/**
+ * The reader never renders AniList/Jikan stats or related rails, so skip that
+ * enrichment fan-out — it was blocking every chapter navigation on upstream APIs.
+ */
+const getComicDetailsCached = cache((source: string, id: string) =>
+  getComicDetails(source, id, undefined, { enrich: false }),
+);
 const getChaptersCached = cache(getChapters);
 
 type RouteParams = {

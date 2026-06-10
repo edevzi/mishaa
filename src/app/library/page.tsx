@@ -114,6 +114,34 @@ async function loadBrowseTitles(): Promise<{ id: string; title: string }[]> {
   }
 }
 
+/** Streams below the interactive grid so the catalog fetches never block first paint. */
+async function BrowseTitlesNav() {
+  const browseTitles = await loadBrowseTitles();
+  if (browseTitles.length === 0) return null;
+  return (
+    <nav
+      aria-label="Browse popular series"
+      className="mx-auto max-w-6xl border-t border-neutral-200 px-4 py-10 dark:border-white/10"
+    >
+      <h2 className="mb-4 text-sm font-semibold uppercase tracking-widest text-neutral-500 dark:text-zinc-400">
+        Popular series
+      </h2>
+      <ul className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm sm:grid-cols-3 lg:grid-cols-4">
+        {browseTitles.map((item) => (
+          <li key={item.id} className="truncate">
+            <Link
+              href={`/library/mangadex/${item.id}`}
+              className="text-neutral-600 transition-colors hover:text-[#ff4d00] dark:text-zinc-400 dark:hover:text-[#ff4d00]"
+            >
+              {item.title}
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </nav>
+  );
+}
+
 export default async function Page({
   searchParams,
 }: {
@@ -151,8 +179,6 @@ export default async function Page({
     },
   };
 
-  const browseTitles = await loadBrowseTitles();
-
   return (
     <>
       <Suspense
@@ -161,28 +187,9 @@ export default async function Page({
         <JsonLd data={collectionSchema} />
         <ComicLibraryClient initialAgeVerified={initialAgeVerified} />
       </Suspense>
-      {browseTitles.length > 0 && (
-        <nav
-          aria-label="Browse popular series"
-          className="mx-auto max-w-6xl border-t border-neutral-200 px-4 py-10 dark:border-white/10"
-        >
-          <h2 className="mb-4 text-sm font-semibold uppercase tracking-widest text-neutral-500 dark:text-zinc-400">
-            Popular series
-          </h2>
-          <ul className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm sm:grid-cols-3 lg:grid-cols-4">
-            {browseTitles.map((item) => (
-              <li key={item.id} className="truncate">
-                <Link
-                  href={`/library/mangadex/${item.id}`}
-                  className="text-neutral-600 transition-colors hover:text-[#ff4d00] dark:text-zinc-400 dark:hover:text-[#ff4d00]"
-                >
-                  {item.title}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </nav>
-      )}
+      <Suspense fallback={null}>
+        <BrowseTitlesNav />
+      </Suspense>
     </>
   );
 }

@@ -67,6 +67,9 @@ interface ComicDetailsClientProps {
   initialAgeVerified?: boolean;
 }
 
+/** Chapter rows rendered initially and added per "show more" click. */
+const CHAPTER_RENDER_BATCH = 100;
+
 export default function ComicDetailsClient({ initialComic, initialChapters, source, id, initialAgeVerified = false }: ComicDetailsClientProps) {
   const router = useRouter();
   const [readNavPending, startReadNavTransition] = useTransition();
@@ -76,6 +79,8 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
 
   const [comic, setComic] = useState<ComicDetail | null>(initialComic);
   const [chapters, setChapters] = useState<ComicChapter[]>(initialChapters || []);
+  /** Long series (500+ chapters) rendered in one pass lock up mobile — reveal in batches. */
+  const [visibleChapterCount, setVisibleChapterCount] = useState(CHAPTER_RENDER_BATCH);
   const [marvelIssue, setMarvelIssue] = useState<MarvelIssue | null>(initialComic?.marvelIssue || null);
   const [marvelSeries, setMarvelSeries] = useState<MarvelSeries | null>(initialComic?.marvelSeries || null);
   const [marvelSeriesIssues, setMarvelSeriesIssues] = useState<MarvelSeriesIssue[]>(initialComic?.marvelSeriesIssues || []);
@@ -1243,7 +1248,7 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
                  </div>
                  <div className="grid grid-cols-1 gap-3 max-h-[min(70vh,44rem)] overflow-y-auto custom-scrollbar pr-2 md:pr-4 md:gap-4">
                     {chapters.length > 0 ? (
-                      chapters.map((ch) => {
+                      chapters.slice(0, visibleChapterCount).map((ch) => {
                         const sharedClass =
                           'group relative flex w-full items-center gap-4 border border-neutral-200 bg-white p-5 text-left transition-all hover:border-[#ff4d00]/45 hover:bg-[#ff4d00]/5 dark:border-white/8 dark:bg-white/5 dark:hover:bg-[#ff4d00]/10 md:p-6';
                         const chapterOpening =
@@ -1333,6 +1338,16 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
                             <span className="text-[9px] font-black uppercase tracking-widest text-[#ff4d00]">{t.tryHeaderLanguage}</span>
                          </div>
                       </div>
+                    )}
+                    {chapters.length > visibleChapterCount && (
+                      <button
+                        type="button"
+                        onClick={() => setVisibleChapterCount((count) => count + CHAPTER_RENDER_BATCH)}
+                        className="group flex w-full items-center justify-center gap-3 border border-dashed border-neutral-300 bg-white p-5 text-[10px] font-black uppercase tracking-[0.28em] text-neutral-500 transition-all hover:border-[#ff4d00]/45 hover:text-[#ff4d00] dark:border-white/15 dark:bg-white/5 dark:text-white/45 dark:hover:text-[#ff4d00]"
+                      >
+                        Show more chapters ({chapters.length - visibleChapterCount})
+                        <ChevronRight size={14} className="rotate-90 transition-transform group-hover:translate-y-0.5" />
+                      </button>
                     )}
                  </div>
               </div>

@@ -35,7 +35,8 @@ export const viewport: Viewport = {
 const getComicDetails = cache(getComicDetailsAction);
 const getCachedChapters = cache(getChapters);
 
-async function resolveMangaDexRouteId(source: string, id: string) {
+/** cache() dedupes the AniList→MangaDex lookup between generateMetadata and the page render. */
+const resolveMangaDexRouteId = cache(async (source: string, id: string) => {
   if (source !== 'mangadex' || isMangaDexUuid(id)) {
     return id;
   }
@@ -54,7 +55,7 @@ async function resolveMangaDexRouteId(source: string, id: string) {
   const resolved = (await resolveMangaDexIdFromTitle(title)) || id;
   cacheMangaDexIdResolution(id, resolved);
   return resolved;
-}
+});
 
 type RouteParams = {
   source: string;
