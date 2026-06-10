@@ -13,8 +13,14 @@ function isLoopbackHostname(hostname: string): boolean {
 
 /**
  * Canonical site origin for OG, RSS, sitemaps, and JSON-LD.
- * On Vercel, `NEXT_PUBLIC_*` is baked at build time — if it points to localhost by mistake,
- * we fall back to deployment/production host so public feeds never advertise loopback URLs.
+ * Order of preference:
+ *   1. `NEXT_PUBLIC_SITE_URL` when explicitly set to a non-loopback host.
+ *   2. The canonical production domain ({@link SITE_FALLBACK}).
+ *
+ * We intentionally do NOT fall back to the auto-assigned `*.vercel.app`
+ * deployment host: emitting that as canonical/og:url/sitemap loc splits SEO
+ * signal off the real domain (Google would index the vercel.app URL instead of
+ * icomics.wiki and treat the custom domain as a duplicate).
  */
 export function getPublicSiteUrl(): string {
   const raw = process.env.NEXT_PUBLIC_SITE_URL?.trim();
@@ -27,15 +33,6 @@ export function getPublicSiteUrl(): string {
       }
     } catch {
       /* fall through */
-    }
-  }
-
-  for (const key of ['VERCEL_PROJECT_PRODUCTION_URL', 'VERCEL_URL'] as const) {
-    const h = process.env[key]?.trim();
-    if (!h) continue;
-    const host = h.replace(/^https?:\/\//, '').replace(/\/$/, '');
-    if (host) {
-      return `https://${host}`;
     }
   }
 
