@@ -126,128 +126,122 @@ export default function ProfilePage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#020202] text-white selection:bg-[#ff4d00] selection:text-white">
+    <div className="min-h-screen bg-app text-fg">
       <Navbar />
 
-      <main className="container mx-auto px-4 sm:px-6 lg:px-8 pt-24 sm:pt-28 lg:pt-32 pb-20 sm:pb-28 lg:pb-32">
-        <div className="max-w-6xl mx-auto grid gap-8 lg:gap-12 lg:grid-cols-[1fr_380px]">
+      <main className="pt-nav-catalog">
+        <div className="wrap grid max-w-6xl gap-8 py-14 sm:py-16 lg:grid-cols-[1fr_380px] lg:gap-12 lg:py-20">
           {/* Left Column: Form & Info */}
-          <section className="space-y-8 sm:space-y-12">
-            <div className="space-y-4 sm:space-y-6">
-              <div className="inline-flex items-center gap-2 px-3 py-1 bg-[#ff4d00]/10 border border-[#ff4d00]/20 rounded-full">
-                <span className="w-1.5 h-1.5 bg-[#ff4d00] rounded-full animate-pulse" />
-                <span className="text-[#ff4d00] text-[10px] font-black uppercase tracking-[0.2em]">{t.badge}</span>
-              </div>
-              <h1 className="text-4xl sm:text-6xl md:text-8xl font-black italic uppercase tracking-tighter leading-[0.85] text-balance">
+          <section className="space-y-8 sm:space-y-10">
+            <div className="space-y-4">
+              <p className="ic-eyebrow">{t.badge}</p>
+              <h1 className="ic-display text-balance text-4xl sm:text-5xl md:text-6xl">
                 {t.titleLine1}
                 <br />
-                <span className="text-[#ff4d00]">{t.titleAccent}</span>
+                <span className="text-accent-text">{t.titleAccent}</span>
               </h1>
-              <p className="text-neutral-500 dark:text-white/40 max-w-xl text-sm font-medium leading-relaxed tracking-wide">{t.intro}</p>
+              <p className="max-w-xl text-sm leading-relaxed text-fg-secondary">{t.intro}</p>
             </div>
 
             {loading ? (
-              <div className="space-y-8 animate-pulse">
-                <div className="h-64 bg-black/[0.04] dark:bg-white/5 border border-neutral-200 dark:border-white/10 rounded-3xl" />
-                <div className="h-96 bg-black/[0.04] dark:bg-white/5 border border-neutral-200 dark:border-white/10 rounded-3xl" />
+              <div className="space-y-8">
+                <div className="sk h-64 rounded-card" />
+                <div className="sk h-96 rounded-card" />
               </div>
             ) : user ? (
-              <div className="space-y-12">
+              <div className="space-y-10">
                 {/* Identity Card */}
-                <div className="relative group">
-                  <div className="absolute -inset-1 bg-gradient-to-r from-[#ff4d00] to-transparent opacity-20 blur-xl group-hover:opacity-40 transition-opacity" />
-                <div className="relative grid md:grid-cols-[240px_1fr] bg-white/[0.03] border border-neutral-200 dark:border-white/10 rounded-3xl overflow-hidden backdrop-blur-xl">
-                  <div className="aspect-square relative bg-[#0a0a0a] border-r border-neutral-200 dark:border-white/10 overflow-hidden">
+                <div className="grid overflow-hidden rounded-card border border-line bg-card md:grid-cols-[240px_1fr]">
+                  <div className="relative aspect-square overflow-hidden border-r border-line bg-sunken">
                       <img
                         src={user.avatar || '/logo.png'}
                         alt={`${user.firstName} ${user.lastName}`}
-                        className="w-full h-full object-cover grayscale opacity-80 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-700"
+                        className="h-full w-full object-cover"
                       />
-                      <div className="absolute bottom-4 left-4 right-4 py-2 px-3 bg-black/60 backdrop-blur-md border border-neutral-200 dark:border-white/10 text-[8px] font-black uppercase tracking-widest text-center">
-                        {t.verifiedReader}
+                      <div className="absolute bottom-3 left-3 right-3 rounded-btn px-3 py-2 text-center backdrop-blur-sm" style={{ background: 'rgba(12, 11, 16, 0.62)' }}>
+                        <span className="ic-eyebrow">{t.verifiedReader}</span>
                       </div>
                     </div>
-                    <div className="p-6 sm:p-8 md:p-10 flex flex-col justify-between gap-6">
-                      <div className="space-y-1">
-                        <p className="text-[10px] font-black uppercase tracking-[0.4em] text-neutral-500 dark:text-white/30 italic">{t.accountId}</p>
-                        <p className="text-xl md:text-2xl font-black tracking-tighter text-white/90 break-all font-mono">{user.id}</p>
+                    <div className="flex flex-col justify-between gap-6 p-6 sm:p-8 md:p-10">
+                      <div className="space-y-2">
+                        <p className="ic-eyebrow">{t.accountId}</p>
+                        <p className="break-all font-mono text-base text-fg sm:text-lg">{user.id}</p>
                       </div>
                       <div className="flex flex-col gap-4 sm:flex-row sm:gap-10">
                         <div>
-                          <p className="text-[9px] font-black uppercase tracking-[0.3em] text-neutral-400 dark:text-white/20 mb-1">{t.joined}</p>
-                          <p className="text-xs font-black text-neutral-600 dark:text-white/60">{new Date(user.createdAt).toLocaleDateString(lang === 'ru' ? 'ru-RU' : 'en-US')}</p>
+                          <p className="ic-eyebrow mb-1">{t.joined}</p>
+                          <p className="text-sm text-fg-secondary">{new Date(user.createdAt).toLocaleDateString(lang === 'ru' ? 'ru-RU' : 'en-US')}</p>
                         </div>
                         <div>
-                          <p className="text-[9px] font-black uppercase tracking-[0.3em] text-neutral-400 dark:text-white/20 mb-1">{t.security}</p>
-                          <p className="text-xs font-black text-[#ff4d00]">{t.encryptedBadge}</p>
+                          <p className="ic-eyebrow mb-1">{t.security}</p>
+                          <p className="text-sm text-accent-text">{t.encryptedBadge}</p>
                         </div>
                       </div>
                     </div>
-                  </div>
                 </div>
 
                 {/* Settings Form */}
-                <form onSubmit={handleSave} className="space-y-8 sm:space-y-10 p-6 sm:p-10 bg-white/[0.02] border border-neutral-100 dark:border-white/5 rounded-3xl">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8">
-                    <div className="space-y-2">
-                      <label className="text-[9px] font-black uppercase tracking-[0.4em] text-neutral-500 dark:text-white/30 ml-1">{t.labelFirstName}</label>
+                <form onSubmit={handleSave} className="space-y-6 rounded-card border border-line bg-card p-6 sm:p-10">
+                  <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+                    <div className="ic-field">
+                      <label className="ic-field__label">{t.labelFirstName}</label>
                       <input
                         value={form.firstName}
                         onChange={handleChange('firstName')}
-                        className="w-full bg-[#0a0a0a] border border-neutral-200 dark:border-white/10 rounded-2xl px-5 py-4 text-sm font-black uppercase tracking-widest text-white focus:border-[#ff4d00] focus:ring-1 focus:ring-[#ff4d00] transition-all outline-none"
+                        className="ic-input"
                       />
                     </div>
-                    <div className="space-y-2">
-                      <label className="text-[9px] font-black uppercase tracking-[0.4em] text-neutral-500 dark:text-white/30 ml-1">{t.labelLastName}</label>
+                    <div className="ic-field">
+                      <label className="ic-field__label">{t.labelLastName}</label>
                       <input
                         value={form.lastName}
                         onChange={handleChange('lastName')}
-                        className="w-full bg-[#0a0a0a] border border-neutral-200 dark:border-white/10 rounded-2xl px-5 py-4 text-sm font-black uppercase tracking-widest text-white focus:border-[#ff4d00] focus:ring-1 focus:ring-[#ff4d00] transition-all outline-none"
+                        className="ic-input"
                       />
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8">
-                    <div className="space-y-2">
-                      <label className="text-[9px] font-black uppercase tracking-[0.4em] text-neutral-500 dark:text-white/30 ml-1">{t.labelUsername}</label>
+                  <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+                    <div className="ic-field">
+                      <label className="ic-field__label">{t.labelUsername}</label>
                       <input
                         value={form.username}
                         onChange={handleChange('username')}
-                        className="w-full bg-[#0a0a0a] border border-neutral-200 dark:border-white/10 rounded-2xl px-5 py-4 text-sm font-black uppercase tracking-widest text-white focus:border-[#ff4d00] focus:ring-1 focus:ring-[#ff4d00] transition-all outline-none"
+                        className="ic-input"
                       />
                     </div>
-                    <div className="space-y-2">
-                      <label className="text-[9px] font-black uppercase tracking-[0.4em] text-neutral-500 dark:text-white/30 ml-1">{t.labelEmail}</label>
+                    <div className="ic-field">
+                      <label className="ic-field__label">{t.labelEmail}</label>
                       <input
                         value={form.email}
                         onChange={handleChange('email')}
-                        className="w-full bg-[#0a0a0a] border border-neutral-200 dark:border-white/10 rounded-2xl px-5 py-4 text-sm font-black text-neutral-800 dark:text-white/80 focus:border-[#ff4d00] focus:ring-1 focus:ring-[#ff4d00] transition-all outline-none"
+                        className="ic-input"
                         placeholder={t.placeholderEmail}
                       />
                     </div>
                   </div>
 
-                  <div className="space-y-2">
-                    <label className="text-[9px] font-black uppercase tracking-[0.4em] text-neutral-500 dark:text-white/30 ml-1">
+                  <div className="ic-field">
+                    <label className="ic-field__label">
                       {t.passwordLabelFull} {user.hasPassword ? t.passwordChange : t.passwordSet}
                     </label>
                     <input
                       type="password"
                       value={form.password}
                       onChange={handleChange('password')}
-                      className="w-full bg-[#0a0a0a] border border-neutral-200 dark:border-white/10 rounded-2xl px-5 py-4 text-sm font-black tracking-[0.5em] text-white focus:border-[#ff4d00] focus:ring-1 focus:ring-[#ff4d00] transition-all outline-none"
+                      className="ic-input"
                       placeholder="••••••••"
                     />
                   </div>
 
                   {error && (
-                    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="p-4 bg-[#ff4d00]/10 border border-[#ff4d00]/20 text-[#ff4d00] text-[10px] font-black uppercase tracking-widest text-center">
+                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="rounded-btn border border-line bg-inset p-4 text-center text-sm text-danger">
                       {t.errorPrefix}: {error}
                     </motion.div>
                   )}
 
                   {success && (
-                    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="p-4 bg-[#16a34a]/10 border border-[#16a34a]/20 text-[#16a34a] text-[10px] font-black uppercase tracking-widest text-center">
+                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="rounded-btn border border-line bg-inset p-4 text-center text-sm text-success">
                       {t.successPrefix}: {success}
                     </motion.div>
                   )}
@@ -255,57 +249,57 @@ export default function ProfilePage() {
                   <button
                     type="submit"
                     disabled={saving}
-                    className="w-full relative group py-5 bg-white text-black font-black uppercase tracking-[0.4em] text-[11px] overflow-hidden transition-all hover:bg-[#ff4d00] hover:text-neutral-900 dark:hover:text-white disabled:opacity-50"
+                    className="ic-btn ic-btn--primary ic-btn--lg ic-btn--block"
                   >
-                    <span className="relative z-10">{saving ? t.saving : t.saveProfile}</span>
+                    {saving ? t.saving : t.saveProfile}
                   </button>
                 </form>
               </div>
             ) : (
-              <div className="p-8 sm:p-20 border border-neutral-100 dark:border-white/5 bg-white/[0.01] rounded-3xl flex flex-col items-center justify-center space-y-4">
-                <p className="text-neutral-400 dark:text-white/20 font-black uppercase tracking-[0.5em] text-xs">{t.couldntLoad}</p>
-                <button type="button" onClick={() => router.refresh()} className="text-[10px] font-black uppercase tracking-widest text-[#ff4d00]">{t.tryAgain}</button>
+              <div className="state-block">
+                <p>{t.couldntLoad}</p>
+                <button type="button" onClick={() => router.refresh()} className="ic-btn ic-btn--secondary ic-btn--sm">{t.tryAgain}</button>
               </div>
             )}
           </section>
 
           {/* Right Column: Cards & Actions */}
-          <aside className="space-y-8">
-            <div className="bg-[#0a0a0a] p-6 sm:p-8 border border-neutral-200 dark:border-white/10 rounded-3xl space-y-6">
-              <p className="text-[10px] font-black uppercase tracking-[0.5em] text-neutral-500 dark:text-white/30 italic">{t.signInMethods}</p>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between p-4 bg-white/[0.02] border border-neutral-100 dark:border-white/5 rounded-2xl">
-                  <span className="text-[10px] font-black uppercase text-neutral-500 dark:text-white/50 tracking-widest">{t.google}</span>
-                  <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded ${user?.authProviderId ? 'bg-[#ffca3a]/10 text-[#ffca3a] border border-[#ffca3a]/20' : 'bg-black/[0.04] dark:bg-white/5 text-neutral-400 dark:text-white/20'}`}>
+          <aside className="space-y-6">
+            <div className="space-y-5 rounded-card border border-line bg-card p-6 sm:p-8">
+              <p className="ic-eyebrow">{t.signInMethods}</p>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between rounded-btn border border-line-subtle bg-inset p-4">
+                  <span className="text-sm font-medium text-fg-secondary">{t.google}</span>
+                  <span className={`ic-badge ${user?.authProviderId ? 'ic-badge--accent' : 'ic-badge--neutral'}`}>
                     {user?.authProviderId ? t.enabled : t.disconnected}
                   </span>
                 </div>
-                <div className="flex items-center justify-between p-4 bg-white/[0.02] border border-neutral-100 dark:border-white/5 rounded-2xl">
-                  <span className="text-[10px] font-black uppercase text-neutral-500 dark:text-white/50 tracking-widest">{t.passwordShort}</span>
-                  <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded ${user?.hasPassword ? 'bg-[#16a34a]/10 text-[#16a34a] border border-[#16a34a]/20' : 'bg-black/[0.04] dark:bg-white/5 text-neutral-400 dark:text-white/20'}`}>
+                <div className="flex items-center justify-between rounded-btn border border-line-subtle bg-inset p-4">
+                  <span className="text-sm font-medium text-fg-secondary">{t.passwordShort}</span>
+                  <span className={`ic-badge ${user?.hasPassword ? 'ic-badge--success' : 'ic-badge--neutral'}`}>
                     {user?.hasPassword ? t.active : t.unset}
                   </span>
                 </div>
               </div>
             </div>
 
-            <div className="bg-white/[0.02] p-6 sm:p-8 border border-neutral-100 dark:border-white/5 rounded-3xl space-y-6">
-              <p className="text-[10px] font-black uppercase tracking-[0.5em] text-neutral-500 dark:text-white/30 italic">{t.yourLibrary}</p>
+            <div className="space-y-5 rounded-card border border-line bg-card p-6 sm:p-8">
+              <p className="ic-eyebrow">{t.yourLibrary}</p>
               <div className="grid grid-cols-2 gap-4">
-                <div className="p-5 bg-black border border-neutral-200 dark:border-white/10 rounded-2xl flex flex-col items-center justify-center space-y-1">
-                  <div className="text-3xl font-black italic text-[#ff4d00]">{user?._count?.reading ?? 0}</div>
-                  <div className="text-[8px] font-black uppercase tracking-[0.2em] text-neutral-500 dark:text-white/40">{t.reading}</div>
+                <div className="flex flex-col items-center justify-center space-y-1 rounded-card border border-line-subtle bg-inset p-5">
+                  <div className="ic-display text-4xl text-accent-text">{user?._count?.reading ?? 0}</div>
+                  <div className="ic-eyebrow">{t.reading}</div>
                 </div>
-                <div className="p-5 bg-black border border-neutral-200 dark:border-white/10 rounded-2xl flex flex-col items-center justify-center space-y-1">
-                  <div className="text-3xl font-black italic text-white">{user?._count?.completed ?? 0}</div>
-                  <div className="text-[8px] font-black uppercase tracking-[0.2em] text-neutral-500 dark:text-white/40">{t.completed}</div>
+                <div className="flex flex-col items-center justify-center space-y-1 rounded-card border border-line-subtle bg-inset p-5">
+                  <div className="ic-display text-4xl text-fg">{user?._count?.completed ?? 0}</div>
+                  <div className="ic-eyebrow">{t.completed}</div>
                 </div>
               </div>
             </div>
 
             <div className="flex flex-col gap-3">
               <Link href="/">
-                <button type="button" className="w-full py-4 sm:py-5 bg-white/[0.05] border border-neutral-200 dark:border-white/10 text-white font-black uppercase tracking-[0.4em] text-[10px] hover:bg-white hover:text-black transition-all">
+                <button type="button" className="ic-btn ic-btn--secondary ic-btn--md ic-btn--block">
                   {t.backHome}
                 </button>
               </Link>
@@ -315,7 +309,7 @@ export default function ProfilePage() {
                   const res = await fetch('/api/auth/logout', { method: 'POST' });
                   if (res.ok) router.push('/');
                 }}
-                className="w-full py-4 sm:py-5 bg-[#ff4d00]/10 border border-[#ff4d00]/20 text-[#ff4d00] font-black uppercase tracking-[0.4em] text-[10px] hover:bg-[#ff4d00] hover:text-neutral-900 dark:hover:text-white transition-all"
+                className="ic-btn ic-btn--danger ic-btn--md ic-btn--block"
               >
                 {t.logOut}
               </button>

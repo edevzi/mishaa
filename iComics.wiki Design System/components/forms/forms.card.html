@@ -1,0 +1,64 @@
+<!-- @dsCard group="Components" viewport="700x340" name="Forms — input, select, segmented" subtitle="Fields, dropdowns, mode switches" -->
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="stylesheet" href="../../styles.css" />
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
+<script src="../../_ds_bundle.js"></script>
+<style>
+  body { padding: 28px; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px 24px; max-width: 560px; }
+  .full { grid-column: 1 / -1; }
+  .stack { display: flex; flex-direction: column; gap: 16px; }
+  .seglabel { display:block; margin-bottom: 8px; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+  const NS = window.IComicsWikiDesignSystem_3734a1;
+  const { Input, Select, SegmentedControl } = NS;
+  const Search = () => <i data-lucide="search" style={{width:16,height:16}} />;
+
+  function Demo() {
+    const [mode, setMode] = React.useState("classic");
+    const [dir, setDir] = React.useState("ltr");
+    return (
+      <div className="stack">
+        <div className="grid">
+          <Input label="Quick search" icon={<Search />} placeholder="Search titles…" />
+          <Select label="Content language" defaultValue="en">
+            <option value="en">English</option>
+            <option value="ja">日本語</option>
+            <option value="ko">한국어</option>
+            <option value="ru">Русский</option>
+          </Select>
+        </div>
+        <div className="full">
+          <span className="ic-eyebrow seglabel">View mode</span>
+          <SegmentedControl value={mode} onChange={setMode} options={[
+            { value: "classic", label: "Classic", icon: <i data-lucide="square" style={{width:15,height:15}} /> },
+            { value: "journal", label: "Journal", icon: <i data-lucide="book-open" style={{width:15,height:15}} /> },
+            { value: "flow", label: "Flow", icon: <i data-lucide="scroll-text" style={{width:15,height:15}} /> },
+          ]} />
+        </div>
+        <div className="full">
+          <span className="ic-eyebrow seglabel">Reading direction</span>
+          <SegmentedControl accent value={dir} onChange={setDir} options={[
+            { value: "ltr", label: "LTR" },
+            { value: "rtl", label: "RTL" },
+          ]} />
+        </div>
+      </div>
+    );
+  }
+  ReactDOM.createRoot(document.getElementById("root")).render(<Demo />);
+  setTimeout(() => window.lucide && window.lucide.createIcons(), 60);
+</script>
+</body>
+</html>

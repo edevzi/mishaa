@@ -30,36 +30,28 @@ export default function CookieConsentBanner() {
     <div
       role="dialog"
       aria-label="Cookie and analytics consent"
-      className="fixed bottom-0 inset-x-0 z-[100010] border-t border-neutral-200 bg-neutral-100/95 px-4 py-4 text-neutral-900 backdrop-blur-xl dark:border-white/10 dark:bg-[#090a0f]/95 dark:text-white"
+      className="fixed bottom-0 inset-x-0 z-[100010] border-t border-line bg-raised px-4 py-4 text-fg shadow-[var(--shadow-md)]"
     >
       <div className="mx-auto flex max-w-4xl flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
-        <p className="text-[10px] leading-relaxed tracking-wide text-neutral-700 dark:text-white/70 sm:max-w-xl">
+        <p className="text-xs leading-relaxed text-fg-secondary sm:max-w-xl">
           {europeAgeCopy
             ? 'EEA, UK, Swiss, and comparable visitors: optional analytics stays off until you allow it.'
             : 'Some regions ask for analytics consent before we send pings.'}{' '}
           Essential cookies cover age gates and preferences only. Toggle details in{' '}
-          <Link href="/privacy" className="text-[#ff5a1f] underline underline-offset-2 hover:text-neutral-900 dark:hover:text-white">
+          <Link href="/privacy" className="text-accent-text underline underline-offset-2 hover:text-fg">
             Privacy
           </Link>{' '}
           and{' '}
-          <Link href="/content-policy" className="text-[#ff5a1f] underline underline-offset-2 hover:text-neutral-900 dark:hover:text-white">
+          <Link href="/content-policy" className="text-accent-text underline underline-offset-2 hover:text-fg">
             Content Policy
           </Link>
           .
         </p>
         <div className="flex shrink-0 gap-3">
-          <button
-            type="button"
-            onClick={deny}
-            className="min-h-11 px-4 text-[9px] font-black uppercase tracking-widest text-neutral-600 transition-colors hover:text-neutral-900 dark:text-white/50 dark:hover:text-white"
-          >
+          <button type="button" onClick={deny} className="ic-btn ic-btn--ghost ic-btn--sm">
             Essentials only
           </button>
-          <button
-            type="button"
-            onClick={grant}
-            className="min-h-11 bg-[#ff5a1f] px-5 text-[9px] font-black uppercase tracking-widest text-white transition-colors hover:bg-black dark:hover:bg-white dark:hover:text-black"
-          >
+          <button type="button" onClick={grant} className="ic-btn ic-btn--primary ic-btn--sm">
             Allow analytics
           </button>
         </div>

@@ -1,0 +1,22 @@
+<!-- @dsCard group="Spacing" viewport="700x150" name="Radius scale" subtitle="Modest, editorial — posters small, panels soft" -->
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8" />
+<link rel="stylesheet" href="../styles.css" />
+<style>
+  body { padding: 24px; display:flex; align-items: flex-end; gap: 18px; flex-wrap: wrap; }
+  .u { display:flex; flex-direction: column; align-items:center; gap: 9px; }
+  .sq { width: 64px; height: 64px; background: var(--surface-card); border: 1.5px solid var(--accent); }
+  .lab { font-family: var(--font-mono); font-size: 10px; color: var(--text-muted); }
+</style>
+</head>
+<body>
+  <div class="u"><div class="sq" style="border-radius:var(--radius-xs)"></div><span class="lab">xs · 4</span></div>
+  <div class="u"><div class="sq" style="border-radius:var(--radius-sm)"></div><span class="lab">sm · 6 (covers)</span></div>
+  <div class="u"><div class="sq" style="border-radius:var(--radius-md)"></div><span class="lab">md · 10 (btn)</span></div>
+  <div class="u"><div class="sq" style="border-radius:var(--radius-lg)"></div><span class="lab">lg · 14 (card)</span></div>
+  <div class="u"><div class="sq" style="border-radius:var(--radius-xl)"></div><span class="lab">xl · 20</span></div>
+  <div class="u"><div class="sq" style="border-radius:var(--radius-pill)"></div><span class="lab">pill · 999</span></div>
+</body>
+</html>

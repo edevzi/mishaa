@@ -25,86 +25,82 @@ export default function ContactPage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-zinc-50 text-neutral-900 selection:bg-[#ff4d00] selection:text-white overflow-x-hidden dark:bg-[#020202] dark:text-white dark:selection:text-white ">
-      
-      
+    <div className="min-h-screen overflow-x-hidden bg-app text-fg">
       <Navbar />
 
-      <main className="container mx-auto px-8 pt-28 pb-24 sm:pb-28">
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="max-w-6xl mx-auto space-y-24"
+      <main className="pt-nav-catalog">
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.28, ease: [0.22, 0.61, 0.36, 1] }}
+          className="wrap max-w-6xl space-y-14 py-14 sm:py-16 lg:py-20"
         >
           {/* Header */}
-          <div className="text-center space-y-8">
-            <div className="inline-block bg-[#ff4d00] px-6 py-2 border border-neutral-200 dark:border-white/10 rounded-xl shadow-[6px_6px_0px_#000]">
-              <span className="text-white text-[10px] font-black uppercase tracking-[0.4em]">{t.badge}</span>
-            </div>
-            <h1 className="text-6xl md:text-9xl font-display uppercase tracking-tighter leading-none italic">
-               {t.titleLine1} <br /><span className="text-[#3b82f6]">{t.titleLine2}</span>
+          <div className="space-y-5">
+            <p className="ic-eyebrow">{t.badge}</p>
+            <h1 className="ic-display text-balance text-4xl sm:text-5xl md:text-6xl">
+               {t.titleLine1} <br /><span className="text-accent-text">{t.titleLine2}</span>
             </h1>
-            <p className="text-xl font-editorial italic opacity-60">&quot;{t.subtitle}&quot;</p>
+            <p className="font-display text-xl italic text-fg-secondary">&quot;{t.subtitle}&quot;</p>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
-            <div className="lg:col-span-4 space-y-8">
-               <div className=" p-10 bg-black/[0.04] dark:bg-white/5 border border-neutral-200 dark:border-white/10 rounded-3xl backdrop-blur-xl space-y-8">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            <div className="lg:col-span-4 space-y-6">
+               <div className="space-y-8 rounded-card border border-line bg-card p-8">
                   <div className="space-y-2">
-                    <span className="text-[10px] font-black uppercase tracking-widest text-[#e63946]">{t.email}</span>
-                    <div className="flex items-center gap-4">
+                    <span className="ic-eyebrow text-accent-text">{t.email}</span>
+                    <div className="flex items-center gap-3 text-fg-secondary">
                        <Mail size={18} />
-                       <a href="mailto:info@icomics.wiki" className="text-xl font-black hover:underline tracking-tight">info@icomics.wiki</a>
+                       <a href="mailto:info@icomics.wiki" className="text-lg font-semibold text-fg hover:underline">info@icomics.wiki</a>
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <span className="text-[10px] font-black uppercase tracking-widest text-[#3b82f6]">{t.telegram}</span>
-                    <div className="flex items-center gap-4">
+                    <span className="ic-eyebrow text-accent-text">{t.telegram}</span>
+                    <div className="flex items-center gap-3 text-fg-secondary">
                        <Send size={18} />
-                       <a href={TELEGRAM_CHANNEL_URL} target="_blank" rel="noreferrer" className="text-xl font-black hover:underline tracking-tight">@icomicswiki</a>
+                       <a href={TELEGRAM_CHANNEL_URL} target="_blank" rel="noreferrer" className="text-lg font-semibold text-fg hover:underline">@icomicswiki</a>
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <span className="text-[10px] font-black uppercase tracking-widest text-neutral-500 dark:text-white/40">{t.domain}</span>
-                    <div className="flex items-center gap-4">
+                    <span className="ic-eyebrow">{t.domain}</span>
+                    <div className="flex items-center gap-3 text-fg-secondary">
                        <Globe size={18} />
-                       <span className="text-xl font-black tracking-tight">icomics.wiki</span>
+                       <span className="text-lg font-semibold text-fg">icomics.wiki</span>
                     </div>
                   </div>
                </div>
 
-               <div className=" p-10 bg-[#0a0a0a] border border-neutral-200 dark:border-white/10 rounded-3xl relative overflow-hidden">
-                  <div className="absolute inset-0  opacity-10" />
-                  <div className="relative z-10 space-y-4">
-                    <h4 className="text-2xl font-display uppercase italic">{t.hq}</h4>
-                    <p className="text-sm opacity-60 leading-relaxed uppercase font-black tracking-wider">
+               <div className="rounded-card border border-line bg-raised p-8">
+                  <div className="space-y-3">
+                    <h4 className="ic-display text-2xl">{t.hq}</h4>
+                    <p className="text-sm leading-relaxed text-fg-muted">
                       {t.hqAddress}
                     </p>
                   </div>
                </div>
             </div>
 
-            <div className="lg:col-span-8  p-12 md:p-16 bg-black/[0.04] dark:bg-white/5 border border-neutral-200 dark:border-white/10 rounded-3xl backdrop-blur-xl">
-               <h2 className="text-4xl font-display uppercase tracking-tight mb-12 italic underline decoration-[#ffca3a] decoration-4">{t.sendTitle}</h2>
-               <form className="grid grid-cols-1 md:grid-cols-2 gap-10">
-                  <div className="space-y-3">
-                    <label className="text-[10px] font-black uppercase tracking-widest opacity-40">{t.alias}</label>
-                    <input type="text" className="w-full bg-transparent border border-neutral-300 dark:border-white/20 rounded-xl px-6 text-white py-4 text-xs font-bold focus:outline-none focus:bg-[#ff4d00]/10" placeholder={t.placeholderAlias} />
+            <div className="lg:col-span-8 rounded-card border border-line bg-card p-8 md:p-12">
+               <h2 className="ic-display mb-10 text-3xl sm:text-4xl">{t.sendTitle}</h2>
+               <form className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="ic-field">
+                    <label className="ic-field__label">{t.alias}</label>
+                    <input type="text" className="ic-input" placeholder={t.placeholderAlias} />
                   </div>
-                  <div className="space-y-3">
-                    <label className="text-[10px] font-black uppercase tracking-widest opacity-40">{t.frequency}</label>
-                    <input type="email" className="w-full bg-transparent border border-neutral-300 dark:border-white/20 rounded-xl px-6 text-white py-4 text-xs font-bold focus:outline-none focus:bg-[#ff4d00]/10" placeholder={t.placeholderFreq} />
+                  <div className="ic-field">
+                    <label className="ic-field__label">{t.frequency}</label>
+                    <input type="email" className="ic-input" placeholder={t.placeholderFreq} />
                   </div>
-                  <div className="md:col-span-2 space-y-3">
-                    <label className="text-[10px] font-black uppercase tracking-widest opacity-40">{t.subject}</label>
-                    <input type="text" className="w-full bg-transparent border border-neutral-300 dark:border-white/20 rounded-xl px-6 text-white py-4 text-xs font-bold focus:outline-none focus:bg-[#ff4d00]/10" placeholder={t.placeholderSub} />
+                  <div className="ic-field md:col-span-2">
+                    <label className="ic-field__label">{t.subject}</label>
+                    <input type="text" className="ic-input" placeholder={t.placeholderSub} />
                   </div>
-                  <div className="md:col-span-2 space-y-3">
-                    <label className="text-[10px] font-black uppercase tracking-widest opacity-40">{t.payload}</label>
-                    <textarea className="w-full bg-transparent border border-neutral-300 dark:border-white/20 rounded-xl px-6 text-white py-4 text-xs font-bold focus:outline-none focus:bg-[#ff4d00]/10 min-h-[160px]" placeholder={t.placeholderMsg} />
+                  <div className="ic-field md:col-span-2">
+                    <label className="ic-field__label">{t.payload}</label>
+                    <textarea className="ic-input min-h-[160px] py-3!" placeholder={t.placeholderMsg} />
                   </div>
                   <div className="md:col-span-2">
-                    <button className="px-8 py-4 uppercase font-black tracking-widest transition-all rounded-lg w-full py-8 text-xl bg-black text-white hover:bg-[#ff4d00] transition-colors border-2 border-white">
+                    <button className="ic-btn ic-btn--primary ic-btn--lg ic-btn--block">
                        {t.sendBtn}
                     </button>
                   </div>

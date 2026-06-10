@@ -16,7 +16,7 @@ export default function ContentPolicyPage() {
       badge="Content Policy"
       title="Content Safety Policy"
       subtitle="This page explains how we handle adult content, reports, moderation, and user safety."
-      icon={<ShieldAlert size={14} className="text-[#ff4d00]" />}
+      icon={<ShieldAlert size={14} className="text-accent" />}
       sections={[
         {
           eyebrow: 'Age Gate',

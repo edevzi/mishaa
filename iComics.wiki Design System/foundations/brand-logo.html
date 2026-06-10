@@ -1,0 +1,37 @@
+<!-- @dsCard group="Brand" viewport="700x200" name="Logo lockup (placeholder)" subtitle="Mark + wordmark on dark & light — swap for the real logo.png" -->
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8" />
+<link rel="stylesheet" href="../styles.css" />
+<style>
+  body { padding: 0; display:grid; grid-template-columns: 1fr 1fr; min-height: 100%; }
+  .panel { display:flex; flex-direction:column; gap: 18px; align-items:flex-start; justify-content:center; padding: 28px; }
+  .dark { background: var(--ink-950); }
+  .light { background: var(--paper-50); }
+  .lock { display:flex; align-items:center; gap: 11px; }
+  .mark { border-radius: 9px; flex:none; }
+  .wm { font-family: var(--font-sans); font-weight:700; font-size: 22px; letter-spacing:-.01em; }
+  .flag { position: fixed; top: 8px; left: 50%; transform: translateX(-50%); font-family: var(--font-mono); font-size: 9.5px;
+          letter-spacing:.08em; text-transform:uppercase; color: var(--text-on-accent); background: var(--accent); padding: 3px 8px; border-radius: 4px; }
+  svg.m rect:first-child { }
+</style>
+</head>
+<body>
+<span class="flag">Placeholder — replace with real logo</span>
+<div class="panel dark">
+  <div class="lock">
+    <svg class="m mark" width="34" height="34" viewBox="0 0 512 512"><rect width="512" height="512" rx="116" fill="#F2994A"/><circle cx="168" cy="150" r="30" fill="#2A1705"/><rect x="142" y="208" width="52" height="190" rx="20" fill="#2A1705"/><path d="M392 214c-22-20-52-32-86-32-62 0-110 44-110 122s48 122 110 122c34 0 64-12 86-32" stroke="#2A1705" stroke-width="52" stroke-linecap="round" fill="none"/></svg>
+    <span class="wm" style="color:#F8F5F0">iComics<span style="color:#948EA6;font-weight:500">·wiki</span></span>
+  </div>
+  <svg class="m mark" width="44" height="44" viewBox="0 0 512 512"><rect width="512" height="512" rx="116" fill="#F2994A"/><circle cx="168" cy="150" r="30" fill="#2A1705"/><rect x="142" y="208" width="52" height="190" rx="20" fill="#2A1705"/><path d="M392 214c-22-20-52-32-86-32-62 0-110 44-110 122s48 122 110 122c34 0 64-12 86-32" stroke="#2A1705" stroke-width="52" stroke-linecap="round" fill="none"/></svg>
+</div>
+<div class="panel light">
+  <div class="lock">
+    <svg class="m mark" width="34" height="34" viewBox="0 0 512 512"><rect width="512" height="512" rx="116" fill="#F2994A"/><circle cx="168" cy="150" r="30" fill="#2A1705"/><rect x="142" y="208" width="52" height="190" rx="20" fill="#2A1705"/><path d="M392 214c-22-20-52-32-86-32-62 0-110 44-110 122s48 122 110 122c34 0 64-12 86-32" stroke="#2A1705" stroke-width="52" stroke-linecap="round" fill="none"/></svg>
+    <span class="wm" style="color:#1B1822">iComics<span style="color:#787287;font-weight:500">·wiki</span></span>
+  </div>
+  <span style="font-family:var(--font-mono);font-size:11px;color:#787287">512×512 · rounded-square monogram · clear-space ≈ ¼ mark</span>
+</div>
+</body>
+</html>

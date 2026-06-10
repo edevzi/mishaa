@@ -1,0 +1,22 @@
+<!-- @dsCard group="Spacing" viewport="700x170" name="Elevation & shadow" subtitle="Lean on borders in dark; soft shadows in light + cover frame" -->
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8" />
+<link rel="stylesheet" href="../styles.css" />
+<style>
+  body { padding: 28px; display:flex; gap: 24px; flex-wrap: wrap; align-items:center; }
+  .u { display:flex; flex-direction:column; align-items:center; gap: 10px; }
+  .card { width: 96px; height: 70px; background: var(--surface-card); border:1px solid var(--border-subtle); border-radius: var(--radius-lg); }
+  .lab { font-family: var(--font-mono); font-size: 10px; color: var(--text-muted); }
+</style>
+</head>
+<body>
+  <div class="u"><div class="card" style="box-shadow:var(--shadow-xs)"></div><span class="lab">xs</span></div>
+  <div class="u"><div class="card" style="box-shadow:var(--shadow-sm)"></div><span class="lab">sm</span></div>
+  <div class="u"><div class="card" style="box-shadow:var(--shadow-md)"></div><span class="lab">md</span></div>
+  <div class="u"><div class="card" style="box-shadow:var(--shadow-lg)"></div><span class="lab">lg</span></div>
+  <div class="u"><div class="card" style="box-shadow:var(--cover-frame)"></div><span class="lab">cover frame</span></div>
+  <div class="u"><div class="card" style="box-shadow:var(--glow-accent)"></div><span class="lab">focus glow</span></div>
+</body>
+</html>

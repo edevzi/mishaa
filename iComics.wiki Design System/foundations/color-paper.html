@@ -1,0 +1,26 @@
+<!-- @dsCard group="Colors" viewport="700x150" name="Paper — light surfaces" subtitle="Warm off-whites; light mode is intentionally warm, not stark" -->
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8" />
+<link rel="stylesheet" href="../styles.css" />
+<style>
+  body { padding: 22px; }
+  .scale { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; }
+  .sw { border-radius: var(--radius-md); height: 76px; border: 1px solid var(--border); }
+  .lab { font-family: var(--font-mono); font-size: 9.5px; margin-top: 6px; color: var(--text-muted); line-height: 1.4; }
+  .lab b { display: block; color: var(--text-secondary); font-weight: 500; }
+</style>
+</head>
+<body>
+<div class="scale">
+  <div><div class="sw" style="background:var(--paper-0)"></div><div class="lab"><b>0</b>card</div></div>
+  <div><div class="sw" style="background:var(--paper-50)"></div><div class="lab"><b>50</b>app</div></div>
+  <div><div class="sw" style="background:var(--paper-100)"></div><div class="lab"><b>100</b>raised</div></div>
+  <div><div class="sw" style="background:var(--paper-150)"></div><div class="lab"><b>150</b>hover</div></div>
+  <div><div class="sw" style="background:var(--paper-200)"></div><div class="lab"><b>200</b>border</div></div>
+  <div><div class="sw" style="background:var(--paper-300)"></div><div class="lab"><b>300</b>border+</div></div>
+  <div><div class="sw" style="background:var(--warm-ink)"></div><div class="lab" style="color:#aaa"><b style="color:#ddd">ink</b>text</div></div>
+</div>
+</body>
+</html>

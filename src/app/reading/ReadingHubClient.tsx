@@ -48,16 +48,17 @@ export default function ReadingHubClient() {
   ];
 
   return (
-    <div className="min-h-screen overflow-x-hidden bg-zinc-50 text-neutral-900 selection:bg-[#ff4d00] selection:text-white dark:bg-[#020202] dark:text-white dark:selection:text-white">
+    <div className="min-h-screen overflow-x-hidden bg-app text-fg">
       <Navbar />
 
-      <main className="container mx-auto px-4 pb-20 pt-24 sm:px-6 sm:pb-28 sm:pt-28 lg:px-8 lg:pb-32 lg:pt-36">
-        <header className="mx-auto max-w-4xl space-y-6 text-center">
-          <p className="text-[10px] font-black uppercase tracking-[0.45em] text-[#ff4d00]">{tr.kicker}</p>
-          <h1 className="text-balance text-4xl font-black uppercase tracking-tighter text-neutral-900 dark:text-white sm:text-5xl md:text-6xl">
+      <main className="pt-nav-catalog">
+        <div className="wrap py-14 sm:py-16 lg:py-20">
+        <header className="mx-auto max-w-4xl space-y-5 text-center">
+          <p className="ic-eyebrow">{tr.kicker}</p>
+          <h1 className="ic-display text-balance text-4xl text-fg sm:text-5xl md:text-6xl">
             {tr.title}
           </h1>
-          <p className="mx-auto max-w-2xl text-sm leading-relaxed text-neutral-600 dark:text-white/55 md:text-base">{tr.intro}</p>
+          <p className="mx-auto max-w-2xl text-sm leading-relaxed text-fg-secondary md:text-base">{tr.intro}</p>
         </header>
 
         <div className="mx-auto mt-14 grid max-w-5xl gap-5 md:grid-cols-3">
@@ -65,41 +66,42 @@ export default function ReadingHubClient() {
             <Link
               key={href}
               href={href}
-              className="group flex flex-col rounded-[1.75rem] border border-neutral-200 bg-white/90 p-6 backdrop-blur-xl transition-all hover:border-[#ff5a1f]/45 hover:shadow-xl dark:border-white/10 dark:bg-white/[0.03] dark:hover:border-[#ff5a1f]/35 sm:p-8"
+              className="group flex flex-col rounded-card border border-line bg-card p-6 transition-colors duration-150 hover:border-line-strong hover:bg-card-hov sm:p-8"
             >
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-neutral-200 bg-neutral-50 text-[#ff5a1f] dark:border-white/10 dark:bg-black/40">
+              <div className="flex h-12 w-12 items-center justify-center rounded-btn bg-accent-tint text-accent-text">
                 <Icon size={22} strokeWidth={2} />
               </div>
-              <h2 className="mt-5 text-lg font-black uppercase tracking-tight text-neutral-900 transition-colors group-hover:text-[#ff5a1f] dark:text-white dark:group-hover:text-white">
+              <h2 className="ic-display mt-5 text-xl text-fg">
                 {title}
               </h2>
-              <p className="mt-3 flex-1 text-sm leading-relaxed text-neutral-600 dark:text-white/55">{body}</p>
-              <span className="mt-6 text-[10px] font-black uppercase tracking-[0.35em] text-neutral-400 dark:text-white/35">{tr.openCta}</span>
+              <p className="mt-3 flex-1 text-sm leading-relaxed text-fg-secondary">{body}</p>
+              <span className="mt-6 text-sm font-medium text-fg-muted transition-colors group-hover:text-accent-text">{tr.openCta}</span>
             </Link>
           ))}
         </div>
 
-        <section className="mx-auto mt-16 max-w-3xl rounded-[1.75rem] border border-neutral-200 bg-white/90 p-8 text-sm leading-relaxed text-neutral-700 backdrop-blur-xl dark:border-white/10 dark:bg-white/[0.03] dark:text-white/65 md:p-10">
-          <h2 className="text-[10px] font-black uppercase tracking-[0.45em] text-[#ff4d00]">{tr.discoverTitle}</h2>
+        <section className="mx-auto mt-16 max-w-3xl rounded-card border border-line bg-card p-8 text-sm leading-relaxed text-fg-secondary md:p-10">
+          <h2 className="ic-eyebrow text-accent-text">{tr.discoverTitle}</h2>
           <p className="mt-4">
             {tr.closingBeforeFaq}{' '}
-            <Link href="/faq" className="font-semibold text-[#ff5a1f] underline decoration-[#ff5a1f]/40 underline-offset-4">
+            <Link href="/faq" className="font-medium text-accent-text underline decoration-line underline-offset-4 hover:decoration-accent">
               {tr.faqLinkLabel}
             </Link>{' '}
             {tr.closingMid}{' '}
-            <Link href="/support" className="font-semibold text-[#ff5a1f] underline decoration-[#ff5a1f]/40 underline-offset-4">
+            <Link href="/support" className="font-medium text-accent-text underline decoration-line underline-offset-4 hover:decoration-accent">
               {tr.supportLinkLabel}
             </Link>{' '}
             {tr.closingAfter}
           </p>
           <p className="mt-4">
             {tr.wikiSearchNote}{' '}
-            <Link href="/icomics-wiki" className="font-semibold text-[#ff5a1f] underline decoration-[#ff5a1f]/40 underline-offset-4">
+            <Link href="/icomics-wiki" className="font-medium text-accent-text underline decoration-line underline-offset-4 hover:decoration-accent">
               {tr.wikiExplainerLink}
             </Link>{' '}
             {tr.wikiSearchNoteEnd}
           </p>
         </section>
+        </div>
       </main>
 
       <Footer />

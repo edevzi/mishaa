@@ -51,7 +51,7 @@ const renderInlineContent = (value: string) => {
           href={token.href}
           target="_blank"
           rel="noreferrer"
-          className="text-[#ff4d00] underline decoration-white/30 underline-offset-4 hover:decoration-[#ff4d00] break-all"
+          className="text-accent-text underline decoration-line underline-offset-4 hover:decoration-accent break-all"
         >
           {token.value}
         </a>
@@ -81,7 +81,7 @@ export default function RichTextContent({ content, className }: RichTextContentP
                 const itemText = line.replace(/^[-•]\s*/, '');
                 return (
                   <div key={`line-${blockIndex}-${lineIndex}`} className="flex gap-3">
-                    <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-[#ff4d00]" />
+                    <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-accent" />
                     <span className="min-w-0 break-words">{renderInlineContent(itemText)}</span>
                   </div>
                 );

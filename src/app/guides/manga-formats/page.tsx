@@ -14,7 +14,7 @@ export default function MangaFormatsGuidePage() {
       {articleLd ? <JsonLd data={articleLd} /> : null}
       <GuideArticleShell
       badge="Formats"
-      icon={<Layers size={14} className="text-[#ff4d00]" />}
+      icon={<Layers size={14} className="text-accent" />}
       title="Manga vs manhwa vs webtoon"
       subtitle="Naming varies across publishers, but direction and composition patterns determine how each format reads on modern displays."
       sections={[

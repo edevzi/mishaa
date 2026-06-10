@@ -95,58 +95,52 @@ function AuthPageContent() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center overflow-hidden bg-zinc-100 p-6 font-sans text-neutral-900 dark:bg-[#05060a] dark:text-white">
-      {/* Dynamic Background */}
-      <div className="absolute inset-0 pointer-events-none">
-         <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-[#ff5a1f]/10 blur-[120px] rounded-full" />
-         <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-blue-500/10 blur-[120px] rounded-full" />
-         <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-[0.03]" />
-      </div>
-
+    <div className="min-h-screen flex flex-col items-center justify-center bg-app p-6 font-sans text-fg">
       {/* Back Button */}
-      <Link href="/" className="absolute top-8 left-8 z-[100] flex scale-90 items-center gap-3 text-neutral-500 transition-all group hover:text-neutral-900 dark:text-white/40 dark:hover:text-white md:scale-100">
-        <div className="flex h-10 w-10 items-center justify-center rounded-full border border-neutral-200 bg-white/80 backdrop-blur-md transition-all group-hover:border-neutral-300 dark:border-white/10 dark:bg-white/5 dark:group-hover:border-white/30">
+      <Link href="/" className="group absolute top-8 left-8 z-[100] flex items-center gap-3 text-fg-muted transition-colors hover:text-fg">
+        <span className="ic-iconbtn ic-iconbtn--sm ic-iconbtn--solid">
           <ArrowRight size={16} className="rotate-180" />
-        </div>
-        <span className="text-[10px] font-black uppercase tracking-[0.3em]">{t.abortMission}</span>
+        </span>
+        <span className="text-sm font-medium">{t.abortMission}</span>
       </Link>
 
       <motion.div
-        initial={{ opacity: 0, y: 20, scale: 0.95 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.28, ease: [0.22, 0.61, 0.36, 1] }}
         className="w-full max-w-[460px] z-10"
       >
-        <div className="glass-panel relative overflow-hidden rounded-[2.5rem] border border-neutral-200 bg-white/95 p-8 shadow-2xl md:p-10 dark:border-white/10 dark:bg-black/40">
+        <div className="relative overflow-hidden rounded-sheet border border-line bg-card p-8 shadow-[var(--shadow-sm)] md:p-10">
           {/* Top Branding */}
           <div className="text-center mb-10 space-y-4">
-            <motion.div 
+            <motion.div
               initial={{ scale: 0.5, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               className="inline-flex items-center justify-center w-16 h-16 bg-white rounded-2xl shadow-[0_0_40px_rgba(255,255,255,0.2)] mb-2"
             >
               <span className="text-3xl font-display font-black text-black">iC</span>
             </motion.div>
-            <div className="space-y-1">
-              <h1 className="text-4xl font-black uppercase tracking-tight text-neutral-900 leading-none dark:text-white">
+            <div className="space-y-2">
+              <h1 className="ic-display text-3xl text-fg">
                 {mode === 'login' ? t.titleLogin : t.titleSignup}
               </h1>
-              <p className="text-sm text-neutral-500 dark:text-white/40 font-medium">
+              <p className="text-sm text-fg-muted">
                 {mode === 'login' ? t.subtitleLogin : t.subtitleSignup}
               </p>
             </div>
           </div>
 
           {/* Mode Tabs */}
-          <div className="flex p-1 bg-black/[0.04] dark:bg-white/5 rounded-2xl mb-8 border border-neutral-200 dark:border-white/10">
+          <div className="ic-seg mb-8 flex w-full">
             <button
               onClick={() => setMode('login')}
-              className={`flex-1 py-3 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all ${mode === 'login' ? 'bg-white text-black shadow-lg' : 'text-neutral-500 hover:text-neutral-900 dark:text-white/40 dark:hover:text-white'}`}
+              className={`ic-seg__opt flex-1 justify-center ${mode === 'login' ? 'is-active' : ''}`}
             >
               {t.tabSignIn}
             </button>
             <button
               onClick={() => setMode('signup')}
-              className={`flex-1 py-3 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all ${mode === 'signup' ? 'bg-white text-black shadow-lg' : 'text-neutral-500 hover:text-neutral-900 dark:text-white/40 dark:hover:text-white'}`}
+              className={`ic-seg__opt flex-1 justify-center ${mode === 'signup' ? 'is-active' : ''}`}
             >
               {t.tabRegister}
             </button>
@@ -163,19 +157,19 @@ function AuthPageContent() {
                   className="space-y-5"
                 >
                   {/* Avatar Section */}
-                  <div className="flex items-center gap-5 rounded-2xl border border-neutral-200 bg-neutral-50/90 p-4 dark:border-white/5 dark:bg-white/5">
-                    <div className="w-14 h-14 rounded-xl bg-black border border-neutral-200 dark:border-white/10 overflow-hidden shadow-inner flex-shrink-0 relative">
+                  <div className="flex items-center gap-5 rounded-card border border-line bg-inset p-4">
+                    <div className="w-14 h-14 rounded-cover border border-line bg-sunken overflow-hidden flex-shrink-0 relative">
                       <Image src={avatarUrl} alt="Avatar" fill unoptimized className="object-cover" />
                     </div>
                     <div className="flex-1">
-                       <p className="text-[9px] font-black uppercase tracking-widest text-neutral-500 dark:text-white/30 mb-2">{t.avatarPrototype}</p>
+                       <p className="ic-field__label mb-2">{t.avatarPrototype}</p>
                        <div className="flex flex-wrap gap-1.5">
                           {AVATAR_STYLES.slice(0, 5).map(style => (
                             <button
                               key={style}
                               type="button"
                               onClick={() => setSelectedAvatarStyle(style)}
-                              className={`px-2 py-1 text-[8px] font-black uppercase rounded-lg border transition-all ${selectedAvatarStyle === style ? 'bg-[#ff5a1f] border-transparent text-white' : 'border-neutral-200 text-neutral-600 hover:bg-neutral-100 dark:border-white/10 dark:text-white/60 dark:hover:bg-white/5 dark:hover:text-white'}`}
+                              className={`ic-tag ic-tag--interactive ${selectedAvatarStyle === style ? 'border-transparent bg-accent-tint text-accent-text' : ''}`}
                             >
                               {style.split('-')[0]}
                             </button>
@@ -185,24 +179,24 @@ function AuthPageContent() {
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                       <label className="text-[10px] font-black uppercase tracking-widest text-neutral-500 dark:text-white/30 ml-2">{t.firstName}</label>
-                       <input 
-                         type="text" 
-                         value={firstName} 
-                         onChange={e => setFirstName(e.target.value)} 
+                    <div className="ic-field">
+                       <label className="ic-field__label">{t.firstName}</label>
+                       <input
+                         type="text"
+                         value={firstName}
+                         onChange={e => setFirstName(e.target.value)}
                          placeholder={t.placeholderFirstDemo}
-                         className="w-full bg-neutral-100/90 dark:bg-black/40 border border-neutral-200 dark:border-white/10 rounded-xl px-4 py-3 text-sm focus:border-[#ff5a1f] outline-none transition-all"
+                         className="ic-input"
                        />
                     </div>
-                    <div className="space-y-2">
-                       <label className="text-[10px] font-black uppercase tracking-widest text-neutral-500 dark:text-white/30 ml-2">{t.lastName}</label>
-                       <input 
-                         type="text" 
-                         value={lastName} 
-                         onChange={e => setLastName(e.target.value)} 
+                    <div className="ic-field">
+                       <label className="ic-field__label">{t.lastName}</label>
+                       <input
+                         type="text"
+                         value={lastName}
+                         onChange={e => setLastName(e.target.value)}
                          placeholder={t.placeholderLastDemo}
-                         className="w-full bg-neutral-100/90 dark:bg-black/40 border border-neutral-200 dark:border-white/10 rounded-xl px-4 py-3 text-sm focus:border-[#ff5a1f] outline-none transition-all"
+                         className="ic-input"
                        />
                     </div>
                   </div>
@@ -211,42 +205,42 @@ function AuthPageContent() {
             </AnimatePresence>
 
             {/* Username/Alias */}
-            <div className="space-y-2">
-               <label className="text-[10px] font-black uppercase tracking-widest text-neutral-500 dark:text-white/30 ml-2">{t.labelUsernameAlias}</label>
-               <div className="relative group">
-                  <User className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-400 transition-colors group-focus-within:text-[#ff5a1f] dark:text-white/20" size={18} />
-                  <input 
-                    type="text" 
-                    value={username} 
-                    onChange={e => setUsername(e.target.value.toLowerCase())} 
+            <div className="ic-field">
+               <label className="ic-field__label">{t.labelUsernameAlias}</label>
+               <div className="ic-input-wrap has-icon">
+                  <User size={18} />
+                  <input
+                    type="text"
+                    value={username}
+                    onChange={e => setUsername(e.target.value.toLowerCase())}
                     placeholder={t.placeholderUsername}
                     required
-                    className="w-full bg-neutral-100/90 dark:bg-black/40 border border-neutral-200 dark:border-white/10 rounded-xl pl-12 pr-4 py-4 text-sm focus:border-[#ff5a1f] outline-none transition-all"
+                    className="ic-input"
                   />
                </div>
             </div>
 
             {/* Password */}
-            <div className="space-y-2">
-               <label className="text-[10px] font-black uppercase tracking-widest text-neutral-500 dark:text-white/30 ml-2">{t.accessKeyShort}</label>
-               <div className="relative group">
-                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-400 transition-colors group-focus-within:text-[#ff5a1f] dark:text-white/20" size={18} />
-                  <input 
-                    type={showPass ? 'text' : 'password'} 
-                    value={password} 
-                    onChange={e => setPassword(e.target.value)} 
+            <div className="ic-field">
+               <label className="ic-field__label">{t.accessKeyShort}</label>
+               <div className="ic-input-wrap has-icon">
+                  <Lock size={18} />
+                  <input
+                    type={showPass ? 'text' : 'password'}
+                    value={password}
+                    onChange={e => setPassword(e.target.value)}
                     placeholder="••••••••"
                     required
-                    className="w-full bg-neutral-100/90 dark:bg-black/40 border border-neutral-200 dark:border-white/10 rounded-xl pl-12 pr-12 py-4 text-sm focus:border-[#ff5a1f] outline-none transition-all"
+                    className="ic-input pr-12!"
                   />
-                  <button type="button" onClick={() => setShowPass(!showPass)} className="absolute right-4 top-1/2 -translate-y-1/2 text-neutral-400 transition-colors hover:text-neutral-900 dark:text-white/20 dark:hover:text-white">
+                  <button type="button" onClick={() => setShowPass(!showPass)} className="absolute right-4 top-1/2 -translate-y-1/2 text-fg-muted transition-colors hover:text-fg">
                     {showPass ? <EyeOff size={18}/> : <Eye size={18}/>}
                   </button>
                </div>
             </div>
 
             {displayError && (
-              <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} className="p-4 bg-red-500/10 border border-red-500/30 text-red-400 text-[11px] font-black uppercase tracking-widest rounded-xl text-center">
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="rounded-btn border border-line bg-inset p-4 text-center text-sm text-danger">
                 {t.errLabel}: {displayError}
               </motion.div>
             )}
@@ -254,7 +248,7 @@ function AuthPageContent() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-4 rounded-xl bg-white text-black text-[11px] font-black uppercase tracking-[0.2em] shadow-[0_0_30px_rgba(255,255,255,0.1)] hover:shadow-[0_0_30px_rgba(255,90,31,0.3)] hover:bg-[#ff5a1f] hover:text-white transition-all transform active:scale-[0.98] disabled:opacity-50"
+              className="ic-btn ic-btn--primary ic-btn--lg ic-btn--block"
             >
               {loading
                 ? mode === 'login'
@@ -266,16 +260,16 @@ function AuthPageContent() {
             </button>
 
             <div className="relative py-4">
-               <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-neutral-200 dark:border-white/10"></div></div>
-               <div className="relative flex justify-center text-[8px] font-black uppercase tracking-[0.4em] text-neutral-400 dark:text-white/20">
-                 <span className="bg-zinc-100 px-3 dark:bg-[#0b0c10]">{t.securedConnection}</span>
+               <div className="absolute inset-0 flex items-center"><div className="ic-rule w-full"></div></div>
+               <div className="relative flex justify-center">
+                 <span className="ic-eyebrow bg-card px-3">{t.securedConnection}</span>
                </div>
             </div>
 
             <button
               type="button"
               onClick={() => window.location.assign('/api/auth/google')}
-              className="flex w-full items-center justify-center gap-3 rounded-xl border border-neutral-200 bg-neutral-50/90 py-4 text-[11px] font-black uppercase tracking-[0.15em] text-neutral-900 transition-all hover:bg-neutral-100 dark:border-white/10 dark:bg-white/5 dark:text-white dark:hover:bg-white/10"
+              className="ic-btn ic-btn--secondary ic-btn--lg ic-btn--block"
             >
               <svg className="w-4 h-4" viewBox="0 0 24 24">
                 <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
@@ -291,18 +285,18 @@ function AuthPageContent() {
             <button
               type="button"
               onClick={() => setMode(mode === 'login' ? 'signup' : 'login')}
-              className="text-[10px] font-black uppercase tracking-widest text-neutral-500 dark:text-white/30 hover:text-[#ff5a1f] transition-all"
+              className="text-sm font-medium text-fg-muted transition-colors hover:text-accent-text"
             >
               {mode === 'login' ? t.switchToRegister : t.switchToSignIn}
             </button>
           </div>
         </div>
       </motion.div>
-      
-      {/* Visual Accents */}
-      <div className="mt-8 flex items-center gap-4 text-[9px] font-black uppercase tracking-[0.4em] text-white/10">
+
+      {/* Quiet footer note */}
+      <div className="ic-eyebrow mt-8 flex items-center gap-4">
          <ShieldCheck size={14}/> {t.footerEncrypted}
-         <span className="w-1 h-1 rounded-full bg-white/10"></span>
+         <span className="w-1 h-1 rounded-full bg-line"></span>
          <Globe size={14}/> {t.footerGlobalUplink}
       </div>
     </div>
@@ -311,7 +305,7 @@ function AuthPageContent() {
 
 export default function AuthPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-zinc-100 dark:bg-[#05060a]" />}>
+    <Suspense fallback={<div className="min-h-screen bg-app" />}>
       <AuthPageContent />
     </Suspense>
   );

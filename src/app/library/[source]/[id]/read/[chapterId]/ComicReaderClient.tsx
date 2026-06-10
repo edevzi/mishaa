@@ -49,6 +49,13 @@ interface ComicReaderClientProps {
 
 type ReaderTheme = 'dark' | 'light' | 'sepia';
 
+/**
+ * Reading Room reader chrome palette. Canvas/text values mirror the dedicated
+ * --reader-dark-bg/fg, --reader-light-bg/fg and --reader-sepia-bg/fg tokens in
+ * globals.css (hex literals are required because shellBg also feeds the
+ * <meta name="theme-color"> sync). Accent is the single marigold token.
+ * scrim* fields are the frosted ink chrome used for bars/buttons over imagery.
+ */
 const READER_THEMES: Record<ReaderTheme, {
   shellBg: string;
   canvasBg: string;
@@ -59,39 +66,59 @@ const READER_THEMES: Record<ReaderTheme, {
   muted: string;
   accent: string;
   accentSoft: string;
+  accentText: string;
+  onAccent: string;
+  scrimBg: string;
+  scrimBorder: string;
+  scrimText: string;
 }> = {
   dark: {
-    shellBg: '#050505',
-    canvasBg: '#000000',
-    panelBg: '#0a0a0a',
-    panelAltBg: '#111111',
+    shellBg: '#0C0B10',
+    canvasBg: '#0C0B10',
+    panelBg: '#1C1925',
+    panelAltBg: 'rgba(255,255,255,0.05)',
     border: 'rgba(255,255,255,0.10)',
-    text: '#ffffff',
-    muted: 'rgba(255,255,255,0.40)',
-    accent: '#ff4d00',
-    accentSoft: 'rgba(255,77,0,0.10)',
+    text: '#E9E5EE',
+    muted: 'rgba(233,229,238,0.58)',
+    accent: '#F2994A',
+    accentSoft: 'rgba(242,153,74,0.14)',
+    accentText: '#F7AE5A',
+    onAccent: '#2A1705',
+    scrimBg: 'rgba(12,11,16,0.62)',
+    scrimBorder: 'rgba(255,255,255,0.12)',
+    scrimText: '#F8F5F0',
   },
   light: {
-    shellBg: '#f7f4ee',
-    canvasBg: '#ffffff',
-    panelBg: '#ffffff',
-    panelAltBg: '#f3eee3',
-    border: 'rgba(20,20,20,0.10)',
-    text: '#121212',
-    muted: 'rgba(0,0,0,0.45)',
-    accent: '#ff5a1f',
-    accentSoft: 'rgba(255,90,31,0.12)',
+    shellBg: '#F6F3EC',
+    canvasBg: '#F6F3EC',
+    panelBg: '#FFFFFF',
+    panelAltBg: 'rgba(27,24,34,0.05)',
+    border: 'rgba(27,24,34,0.12)',
+    text: '#221E2D',
+    muted: 'rgba(34,30,45,0.60)',
+    accent: '#F2994A',
+    accentSoft: 'rgba(242,153,74,0.16)',
+    accentText: '#B5611C',
+    onAccent: '#2A1705',
+    scrimBg: 'rgba(27,24,34,0.55)',
+    scrimBorder: 'rgba(255,255,255,0.14)',
+    scrimText: '#F8F5F0',
   },
   sepia: {
-    shellBg: '#f4ecd8',
-    canvasBg: '#f7f0df',
-    panelBg: '#fffaf0',
-    panelAltBg: '#efe3c8',
-    border: 'rgba(67,52,34,0.16)',
-    text: '#433422',
-    muted: 'rgba(67,52,34,0.50)',
-    accent: '#c46b2c',
-    accentSoft: 'rgba(196,107,44,0.12)',
+    shellBg: '#F0E2C6',
+    canvasBg: '#F0E2C6',
+    panelBg: '#FBF6EA',
+    panelAltBg: 'rgba(74,59,38,0.07)',
+    border: 'rgba(74,59,38,0.18)',
+    text: '#4A3B26',
+    muted: 'rgba(74,59,38,0.62)',
+    accent: '#F2994A',
+    accentSoft: 'rgba(242,153,74,0.18)',
+    accentText: '#B5611C',
+    onAccent: '#2A1705',
+    scrimBg: 'rgba(27,24,34,0.55)',
+    scrimBorder: 'rgba(255,255,255,0.14)',
+    scrimText: '#F8F5F0',
   },
 };
 
@@ -1122,7 +1149,7 @@ export default function ComicReaderClient({ initialComic, initialChapters, sourc
 
   if (restrictedSource && !isAgeVerified) {
     return (
-      <div className="min-h-dvh overflow-hidden selection:text-white" style={{ backgroundColor: READER_THEMES[readerTheme].shellBg, color: READER_THEMES[readerTheme].text }}>
+      <div className="min-h-dvh overflow-hidden" style={{ backgroundColor: READER_THEMES[readerTheme].shellBg, color: READER_THEMES[readerTheme].text }}>
         <AnimatePresence>
           <AgeGateOverlay
             title={t.restricted}
@@ -1140,45 +1167,13 @@ export default function ComicReaderClient({ initialComic, initialChapters, sourc
 
   if (metadataLoading) {
     return (
-      <div className="relative min-h-dvh overflow-hidden bg-[#020202] flex items-center justify-center">
-        <div className="pointer-events-none absolute inset-0">
-          <motion.div
-            className="absolute left-1/2 top-1/3 h-[min(100vmin,28rem)] w-[min(100vmin,28rem)] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#ff4d00]/15 blur-[120px]"
-            animate={{ opacity: [0.25, 0.55, 0.25], scale: [1, 1.12, 1] }}
-            transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}
-          />
-          <div
-            className="absolute inset-0 opacity-[0.05]"
-            style={{
-              backgroundImage:
-                'linear-gradient(to right, rgba(255,255,255,0.9) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,0.9) 1px, transparent 1px)',
-              backgroundSize: '40px 40px',
-            }}
-          />
-        </div>
-        <div className="relative z-10 flex flex-col items-center gap-8 px-6">
-          <div className="relative flex h-36 w-36 items-center justify-center">
-            <motion.div
-              animate={{ rotate: 360 }}
-              transition={{ duration: 14, repeat: Infinity, ease: 'linear' }}
-              className="absolute inset-0 rounded-2xl border border-[#ff4d00]/20"
-            />
-            <motion.div
-              animate={{ scale: [1, 1.08, 1], opacity: [0.35, 0.85, 0.35] }}
-              transition={{ duration: 2.4, repeat: Infinity }}
-              className="absolute inset-4 rounded-xl bg-[#ff4d00]/10 blur-xl"
-            />
-            <BookOpen className="relative z-10 h-12 w-12 text-[#ff4d00]" strokeWidth={1.25} />
-          </div>
-          <div className="flex flex-col items-center gap-3 text-center">
-            <Loader2 className="h-5 w-5 text-[#ff4d00]/60 animate-spin" aria-hidden />
-            <p className="text-[11px] font-black uppercase tracking-[0.55em] text-white/90">Preparing library</p>
-            <motion.div
-              className="h-0.5 w-28 rounded-full bg-gradient-to-r from-transparent via-[#ff4d00] to-transparent"
-              animate={{ opacity: [0.35, 1, 0.35], scaleX: [0.75, 1, 0.75] }}
-              transition={{ duration: 1.6, repeat: Infinity }}
-            />
-            <p className="text-[9px] font-bold uppercase tracking-[0.45em] text-white/30">Catalog & chapters</p>
+      <div className="relative flex min-h-dvh items-center justify-center overflow-hidden bg-[#0C0B10]">
+        <div className="flex flex-col items-center gap-5 px-6 text-center">
+          <BookOpen className="h-9 w-9 text-[#E9E5EE]/80" strokeWidth={1.5} aria-hidden />
+          <Loader2 className="h-5 w-5 animate-spin text-[#F2994A]" aria-hidden />
+          <div className="flex flex-col items-center gap-1.5">
+            <p className="font-mono text-[11px] font-medium uppercase tracking-[0.12em] text-[#E9E5EE]/75">Preparing library</p>
+            <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-[#E9E5EE]/40">Catalog & chapters</p>
           </div>
         </div>
       </div>
@@ -1189,7 +1184,7 @@ export default function ComicReaderClient({ initialComic, initialChapters, sourc
 
   return (
     <div
-      className="min-h-screen overflow-hidden selection:text-white"
+      className="min-h-screen overflow-hidden"
       style={{
         backgroundColor: READER_THEMES[readerTheme].shellBg,
         color: READER_THEMES[readerTheme].text,
@@ -1221,125 +1216,31 @@ export default function ComicReaderClient({ initialComic, initialChapters, sourc
       >
         <AnimatePresence mode="wait">
           {readerLoading && (
-            <motion.div 
+            <motion.div
               key="loader"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              transition={{ duration: 0.35 }}
-              className="fixed inset-0 z-[10050] flex flex-col items-center justify-center overflow-hidden bg-[#020202]"
+              transition={{ duration: 0.3, ease: [0.22, 0.61, 0.36, 1] }}
+              className="fixed inset-0 z-[10050] flex flex-col items-center justify-center overflow-hidden bg-[#0C0B10]"
               role="status"
               aria-live="polite"
               aria-busy="true"
             >
-              <div className="pointer-events-none absolute inset-0">
-                <motion.div
-                  className="absolute -left-[20%] top-[10%] h-[min(90vmin,32rem)] w-[min(90vmin,32rem)] rounded-full bg-[#ff4d00]/18 blur-[110px]"
-                  animate={{ opacity: [0.35, 0.7, 0.35], x: [0, 12, 0] }}
-                  transition={{ duration: 7, repeat: Infinity, ease: 'easeInOut' }}
-                />
-                <motion.div
-                  className="absolute -right-[25%] bottom-0 h-[min(80vmin,26rem)] w-[min(80vmin,26rem)] rounded-full bg-orange-400/10 blur-[100px]"
-                  animate={{ opacity: [0.2, 0.5, 0.2] }}
-                  transition={{ duration: 5.5, repeat: Infinity, ease: 'easeInOut' }}
-                />
+              <div className="flex w-full max-w-[min(92vw,24rem)] flex-col items-center gap-5 px-6 text-center">
                 <div
-                  className="absolute inset-0 opacity-[0.045]"
-                  style={{
-                    backgroundImage:
-                      'linear-gradient(to right, rgba(255,255,255,0.85) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,0.85) 1px, transparent 1px)',
-                    backgroundSize: '44px 44px',
-                  }}
+                  className="h-10 w-10 animate-spin rounded-full border-2"
+                  style={{ borderColor: 'rgba(242,153,74,0.25)', borderTopColor: '#F2994A' }}
+                  aria-hidden
                 />
-                <div
-                  className="absolute inset-0 opacity-[0.12]"
-                  style={{
-                    backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.14) 1px, transparent 1px)',
-                    backgroundSize: '10px 10px',
-                  }}
-                />
-              </div>
-
-              {/* Manga-style focus brackets */}
-              <div className="relative mb-14 flex h-[min(52vmin,13.5rem)] w-[min(82vmin,21rem)] items-center justify-center">
-                {(
-                  [
-                    'left-0 top-0 border-l-2 border-t-2 rounded-tl-md',
-                    'right-0 top-0 border-r-2 border-t-2 rounded-tr-md',
-                    'left-0 bottom-0 border-l-2 border-b-2 rounded-bl-md',
-                    'right-0 bottom-0 border-r-2 border-b-2 rounded-br-md',
-                  ] as const
-                ).map((cornerClass, i) => (
-                  <motion.span
-                    key={i}
-                    className={`pointer-events-none absolute h-9 w-9 border-[#ff4d00]/90 ${cornerClass}`}
-                    initial={{ opacity: 0, scale: 0.92 }}
-                    animate={{ opacity: [0.4, 1, 0.4], scale: [0.96, 1.02, 0.96] }}
-                    transition={{
-                      opacity: { delay: i * 0.1, duration: 0.35 },
-                      duration: 2.8,
-                      repeat: Infinity,
-                      ease: 'easeInOut',
-                    }}
-                  />
-                ))}
-
-                {/* Stacked “panels” */}
-                {[0, 1, 2].map((i) => (
-                  <motion.div
-                    key={i}
-                    className="absolute rounded-lg border border-white/12 bg-zinc-950/80 shadow-2xl backdrop-blur-[2px]"
-                    style={{
-                      width: `${78 - i * 9}%`,
-                      height: `${88 - i * 7}%`,
-                      zIndex: i,
-                    }}
-                    initial={{ opacity: 0, y: 16, rotate: -3.5 + i * 1.2 }}
-                    animate={{
-                      opacity: 0.55 - i * 0.14,
-                      y: [0, -3 - i, 0],
-                      rotate: -3.5 + i * 1.2,
-                    }}
-                    transition={{
-                      opacity: { delay: 0.15 + i * 0.1, duration: 0.45 },
-                      y: { duration: 2.8 + i * 0.35, repeat: Infinity, ease: 'easeInOut' },
-                    }}
-                  />
-                ))}
-
-                <motion.div
-                  animate={{ rotate: 360 }}
-                  transition={{ duration: 22, repeat: Infinity, ease: 'linear' }}
-                  className="absolute inset-[18%] rounded-2xl border border-[#ff4d00]/15"
-                />
-                <motion.div
-                  animate={{ scale: [1, 1.06, 1], opacity: [0.55, 1, 0.55] }}
-                  transition={{ duration: 2.2, repeat: Infinity, ease: 'easeInOut' }}
-                  className="relative z-20 flex h-[3.25rem] w-[3.25rem] items-center justify-center rounded-md bg-gradient-to-br from-[#ff4d00] to-[#ff9000] rotate-45 shadow-[0_0_48px_rgba(255,77,0,0.45)]"
-                >
-                  <BookOpen className="h-7 w-7 -rotate-45 text-white/95" strokeWidth={1.35} aria-hidden />
-                </motion.div>
-              </div>
-
-              <div className="relative z-10 flex max-w-[min(92vw,24rem)] flex-col items-center gap-4 px-6 text-center">
-                <p className="line-clamp-2 text-[10px] font-bold uppercase tracking-[0.35em] text-white/45">
+                <p className="line-clamp-2 text-sm font-medium text-[#E9E5EE]">
                   {comic.title}
                 </p>
-                <div className="space-y-2">
-                  <h2 className="text-[11px] font-black uppercase tracking-[0.65em] text-white md:text-[12px]">
-                    Opening chapter
-                  </h2>
-                  <motion.div
-                    className="mx-auto h-0.5 max-w-[10rem] rounded-full bg-gradient-to-r from-transparent via-[#ff4d00] to-transparent"
-                    animate={{ opacity: [0.4, 1, 0.4], scaleX: [0.85, 1, 0.85] }}
-                    transition={{ duration: 1.8, repeat: Infinity }}
-                  />
-                </div>
-                <p className="text-[10px] font-black uppercase tracking-[0.75em] text-[#ff4d00]">
-                  Ch. {chapters[currentChapterIdx]?.chapterNum || '–'}
+                <p className="font-mono text-[11px] font-medium uppercase tracking-[0.12em] text-[#F7AE5A]">
+                  Chapter {chapters[currentChapterIdx]?.chapterNum || '–'}
                 </p>
-                <p className="text-[8px] font-bold uppercase tracking-[0.4em] text-white/25">
-                  Decoding spreads · hang tight
+                <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-[#E9E5EE]/40">
+                  Opening chapter
                 </p>
               </div>
             </motion.div>
@@ -1348,13 +1249,18 @@ export default function ComicReaderClient({ initialComic, initialChapters, sourc
 
         <AnimatePresence>
           {!readerLoading && pages.length > 0 && scrolled && (
-            <motion.div 
-              initial={{ y: -100, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              exit={{ y: -100, opacity: 0 }}
-              className="fixed left-1/2 z-[10045] flex -translate-x-1/2 items-center justify-center rounded-2xl border border-white/10 bg-white/5 px-8 py-3 shadow-2xl backdrop-blur-xl pointer-events-none top-[max(0.75rem,env(safe-area-inset-top,0px))]"
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.22, ease: [0.22, 0.61, 0.36, 1] }}
+              className="fixed left-1/2 z-[10045] flex -translate-x-1/2 items-center justify-center rounded-full border px-5 py-2 backdrop-blur-md pointer-events-none top-[max(0.75rem,env(safe-area-inset-top,0px))]"
+              style={{
+                backgroundColor: READER_THEMES[readerTheme].scrimBg,
+                borderColor: READER_THEMES[readerTheme].scrimBorder,
+              }}
             >
-               <div className="text-[11px] font-black uppercase tracking-widest text-white/80">
+               <div className="font-mono text-[11px] font-medium uppercase tracking-[0.12em]" style={{ color: READER_THEMES[readerTheme].scrimText }}>
                   Chapter {chapters[currentChapterIdx]?.chapterNum}
                </div>
             </motion.div>
@@ -1364,60 +1270,61 @@ export default function ComicReaderClient({ initialComic, initialChapters, sourc
         <AnimatePresence>
           {uiVisible && pages.length > 0 && (
             <>
-              <motion.div 
+              <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
+                transition={{ duration: 0.22, ease: [0.22, 0.61, 0.36, 1] }}
                 onClick={() => setUiVisible(false)}
-                className="fixed inset-0 z-[10020] bg-black/70 backdrop-blur-sm"
+                className="fixed inset-0 z-[10020] bg-[rgba(12,11,16,0.6)] backdrop-blur-sm"
               />
-              <motion.div 
-                initial={{ y: "100%" }}
-                animate={{ y: 0 }}
-                exit={{ y: "100%" }}
-                transition={{ type: "spring", damping: 25, stiffness: 200 }}
-                className="fixed bottom-0 left-0 right-0 z-[10030] bg-[#0a0a0a] border-t border-white/10 rounded-t-3xl shadow-[0_-20px_50px_rgba(0,0,0,0.8)] pb-[max(env(safe-area-inset-bottom),2rem)] pt-6 px-6 md:px-12 flex flex-col gap-8 max-h-[85vh] overflow-y-auto"
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.26, ease: [0.22, 0.61, 0.36, 1] }}
+                className="fixed bottom-0 left-0 right-0 z-[10030] bg-[#16131C] text-[#F8F5F0] border-t border-white/10 rounded-t-[20px] shadow-[0_-18px_48px_rgba(0,0,0,0.6)] pb-[max(env(safe-area-inset-bottom),2rem)] pt-6 px-6 md:px-12 flex flex-col gap-8 max-h-[85vh] overflow-y-auto"
               >
-                <div className="w-12 h-1.5 bg-white/20 rounded-full mx-auto mb-2" />
+                <div className="w-10 h-1 bg-white/15 rounded-full mx-auto mb-2" />
                 <div className="flex items-center justify-between border-b border-white/10 pb-4">
                   <div className="flex-1 min-w-0 pr-4">
-                    <div className="text-[10px] font-bold uppercase tracking-[0.4em] text-[#ff4d00]">Now reading</div>
-                    <div className="text-[14px] md:text-[18px] font-black uppercase tracking-tight truncate text-white">{comic.title}</div>
+                    <div className="font-mono text-[11px] font-medium uppercase tracking-[0.12em] text-white/45">Now reading</div>
+                    <div className="mt-1 truncate text-base font-semibold text-[#F8F5F0] md:text-lg">{comic.title}</div>
                   </div>
-                  <button 
-                    onClick={exitToComicDetail} 
-                    className="flex-shrink-0 w-12 h-12 flex items-center justify-center bg-red-500/10 border border-red-500/30 text-red-500 rounded-xl"
+                  <button
+                    onClick={exitToComicDetail}
+                    className="flex-shrink-0 w-11 h-11 flex items-center justify-center rounded-btn border border-white/10 bg-white/5 text-white/70 transition-colors hover:text-white"
                   >
-                    <X size={24}/>
+                    <X size={20}/>
                   </button>
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                   <div className="space-y-8">
                      <div className="space-y-4">
-                       <div className="text-[11px] font-black uppercase tracking-[0.2em] text-white/40">Reading Mode</div>
-                       <div className="flex items-center gap-2 bg-white/5 p-1.5 rounded-2xl">
-                          <button aria-label="Classic reading mode" onClick={() => { setViewMode('classic'); setUiVisible(false); }} className={`flex-1 flex items-center justify-center gap-2 py-4 rounded-xl text-[11px] font-black uppercase transition-all ${viewMode === 'classic' ? 'bg-[#ff4d00] text-white' : 'text-white/40 hover:text-white'}`}>
+                       <div className="font-mono text-[11px] font-medium uppercase tracking-[0.12em] text-white/45">Reading mode</div>
+                       <div className="flex items-center gap-0.5 rounded-full border border-white/10 bg-white/5 p-1">
+                          <button aria-label="Classic reading mode" onClick={() => { setViewMode('classic'); setUiVisible(false); }} className={`flex-1 flex items-center justify-center gap-2 rounded-full py-3 text-sm font-medium transition-colors ${viewMode === 'classic' ? 'bg-[#F2994A] text-[#2A1705]' : 'text-white/55 hover:text-white'}`}>
                             Classic
                           </button>
-                          <button aria-label="Journal reading mode" onClick={() => { setViewMode('journal'); setUiVisible(false); }} className={`flex-1 flex items-center justify-center gap-2 py-4 rounded-xl text-[11px] font-black uppercase transition-all ${viewMode === 'journal' ? 'bg-[#ff4d00] text-white' : 'text-white/40 hover:text-white'}`}>
+                          <button aria-label="Journal reading mode" onClick={() => { setViewMode('journal'); setUiVisible(false); }} className={`flex-1 flex items-center justify-center gap-2 rounded-full py-3 text-sm font-medium transition-colors ${viewMode === 'journal' ? 'bg-[#F2994A] text-[#2A1705]' : 'text-white/55 hover:text-white'}`}>
                             Journal
                           </button>
-                          <button aria-label="Flow reading mode" onClick={() => { setViewMode('flow'); setUiVisible(false); }} className={`flex-1 flex items-center justify-center gap-2 py-4 rounded-xl text-[11px] font-black uppercase transition-all ${viewMode === 'flow' ? 'bg-[#ff4d00] text-white' : 'text-white/40 hover:text-white'}`}>
+                          <button aria-label="Flow reading mode" onClick={() => { setViewMode('flow'); setUiVisible(false); }} className={`flex-1 flex items-center justify-center gap-2 rounded-full py-3 text-sm font-medium transition-colors ${viewMode === 'flow' ? 'bg-[#F2994A] text-[#2A1705]' : 'text-white/55 hover:text-white'}`}>
                             Flow
                           </button>
                        </div>
                      </div>
                      <div className="space-y-4">
-                       <div className="text-[11px] font-black uppercase tracking-[0.2em] text-white/40 flex items-center justify-between">
+                       <div className="font-mono text-[11px] font-medium uppercase tracking-[0.12em] text-white/45 flex items-center justify-between">
                           <span>Chapter {chapters[currentChapterIdx]?.chapterNum || '0'}</span>
-                          <span className="text-[#ff4d00]">{chapters.length} Total</span>
+                          <span className="text-[#F7AE5A]">{chapters.length} total</span>
                        </div>
                        <div className="flex items-center gap-3">
-                          <button aria-label="Previous chapter" onClick={() => { prevChapter(); setUiVisible(false); }} disabled={currentChapterIdx === 0} className="flex-1 h-14 bg-white/5 border border-white/10 rounded-xl text-[11px] font-black uppercase disabled:opacity-20 transition-all flex items-center justify-center gap-2">
-                            <ChevronLeft size={18} /> Prev
+                          <button aria-label="Previous chapter" onClick={() => { prevChapter(); setUiVisible(false); }} disabled={currentChapterIdx === 0} className="flex-1 h-12 rounded-btn border border-white/10 bg-white/5 text-sm font-medium text-white/80 disabled:opacity-30 transition-colors flex items-center justify-center gap-2">
+                            <ChevronLeft size={18} /> Previous
                           </button>
-                          <button aria-label="Next chapter" onClick={() => { nextChapter(); setUiVisible(false); }} disabled={currentChapterIdx === chapters.length - 1} className="flex-1 h-14 bg-[#ff4d00] text-white rounded-xl text-[11px] font-black uppercase disabled:opacity-20 transition-all flex items-center justify-center gap-2">
+                          <button aria-label="Next chapter" onClick={() => { nextChapter(); setUiVisible(false); }} disabled={currentChapterIdx === chapters.length - 1} className="flex-1 h-12 rounded-btn bg-[#F2994A] text-[#2A1705] text-sm font-semibold disabled:opacity-30 transition-colors flex items-center justify-center gap-2">
                             Next <ChevronRight size={18} />
                           </button>
                        </div>
@@ -1425,17 +1332,17 @@ export default function ComicReaderClient({ initialComic, initialChapters, sourc
                   </div>
                   <div className="space-y-8">
                      <div className="space-y-4">
-                       <div className="flex items-center justify-between text-[11px] font-black uppercase tracking-[0.2em]">
-                         <span className="text-white/40">Progress</span>
-                         <span className="text-[#ff4d00]">
-                           {viewMode === 'flow' ? `${Math.round(scrollProgress)}%` : `Page ${currentPage + 1} of ${pages.length}`}
+                       <div className="flex items-center justify-between font-mono text-[11px] font-medium uppercase tracking-[0.12em]">
+                         <span className="text-white/45">Progress</span>
+                         <span className="text-[#F7AE5A]">
+                           {viewMode === 'flow' ? `${Math.round(scrollProgress)}%` : `Page ${currentPage + 1} / ${pages.length}`}
                          </span>
                        </div>
-                       <input 
-                         type="range" 
-                         min="0" 
-                         max={pages.length - 1} 
-                         value={viewMode === 'flow' ? Math.floor((scrollProgress / 100) * (pages.length - 1)) : currentPage} 
+                       <input
+                         type="range"
+                         min="0"
+                         max={pages.length - 1}
+                         value={viewMode === 'flow' ? Math.floor((scrollProgress / 100) * (pages.length - 1)) : currentPage}
                          onChange={(e) => {
                            const val = parseInt(e.target.value);
                            setCurrentPage(val);
@@ -1445,17 +1352,17 @@ export default function ComicReaderClient({ initialComic, initialChapters, sourc
                              canvasRef.current?.scrollTo({ top: 0, behavior: 'instant' });
                            }
                          }}
-                         className="w-full h-2 bg-white/10 appearance-none cursor-pointer accent-[#ff4d00] rounded-full"
+                         className="w-full h-1.5 bg-white/10 appearance-none cursor-pointer accent-[#F2994A] rounded-full"
                        />
                      </div>
                      <div className="space-y-4">
-                       <div className="text-[11px] font-black uppercase tracking-[0.2em] text-white/40">Tools</div>
+                       <div className="font-mono text-[11px] font-medium uppercase tracking-[0.12em] text-white/45">Tools</div>
                        <div className="flex items-center gap-3">
-                          <button aria-label="Open page overview" onClick={() => setShowGrid(true)} className="flex-1 h-14 flex items-center justify-center gap-2 bg-white/5 border border-white/10 rounded-xl text-[11px] font-black uppercase">
+                          <button aria-label="Open page overview" onClick={() => setShowGrid(true)} className="flex-1 h-12 flex items-center justify-center gap-2 rounded-btn border border-white/10 bg-white/5 text-sm font-medium text-white/80 transition-colors hover:text-white">
                              <List size={18}/> Overview
                           </button>
                           {viewMode === 'flow' && (
-                            <button aria-label="Scroll to top" onClick={() => { setUiVisible(false); canvasRef.current?.scrollTo({ top: 0, behavior: 'smooth' }); }} className="flex-1 h-14 bg-white/5 border border-white/10 rounded-xl flex items-center justify-center gap-2 text-[11px] font-black uppercase">
+                            <button aria-label="Scroll to top" onClick={() => { setUiVisible(false); canvasRef.current?.scrollTo({ top: 0, behavior: 'smooth' }); }} className="flex-1 h-12 flex items-center justify-center gap-2 rounded-btn border border-white/10 bg-white/5 text-sm font-medium text-white/80 transition-colors hover:text-white">
                               <ChevronUp size={18}/> Top
                             </button>
                           )}
@@ -1470,14 +1377,14 @@ export default function ComicReaderClient({ initialComic, initialChapters, sourc
 
         {pages.length > 0 && viewMode !== 'flow' && !readerLoading && (
           <div
-            className={`fixed z-[10055] flex max-w-[calc(100vw-env(safe-area-inset-left,0px)-env(safe-area-inset-right,0px)-1.25rem)] touch-manipulation items-center gap-0.5 overflow-x-auto overscroll-x-contain rounded-2xl border py-1 pl-1 pr-2 shadow-xl backdrop-blur-md [-ms-overflow-style:none] [scrollbar-width:none] transition-all duration-300 sm:max-w-[calc(100vw-8rem)] sm:overflow-visible sm:px-1.5 sm:pr-1.5 bottom-[max(1rem,calc(env(safe-area-inset-bottom,0px)+0.75rem))] left-[max(0.75rem,env(safe-area-inset-left,0px))] sm:bottom-[max(2rem,env(safe-area-inset-bottom,0px))] sm:left-8 [&::-webkit-scrollbar]:hidden ${
+            className={`fixed z-[10055] flex max-w-[calc(100vw-env(safe-area-inset-left,0px)-env(safe-area-inset-right,0px)-1.25rem)] touch-manipulation items-center gap-0.5 overflow-x-auto overscroll-x-contain rounded-full border py-1 pl-1 pr-2 backdrop-blur-md [-ms-overflow-style:none] [scrollbar-width:none] transition-opacity duration-300 sm:max-w-[calc(100vw-8rem)] sm:overflow-visible sm:px-1.5 sm:pr-1.5 bottom-[max(1rem,calc(env(safe-area-inset-bottom,0px)+0.75rem))] left-[max(0.75rem,env(safe-area-inset-left,0px))] sm:bottom-[max(2rem,env(safe-area-inset-bottom,0px))] sm:left-8 [&::-webkit-scrollbar]:hidden ${
               showSettings || showGrid || showReaderHelp || uiVisible
-                ? 'pointer-events-none opacity-0 scale-95'
-                : 'opacity-100 scale-100'
+                ? 'pointer-events-none opacity-0'
+                : 'opacity-100'
             }`}
             style={{
-              backgroundColor: READER_THEMES[readerTheme].panelBg,
-              borderColor: READER_THEMES[readerTheme].border,
+              backgroundColor: READER_THEMES[readerTheme].scrimBg,
+              borderColor: READER_THEMES[readerTheme].scrimBorder,
             }}
             title={t.readerZoomHint}
             role="toolbar"
@@ -1486,25 +1393,25 @@ export default function ComicReaderClient({ initialComic, initialChapters, sourc
             <button
               type="button"
               aria-label="Zoom out"
-              className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl transition-opacity disabled:opacity-30 sm:h-auto sm:w-auto sm:p-2.5"
+              className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full transition-opacity disabled:opacity-30 sm:h-auto sm:w-auto sm:p-2.5"
               disabled={readerZoom <= 0.66}
-              style={{ color: READER_THEMES[readerTheme].text }}
+              style={{ color: READER_THEMES[readerTheme].scrimText }}
               onClick={() => setReaderZoom((z) => z - READER_ZOOM_STEP)}
             >
               <ZoomOut size={18} aria-hidden />
             </button>
             <span
-              className="min-w-10 flex-shrink-0 text-center text-[10px] font-black tabular-nums sm:min-w-[3.25rem] sm:text-[11px]"
-              style={{ color: READER_THEMES[readerTheme].text }}
+              className="min-w-10 flex-shrink-0 text-center font-mono text-[10px] font-medium tabular-nums sm:min-w-[3.25rem] sm:text-[11px]"
+              style={{ color: READER_THEMES[readerTheme].scrimText }}
             >
               {Math.round(readerZoom * 100)}%
             </span>
             <button
               type="button"
               aria-label="Zoom in"
-              className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl transition-opacity disabled:opacity-30 sm:h-auto sm:w-auto sm:p-2.5"
+              className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full transition-opacity disabled:opacity-30 sm:h-auto sm:w-auto sm:p-2.5"
               disabled={readerZoom >= 2.98}
-              style={{ color: READER_THEMES[readerTheme].text }}
+              style={{ color: READER_THEMES[readerTheme].scrimText }}
               onClick={() => setReaderZoom((z) => z + READER_ZOOM_STEP)}
             >
               <ZoomIn size={18} aria-hidden />
@@ -1512,22 +1419,22 @@ export default function ComicReaderClient({ initialComic, initialChapters, sourc
             <button
               type="button"
               aria-label={t.readerZoomReset}
-              className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl sm:h-auto sm:w-auto sm:p-2.5"
-              style={{ color: READER_THEMES[readerTheme].muted }}
+              className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full sm:h-auto sm:w-auto sm:p-2.5"
+              style={{ color: 'rgba(248,245,240,0.65)' }}
               onClick={() => setReaderZoom(1)}
             >
               <RotateCcw size={17} aria-hidden />
             </button>
             <span
-              className="mx-0.5 h-6 w-px shrink-0 self-center opacity-40"
-              style={{ backgroundColor: READER_THEMES[readerTheme].border }}
+              className="mx-0.5 h-6 w-px shrink-0 self-center"
+              style={{ backgroundColor: READER_THEMES[readerTheme].scrimBorder }}
               aria-hidden
             />
             <button
               type="button"
               aria-label={isFullscreen ? t.readerFullscreenExit : t.readerFullscreenEnter}
-              className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl sm:h-auto sm:w-auto sm:p-2.5"
-              style={{ color: READER_THEMES[readerTheme].text }}
+              className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full sm:h-auto sm:w-auto sm:p-2.5"
+              style={{ color: READER_THEMES[readerTheme].scrimText }}
               onClick={() => void toggleFullscreen()}
             >
               {isFullscreen ? <Minimize2 size={18} aria-hidden /> : <Maximize2 size={18} aria-hidden />}
@@ -1537,14 +1444,22 @@ export default function ComicReaderClient({ initialComic, initialChapters, sourc
 
         {pages.length > 0 && (
           <div
-            className={`fixed z-[10040] touch-manipulation transition-all duration-300 bottom-[max(1rem,env(safe-area-inset-bottom,0px))] right-[max(1rem,env(safe-area-inset-right,0px))] sm:bottom-8 sm:right-8 ${
+            className={`fixed z-[10040] touch-manipulation transition-opacity duration-300 bottom-[max(1rem,env(safe-area-inset-bottom,0px))] right-[max(1rem,env(safe-area-inset-right,0px))] sm:bottom-8 sm:right-8 ${
               uiVisible || showSettings || !settingsFabIdle
-                ? 'opacity-0 scale-50 pointer-events-none'
-                : 'opacity-100 scale-100'
+                ? 'opacity-0 pointer-events-none'
+                : 'opacity-100'
             }`}
           >
-             <button onClick={() => setShowSettings(true)} className="flex h-14 w-14 items-center justify-center rounded-full border border-[#ff4d00]/50 bg-[#ff4d00] text-white shadow-[0_10px_30px_rgba(255,77,0,0.5)] transition-all active:scale-90 sm:h-16 sm:w-16">
-               <Settings className="h-6 w-6 sm:h-7 sm:w-7" aria-hidden />
+             <button
+               onClick={() => setShowSettings(true)}
+               className="flex h-14 w-14 items-center justify-center rounded-full border backdrop-blur-md transition-colors"
+               style={{
+                 backgroundColor: READER_THEMES[readerTheme].scrimBg,
+                 borderColor: READER_THEMES[readerTheme].scrimBorder,
+                 color: READER_THEMES[readerTheme].scrimText,
+               }}
+             >
+               <Settings className="h-6 w-6" aria-hidden />
              </button>
           </div>
         )}
@@ -1553,12 +1468,13 @@ export default function ComicReaderClient({ initialComic, initialChapters, sourc
         <AnimatePresence>
           {showSettings && (
             <div className="fixed inset-0 z-[20000] flex items-center justify-center p-4">
-              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowSettings(false)} className="absolute inset-0 backdrop-blur-sm" style={{ backgroundColor: 'rgba(0,0,0,0.72)' }} />
-              <motion.div 
-                initial={{ y: 50, opacity: 0 }} 
-                animate={{ y: 0, opacity: 1 }} 
-                exit={{ y: 50, opacity: 0 }} 
-                className="relative w-full max-w-md rounded-3xl p-8 space-y-10 shadow-2xl"
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.22, ease: [0.22, 0.61, 0.36, 1] }} onClick={() => setShowSettings(false)} className="absolute inset-0 backdrop-blur-sm" style={{ backgroundColor: 'rgba(12,11,16,0.6)' }} />
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.26, ease: [0.22, 0.61, 0.36, 1] }}
+                className="relative w-full max-w-md rounded-sheet p-6 sm:p-8 space-y-7 shadow-2xl max-h-[88vh] overflow-y-auto"
                 style={{
                   backgroundColor: READER_THEMES[readerTheme].panelBg,
                   border: `1px solid ${READER_THEMES[readerTheme].border}`,
@@ -1567,12 +1483,12 @@ export default function ComicReaderClient({ initialComic, initialChapters, sourc
               >
                 <div className="flex items-center justify-between">
                   <div>
-                    <div className="text-[10px] font-black uppercase tracking-[0.4em]" style={{ color: READER_THEMES[readerTheme].accent }}>{t.readerEyebrow}</div>
-                    <h3 className="mt-1 text-2xl font-black uppercase tracking-tight italic">{t.readerSettingsModalTitle}</h3>
+                    <div className="ic-eyebrow" style={{ color: READER_THEMES[readerTheme].muted }}>{t.readerEyebrow}</div>
+                    <h3 className="mt-1 font-display text-2xl font-normal">{t.readerSettingsModalTitle}</h3>
                   </div>
                   <button
                     onClick={() => setShowSettings(false)}
-                    className="w-10 h-10 flex items-center justify-center rounded-xl"
+                    className="w-10 h-10 flex items-center justify-center rounded-btn transition-colors"
                     style={{
                       backgroundColor: READER_THEMES[readerTheme].panelAltBg,
                       border: `1px solid ${READER_THEMES[readerTheme].border}`,
@@ -1583,39 +1499,39 @@ export default function ComicReaderClient({ initialComic, initialChapters, sourc
                   </button>
                 </div>
 
-                <div className="space-y-8">
+                <div className="space-y-7">
                   {/* Theme Selector */}
-                  <div className="space-y-4">
-                    <div className="text-[10px] font-black uppercase tracking-[0.2em]" style={{ color: READER_THEMES[readerTheme].muted }}>{t.readerInterfaceThemeLabel}</div>
+                  <div className="space-y-3">
+                    <div className="ic-eyebrow" style={{ color: READER_THEMES[readerTheme].muted }}>{t.readerInterfaceThemeLabel}</div>
                     <div className="grid grid-cols-3 gap-3">
                       {[
-                        { id: 'dark', bg: 'bg-black', label: t.readerThemeDark },
-                        { id: 'sepia', bg: 'bg-[#f4ecd8]', label: t.readerThemeSepia },
-                        { id: 'light', bg: 'bg-white', label: t.readerThemeLight }
+                        { id: 'dark', bg: 'bg-[#0C0B10]', label: t.readerThemeDark },
+                        { id: 'sepia', bg: 'bg-[#F0E2C6]', label: t.readerThemeSepia },
+                        { id: 'light', bg: 'bg-[#F6F3EC]', label: t.readerThemeLight }
                       ].map((themeOption) => (
-                        <button 
-                          key={themeOption.id} 
+                        <button
+                          key={themeOption.id}
                           onClick={() => { setReaderTheme(themeOption.id as ReaderTheme); localStorage.setItem('reader_theme', themeOption.id); }}
-                          className="flex flex-col items-center gap-2 p-3 border transition-all"
+                          className="flex flex-col items-center gap-2 rounded-card border p-3 transition-colors"
                           style={readerTheme === themeOption.id
                             ? { borderColor: READER_THEMES[readerTheme].accent, backgroundColor: READER_THEMES[readerTheme].accentSoft }
                             : { borderColor: READER_THEMES[readerTheme].border, backgroundColor: READER_THEMES[readerTheme].panelAltBg }
                           }
                         >
-                          <div className={`w-8 h-8 rounded-full ${themeOption.bg} border border-white/10`} />
-                          <span className="text-[9px] font-black uppercase tracking-widest" style={{ color: readerTheme === themeOption.id ? READER_THEMES[readerTheme].text : READER_THEMES[readerTheme].muted }}>{themeOption.label}</span>
+                          <div className={`w-8 h-8 rounded-full border ${themeOption.bg}`} style={{ borderColor: READER_THEMES[readerTheme].border }} />
+                          <span className="text-xs font-medium" style={{ color: readerTheme === themeOption.id ? READER_THEMES[readerTheme].text : READER_THEMES[readerTheme].muted }}>{themeOption.label}</span>
                         </button>
                       ))}
                     </div>
                   </div>
 
                   {/* Reading Direction */}
-                  <div className="space-y-4">
-                    <div className="text-[10px] font-black uppercase tracking-[0.2em]" style={{ color: READER_THEMES[readerTheme].muted }}>{t.readerReadingDirectionLabel}</div>
+                  <div className="space-y-3">
+                    <div className="ic-eyebrow" style={{ color: READER_THEMES[readerTheme].muted }}>{t.readerReadingDirectionLabel}</div>
                     <div className="grid grid-cols-2 gap-3">
-                      <button 
+                      <button
                         onClick={() => { setReadingDirection('ltr'); localStorage.setItem('reading_direction', 'ltr'); }}
-                        className="py-4 border text-[10px] font-black uppercase tracking-widest transition-all"
+                        className="rounded-btn border py-3.5 text-sm font-medium transition-colors"
                         style={readingDirection === 'ltr'
                           ? { borderColor: READER_THEMES[readerTheme].accent, backgroundColor: READER_THEMES[readerTheme].accentSoft, color: READER_THEMES[readerTheme].text }
                           : { borderColor: READER_THEMES[readerTheme].border, backgroundColor: READER_THEMES[readerTheme].panelAltBg, color: READER_THEMES[readerTheme].muted }
@@ -1623,9 +1539,9 @@ export default function ComicReaderClient({ initialComic, initialChapters, sourc
                       >
                         {t.readerDirectionLtr}
                       </button>
-                      <button 
+                      <button
                         onClick={() => { setReadingDirection('rtl'); localStorage.setItem('reading_direction', 'rtl'); }}
-                        className="py-4 border text-[10px] font-black uppercase tracking-widest transition-all"
+                        className="rounded-btn border py-3.5 text-sm font-medium transition-colors"
                         style={readingDirection === 'rtl'
                           ? { borderColor: READER_THEMES[readerTheme].accent, backgroundColor: READER_THEMES[readerTheme].accentSoft, color: READER_THEMES[readerTheme].text }
                           : { borderColor: READER_THEMES[readerTheme].border, backgroundColor: READER_THEMES[readerTheme].panelAltBg, color: READER_THEMES[readerTheme].muted }
@@ -1637,34 +1553,34 @@ export default function ComicReaderClient({ initialComic, initialChapters, sourc
                   </div>
 
                   {/* View Modes */}
-                  <div className="space-y-4">
-                    <div className="text-[10px] font-bold uppercase tracking-[0.2em]" style={{ color: READER_THEMES[readerTheme].muted }}>{t.readerLayoutSectionTitle}</div>
-                    <div className="grid grid-cols-3 gap-2">
-                       <button onClick={() => setViewMode('classic')} className="py-4 text-[9px] font-black uppercase tracking-widest border transition-all" style={viewMode === 'classic'
-                         ? { borderColor: READER_THEMES[readerTheme].accent, backgroundColor: READER_THEMES[readerTheme].accentSoft, color: READER_THEMES[readerTheme].text }
-                         : { borderColor: READER_THEMES[readerTheme].border, backgroundColor: READER_THEMES[readerTheme].panelAltBg, color: READER_THEMES[readerTheme].muted }
+                  <div className="space-y-3">
+                    <div className="ic-eyebrow" style={{ color: READER_THEMES[readerTheme].muted }}>{t.readerLayoutSectionTitle}</div>
+                    <div className="flex items-center gap-0.5 rounded-full border p-1" style={{ borderColor: READER_THEMES[readerTheme].border, backgroundColor: READER_THEMES[readerTheme].panelAltBg }}>
+                       <button onClick={() => setViewMode('classic')} className="flex-1 rounded-full py-2.5 text-sm font-medium transition-colors" style={viewMode === 'classic'
+                         ? { backgroundColor: READER_THEMES[readerTheme].accentSoft, color: READER_THEMES[readerTheme].accentText }
+                         : { color: READER_THEMES[readerTheme].muted }
                        }>{t.readerViewClassic}</button>
-                       <button onClick={() => setViewMode('journal')} className="py-4 text-[9px] font-black uppercase tracking-widest border transition-all" style={viewMode === 'journal'
-                         ? { borderColor: READER_THEMES[readerTheme].accent, backgroundColor: READER_THEMES[readerTheme].accentSoft, color: READER_THEMES[readerTheme].text }
-                         : { borderColor: READER_THEMES[readerTheme].border, backgroundColor: READER_THEMES[readerTheme].panelAltBg, color: READER_THEMES[readerTheme].muted }
+                       <button onClick={() => setViewMode('journal')} className="flex-1 rounded-full py-2.5 text-sm font-medium transition-colors" style={viewMode === 'journal'
+                         ? { backgroundColor: READER_THEMES[readerTheme].accentSoft, color: READER_THEMES[readerTheme].accentText }
+                         : { color: READER_THEMES[readerTheme].muted }
                        }>{t.readerViewJournal}</button>
-                       <button onClick={() => setViewMode('flow')} className="py-4 text-[9px] font-black uppercase tracking-widest border transition-all" style={viewMode === 'flow'
-                         ? { borderColor: READER_THEMES[readerTheme].accent, backgroundColor: READER_THEMES[readerTheme].accentSoft, color: READER_THEMES[readerTheme].text }
-                         : { borderColor: READER_THEMES[readerTheme].border, backgroundColor: READER_THEMES[readerTheme].panelAltBg, color: READER_THEMES[readerTheme].muted }
+                       <button onClick={() => setViewMode('flow')} className="flex-1 rounded-full py-2.5 text-sm font-medium transition-colors" style={viewMode === 'flow'
+                         ? { backgroundColor: READER_THEMES[readerTheme].accentSoft, color: READER_THEMES[readerTheme].accentText }
+                         : { color: READER_THEMES[readerTheme].muted }
                        }>{t.readerViewFlow}</button>
                     </div>
                   </div>
 
                   {/* Page overview (thumbnail grid) */}
-                  <div className="space-y-4">
-                    <div className="text-[10px] font-black uppercase tracking-[0.2em]" style={{ color: READER_THEMES[readerTheme].muted }}>{t.readerPageOverviewLabel}</div>
+                  <div className="space-y-3">
+                    <div className="ic-eyebrow" style={{ color: READER_THEMES[readerTheme].muted }}>{t.readerPageOverviewLabel}</div>
                     <button
                       type="button"
                       onClick={() => {
                         setShowSettings(false);
                         setShowGrid(true);
                       }}
-                      className="w-full py-4 border text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2"
+                      className="w-full rounded-btn border py-3.5 text-sm font-medium transition-colors flex items-center justify-center gap-2"
                       style={{
                         borderColor: READER_THEMES[readerTheme].border,
                         backgroundColor: READER_THEMES[readerTheme].panelAltBg,
@@ -1682,7 +1598,7 @@ export default function ComicReaderClient({ initialComic, initialChapters, sourc
                       setShowSettings(false);
                       setShowReaderHelp(true);
                     }}
-                    className="w-full py-4 border text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2"
+                    className="w-full rounded-btn border py-3.5 text-sm font-medium transition-colors flex items-center justify-center gap-2"
                     style={{
                       borderColor: READER_THEMES[readerTheme].border,
                       backgroundColor: READER_THEMES[readerTheme].panelAltBg,
@@ -1693,11 +1609,11 @@ export default function ComicReaderClient({ initialComic, initialChapters, sourc
                   </button>
 
                   {/* Fullscreen */}
-                  <div className="space-y-4">
-                    <div className="text-[10px] font-black uppercase tracking-[0.2em]" style={{ color: READER_THEMES[readerTheme].muted }}>{t.readerFullscreenSectionTitle}</div>
+                  <div className="space-y-3">
+                    <div className="ic-eyebrow" style={{ color: READER_THEMES[readerTheme].muted }}>{t.readerFullscreenSectionTitle}</div>
                     <button
                       onClick={() => void toggleFullscreen()}
-                      className="w-full py-4 border text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2"
+                      className="w-full rounded-btn border py-3.5 text-sm font-medium transition-colors flex items-center justify-center gap-2"
                       style={isFullscreen
                         ? { borderColor: READER_THEMES[readerTheme].accent, backgroundColor: READER_THEMES[readerTheme].accentSoft, color: READER_THEMES[readerTheme].text }
                         : { borderColor: READER_THEMES[readerTheme].border, backgroundColor: READER_THEMES[readerTheme].panelAltBg, color: READER_THEMES[readerTheme].muted }
@@ -1716,9 +1632,10 @@ export default function ComicReaderClient({ initialComic, initialChapters, sourc
         <AnimatePresence>
           {!readerLoading && resumeOfferPage !== null && resumeOfferPage > 0 && (
             <motion.div
-              initial={{ y: 40, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              exit={{ y: 40, opacity: 0 }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.26, ease: [0.22, 0.61, 0.36, 1] }}
               className="fixed left-4 right-4 z-[10056] flex flex-col items-stretch gap-3 sm:left-1/2 sm:right-auto sm:w-[min(92vw,24rem)] sm:-translate-x-1/2"
               style={{
                 paddingBottom: 'max(env(safe-area-inset-bottom, 0px), 0.5rem)',
@@ -1729,21 +1646,21 @@ export default function ComicReaderClient({ initialComic, initialChapters, sourc
               }}
             >
               <div
-                className="rounded-2xl border px-4 py-3 shadow-2xl backdrop-blur-xl"
+                className="rounded-card border px-4 py-3.5 shadow-2xl"
                 style={{
                   backgroundColor: READER_THEMES[readerTheme].panelBg,
                   borderColor: READER_THEMES[readerTheme].border,
                   color: READER_THEMES[readerTheme].text,
                 }}
               >
-                <p className="text-center text-[11px] font-black uppercase tracking-wide">
+                <p className="text-center text-sm font-medium">
                   {t.readerResumePrompt.replace('{page}', String(resumeOfferPage + 1))}
                 </p>
                 <div className="mt-3 flex gap-2">
                   <button
                     type="button"
-                    className="flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest"
-                    style={{ backgroundColor: READER_THEMES[readerTheme].accent, color: '#fff' }}
+                    className="flex-1 py-2.5 rounded-btn text-sm font-semibold transition-colors"
+                    style={{ backgroundColor: READER_THEMES[readerTheme].accent, color: READER_THEMES[readerTheme].onAccent }}
                     onClick={() => {
                       if (savedPageIndex !== null) {
                         resumeDismissGateRef.current = `${chapterId}:${savedPageIndex}`;
@@ -1766,7 +1683,7 @@ export default function ComicReaderClient({ initialComic, initialChapters, sourc
                   </button>
                   <button
                     type="button"
-                    className="flex-1 py-3 rounded-xl border text-[10px] font-black uppercase tracking-widest"
+                    className="flex-1 py-2.5 rounded-btn border text-sm font-medium transition-colors"
                     style={{
                       borderColor: READER_THEMES[readerTheme].border,
                       color: READER_THEMES[readerTheme].muted,
@@ -1796,15 +1713,17 @@ export default function ComicReaderClient({ initialComic, initialChapters, sourc
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
+                transition={{ duration: 0.22, ease: [0.22, 0.61, 0.36, 1] }}
                 onClick={() => setShowReaderHelp(false)}
                 className="absolute inset-0 backdrop-blur-sm"
-                style={{ backgroundColor: 'rgba(0,0,0,0.72)' }}
+                style={{ backgroundColor: 'rgba(12,11,16,0.6)' }}
               />
               <motion.div
-                initial={{ y: 50, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                exit={{ y: 50, opacity: 0 }}
-                className="relative w-full max-w-md rounded-3xl p-8 space-y-6 shadow-2xl max-h-[85vh] overflow-y-auto"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.26, ease: [0.22, 0.61, 0.36, 1] }}
+                className="relative w-full max-w-md rounded-sheet p-6 sm:p-8 space-y-6 shadow-2xl max-h-[85vh] overflow-y-auto"
                 style={{
                   backgroundColor: READER_THEMES[readerTheme].panelBg,
                   border: `1px solid ${READER_THEMES[readerTheme].border}`,
@@ -1812,11 +1731,11 @@ export default function ComicReaderClient({ initialComic, initialChapters, sourc
                 }}
               >
                 <div className="flex items-center justify-between gap-4">
-                  <h3 className="text-2xl font-black uppercase tracking-tight italic pr-4">{t.readerShortcutsTitle}</h3>
+                  <h3 className="font-display text-2xl font-normal pr-4">{t.readerShortcutsTitle}</h3>
                   <button
                     type="button"
                     onClick={() => setShowReaderHelp(false)}
-                    className="w-10 h-10 flex-shrink-0 flex items-center justify-center rounded-xl"
+                    className="w-10 h-10 flex-shrink-0 flex items-center justify-center rounded-btn transition-colors"
                     style={{
                       backgroundColor: READER_THEMES[readerTheme].panelAltBg,
                       border: `1px solid ${READER_THEMES[readerTheme].border}`,
@@ -1826,24 +1745,56 @@ export default function ComicReaderClient({ initialComic, initialChapters, sourc
                     <X size={20} />
                   </button>
                 </div>
-                <p className="text-[10px] font-bold uppercase tracking-widest leading-relaxed whitespace-pre-line" style={{ color: READER_THEMES[readerTheme].muted }}>
-                  {t.readerShortcutsBody}
-                </p>
-                <p className="text-[9px] font-bold uppercase tracking-wider" style={{ color: READER_THEMES[readerTheme].muted }}>
+                <div className="space-y-2.5">
+                  {t.readerShortcutsBody.split('\n').map((line, i) => {
+                    const sep = line.indexOf(' — ');
+                    if (sep === -1) {
+                      return (
+                        <p key={i} className="text-sm leading-relaxed" style={{ color: READER_THEMES[readerTheme].muted }}>
+                          {line}
+                        </p>
+                      );
+                    }
+                    return (
+                      <div key={i} className="flex items-center justify-between gap-4">
+                        <span className="text-sm" style={{ color: READER_THEMES[readerTheme].muted }}>
+                          {line.slice(sep + 3)}
+                        </span>
+                        <span className="flex shrink-0 items-center gap-1">
+                          {line.slice(0, sep).split(' / ').map((key, j) => (
+                            <kbd
+                              key={j}
+                              className="rounded-[6px] border px-1.5 py-0.5 font-mono text-[11px]"
+                              style={{
+                                borderColor: READER_THEMES[readerTheme].border,
+                                borderBottomWidth: 2,
+                                backgroundColor: READER_THEMES[readerTheme].panelAltBg,
+                                color: READER_THEMES[readerTheme].text,
+                              }}
+                            >
+                              {key}
+                            </kbd>
+                          ))}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+                <p className="text-xs" style={{ color: READER_THEMES[readerTheme].muted }}>
                   {t.readerShortcutsShowHint}
                 </p>
                 <div className="flex flex-col gap-3 sm:flex-row">
                   <button
                     type="button"
-                    className="flex-1 py-4 rounded-xl text-[10px] font-black uppercase tracking-widest"
-                    style={{ backgroundColor: READER_THEMES[readerTheme].accent, color: '#fff' }}
+                    className="flex-1 py-3 rounded-btn text-sm font-semibold transition-colors"
+                    style={{ backgroundColor: READER_THEMES[readerTheme].accent, color: READER_THEMES[readerTheme].onAccent }}
                     onClick={() => setShowReaderHelp(false)}
                   >
                     {t.readerShortcutsOk}
                   </button>
                   <button
                     type="button"
-                    className="flex-1 py-4 rounded-xl border text-[10px] font-black uppercase tracking-widest"
+                    className="flex-1 py-3 rounded-btn border text-sm font-medium transition-colors"
                     style={{
                       borderColor: READER_THEMES[readerTheme].border,
                       backgroundColor: READER_THEMES[readerTheme].panelAltBg,
@@ -1867,17 +1818,17 @@ export default function ComicReaderClient({ initialComic, initialChapters, sourc
         </AnimatePresence>
         
         <div
-          className={`fixed z-[10040] touch-manipulation transition-all duration-300 top-[max(0.75rem,env(safe-area-inset-top,0px))] left-[max(0.75rem,env(safe-area-inset-left,0px))] sm:top-8 sm:left-8 ${uiVisible ? 'pointer-events-none opacity-0' : 'opacity-100'}`}
+          className={`fixed z-[10040] touch-manipulation transition-opacity duration-300 top-[max(0.75rem,env(safe-area-inset-top,0px))] left-[max(0.75rem,env(safe-area-inset-left,0px))] sm:top-8 sm:left-8 ${uiVisible ? 'pointer-events-none opacity-0' : 'opacity-100'}`}
         >
            <button
              aria-label="Close reader"
              type="button"
              onClick={exitToComicDetail}
-             className="flex h-11 w-11 items-center justify-center rounded-full border backdrop-blur-md transition-all sm:h-12 sm:w-12"
+             className="flex h-11 w-11 items-center justify-center rounded-full border backdrop-blur-md transition-colors sm:h-12 sm:w-12"
              style={{
-               backgroundColor: READER_THEMES[readerTheme].panelBg,
-               borderColor: READER_THEMES[readerTheme].border,
-               color: READER_THEMES[readerTheme].muted,
+               backgroundColor: READER_THEMES[readerTheme].scrimBg,
+               borderColor: READER_THEMES[readerTheme].scrimBorder,
+               color: READER_THEMES[readerTheme].scrimText,
              }}
            >
              <X size={20} />
@@ -1935,39 +1886,36 @@ export default function ComicReaderClient({ initialComic, initialChapters, sourc
            )}
 
            {readerLoading ? null : pages.length === 0 ? (
-             <div className="h-full flex flex-col items-center justify-center gap-10 p-10 text-center max-w-xl mx-auto">
-                <div className="relative w-24 h-24 flex items-center justify-center">
-                   <div className="absolute inset-0 blur-3xl rounded-full" style={{ backgroundColor: READER_THEMES[readerTheme].accentSoft }} />
-                   <ExternalLink size={48} className="relative z-10" style={{ color: READER_THEMES[readerTheme].accent }} />
-                </div>
-                <div className="space-y-4">
-                   <div className="text-[12px] font-black uppercase tracking-[0.5em]" style={{ color: READER_THEMES[readerTheme].accent }}>Official reader only</div>
-                   <h2 className="text-xl md:text-2xl font-black uppercase tracking-tight" style={{ color: READER_THEMES[readerTheme].text }}>Read this chapter on the publisher&apos;s site</h2>
+             <div className="h-full flex flex-col items-center justify-center gap-8 p-10 text-center max-w-md mx-auto">
+                <ExternalLink size={32} style={{ color: READER_THEMES[readerTheme].muted }} />
+                <div className="space-y-3">
+                   <div className="ic-eyebrow" style={{ color: READER_THEMES[readerTheme].muted }}>Official reader only</div>
+                   <h2 className="font-display text-2xl font-normal" style={{ color: READER_THEMES[readerTheme].text }}>Read this chapter on the publisher&apos;s site</h2>
                    <p className="text-sm leading-relaxed" style={{ color: READER_THEMES[readerTheme].muted }}>
-                      This chapter is hosted on an <b>official platform</b> (for example MANGA Plus or VIZ).
+                      This chapter is hosted on an official platform (for example MANGA Plus or VIZ).
                       Images are not available here so that publisher rights stay protected.
                    </p>
                 </div>
                 {officialReaderOutboundUrl && (
                   <a
-                    href={officialReaderOutboundUrl} 
-                    target="_blank" 
-                    rel="noopener noreferrer" 
-                    className="inline-flex items-center gap-4 px-10 py-5 text-[12px] font-black uppercase tracking-[0.2em] rounded-2xl hover:scale-105 active:scale-95 transition-all"
-                    style={{ backgroundColor: READER_THEMES[readerTheme].accent, color: '#fff', boxShadow: `0 20px 40px ${READER_THEMES[readerTheme].accentSoft}` }}
+                    href={officialReaderOutboundUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 rounded-btn px-6 py-3.5 text-sm font-semibold transition-colors"
+                    style={{ backgroundColor: READER_THEMES[readerTheme].accent, color: READER_THEMES[readerTheme].onAccent }}
                   >
-                    <ExternalLink size={20} /> Open official reader
+                    <ExternalLink size={18} /> Open official reader
                   </a>
                 )}
-                <div className="pt-10 flex gap-4">
-                   <button onClick={prevChapter} disabled={currentChapterIdx === 0} className="px-6 py-3 border text-[10px] font-black uppercase tracking-widest disabled:opacity-0 transition-all" style={{ borderColor: READER_THEMES[readerTheme].border, color: READER_THEMES[readerTheme].muted }}>Previous chapter</button>
-                   <button onClick={nextChapter} disabled={currentChapterIdx === chapters.length - 1} className="px-6 py-3 border text-[10px] font-black uppercase tracking-widest disabled:opacity-0 transition-all" style={{ borderColor: READER_THEMES[readerTheme].border, color: READER_THEMES[readerTheme].muted }}>Next chapter</button>
+                <div className="pt-6 flex gap-3">
+                   <button onClick={prevChapter} disabled={currentChapterIdx === 0} className="rounded-btn border px-5 py-2.5 text-sm font-medium disabled:opacity-0 transition-colors" style={{ borderColor: READER_THEMES[readerTheme].border, color: READER_THEMES[readerTheme].muted }}>Previous chapter</button>
+                   <button onClick={nextChapter} disabled={currentChapterIdx === chapters.length - 1} className="rounded-btn border px-5 py-2.5 text-sm font-medium disabled:opacity-0 transition-colors" style={{ borderColor: READER_THEMES[readerTheme].border, color: READER_THEMES[readerTheme].muted }}>Next chapter</button>
                 </div>
              </div>
            ) : (
               <div
                 style={comicZoomWrapStyle}
-                className={`mx-auto flex w-full flex-col items-center transition-all duration-500 ${
+                className={`mx-auto flex w-full flex-col items-center transition-all duration-300 ease-[cubic-bezier(0.22,0.61,0.36,1)] ${
                   viewMode === 'flow'
                     ? 'pt-0 pb-[max(5.5rem,env(safe-area-inset-bottom,0px)+4.5rem)] sm:pb-24'
                     : 'box-border min-h-full justify-center px-3 pt-4 pb-[max(8.25rem,calc(7rem+env(safe-area-inset-bottom,0px)))] sm:px-4 sm:pt-6 sm:pb-[max(7rem,calc(6rem+env(safe-area-inset-bottom,0px)))]'
@@ -1977,14 +1925,14 @@ export default function ComicReaderClient({ initialComic, initialChapters, sourc
                    <div className="relative flex w-full items-center justify-center">
                      {!pageReady ? (
                        <div className="flex min-h-[min(50vh,28rem)] w-full items-center justify-center py-12">
-                         <div className="w-14 h-14 border-2 border-[#ff4d00]/30 border-t-[#ff4d00] rounded-full animate-spin" />
+                         <div className="w-12 h-12 border-2 rounded-full animate-spin" style={{ borderColor: 'rgba(242,153,74,0.25)', borderTopColor: '#F2994A' }} />
                        </div>
                      ) : (
                        <motion.img
                          key={`classic-${currentPage}`}
-                         initial={{ opacity: 0, x: readingDirection === 'ltr' ? 14 : -14 }}
-                         animate={{ opacity: 1, x: 0 }}
-                         transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+                         initial={{ opacity: 0 }}
+                         animate={{ opacity: 1 }}
+                         transition={{ duration: 0.22, ease: [0.22, 0.61, 0.36, 1] }}
                          src={pages[currentPage]}
                          style={{
                            maxWidth: isMobile ? '100%' : '80vw',
@@ -2000,7 +1948,7 @@ export default function ComicReaderClient({ initialComic, initialChapters, sourc
                    <div className="mx-auto flex w-full max-w-[min(100%,98vw)] items-stretch justify-center gap-0">
                       {!pageReady ? (
                         <div className="flex min-h-[min(50vh,28rem)] w-full items-center justify-center py-12">
-                          <div className="w-14 h-14 border-2 border-[#ff4d00]/30 border-t-[#ff4d00] rounded-full animate-spin" />
+                          <div className="w-12 h-12 border-2 rounded-full animate-spin" style={{ borderColor: 'rgba(242,153,74,0.25)', borderTopColor: '#F2994A' }} />
                         </div>
                       ) : currentPage === 0 && isSpreadCover ? (
                         <div className="relative max-h-[90vh] w-full aspect-[2/3] flex justify-center">
@@ -2070,15 +2018,15 @@ export default function ComicReaderClient({ initialComic, initialChapters, sourc
                         <button
                           type="button"
                           onClick={nextChapter}
-                          className="w-full py-40 mt-20 border-2 border-dashed transition-all flex flex-col items-center gap-4"
+                          className="w-full rounded-card py-24 mt-12 mb-4 border border-dashed transition-colors flex flex-col items-center gap-3"
                           style={{
                             borderColor: READER_THEMES[readerTheme].border,
                           }}
                         >
-                           <div className="text-[12px] font-black uppercase tracking-[0.5em]" style={{ color: READER_THEMES[readerTheme].muted }}>
+                           <div className="font-mono text-xs font-medium uppercase tracking-[0.12em]" style={{ color: READER_THEMES[readerTheme].muted }}>
                              Go to next chapter
                            </div>
-                           <ChevronDown size={32} style={{ color: READER_THEMES[readerTheme].muted, opacity: 0.5 }} />
+                           <ChevronDown size={24} style={{ color: READER_THEMES[readerTheme].muted, opacity: 0.6 }} />
                         </button>
                       )}
                   </div>
@@ -2089,20 +2037,18 @@ export default function ComicReaderClient({ initialComic, initialChapters, sourc
 
          <AnimatePresence>
            {showGrid && (
-             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[10050] bg-black/90 overflow-y-auto p-4 md:p-16">
-                <div className="fixed top-0 left-0 right-0 h-24 bg-black/90 backdrop-blur-xl z-[10060] px-6 flex items-center justify-between border-b border-white/10 pt-[env(safe-area-inset-top)]">
-                  <button aria-label="Back to reader" onClick={() => setShowGrid(false)} className="flex items-center gap-3 text-[10px] font-black uppercase tracking-widest text-white/40">
+             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.26, ease: [0.22, 0.61, 0.36, 1] }} className="fixed inset-0 z-[10050] bg-[rgba(12,11,16,0.92)] overflow-y-auto p-4 md:p-16">
+                <div className="fixed top-0 left-0 right-0 h-24 bg-[rgba(12,11,16,0.78)] backdrop-blur-xl z-[10060] px-6 flex items-center justify-between border-b border-white/10 pt-[env(safe-area-inset-top)]">
+                  <button aria-label="Back to reader" onClick={() => setShowGrid(false)} className="flex items-center gap-2 text-sm font-medium text-white/60 transition-colors hover:text-white">
                       <ChevronLeft size={20} /> Back to reader
                    </button>
-                   <button aria-label="Close overview" onClick={() => setShowGrid(false)} className="w-11 h-11 flex items-center justify-center bg-white/5 border border-white/10 rounded-xl"><X size={24}/></button>
+                   <button aria-label="Close overview" onClick={() => setShowGrid(false)} className="w-11 h-11 flex items-center justify-center rounded-btn border border-white/10 bg-white/5 text-white/80 transition-colors hover:text-white"><X size={22}/></button>
                 </div>
-                <div className="mt-24 grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 md:gap-8 max-w-7xl mx-auto">
+                <div className="mt-24 grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 md:gap-6 max-w-7xl mx-auto">
                    {pages.map((p, i) => (
-                     <button key={i} onClick={() => { setCurrentPage(i); setShowGrid(false); }} className={`relative aspect-[2/3] bg-[#0a0a0a] border ${currentPage === i ? 'border-[#ff4d00]' : 'border-white/10'} overflow-hidden`}>
-                        <Image src={p} fill className="object-cover opacity-60" alt={`Page ${i + 1}`} unoptimized />
-                        <div className="absolute inset-0 flex items-center justify-center">
-                           <div className="px-3 py-1.5 bg-black/80 border border-white/10 text-[14px] font-black text-white">{i + 1}</div>
-                        </div>
+                     <button key={i} onClick={() => { setCurrentPage(i); setShowGrid(false); }} className={`relative aspect-[2/3] overflow-hidden rounded-[4px] bg-[#16131C] border-2 transition-colors ${currentPage === i ? 'border-[#F2994A]' : 'border-transparent hover:border-white/30'}`}>
+                        <Image src={p} fill className="object-cover opacity-80" alt={`Page ${i + 1}`} unoptimized />
+                        <span className="absolute bottom-1.5 right-1.5 rounded-[4px] bg-[rgba(12,11,16,0.72)] px-2 py-0.5 font-mono text-[11px] font-medium text-white/85">{i + 1}</span>
                      </button>
                    ))}
                 </div>
@@ -2112,7 +2058,7 @@ export default function ComicReaderClient({ initialComic, initialChapters, sourc
       </motion.div>
 
       <style jsx global>{`
-        input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; height: 20px; width: 20px; border-radius: 50%; background: #ff4d00; cursor: pointer; border: 2px solid white; }
+        input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; height: 18px; width: 18px; border-radius: 50%; background: #F2994A; cursor: pointer; border: 2px solid #2A1705; }
       `}</style>
     </div>
   );

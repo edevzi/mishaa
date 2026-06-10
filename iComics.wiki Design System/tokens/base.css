@@ -1,0 +1,63 @@
+/* ============================================================================
+   iComics.wiki — BASE
+   Light element defaults so cards/kits inherit the system. Class-free where
+   possible; a few utility classes for editorial primitives.
+   ============================================================================ */
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  background: var(--surface-app);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  font-size: var(--text-base);
+  font-weight: var(--weight-regular);
+  line-height: var(--leading-normal);
+  font-feature-settings: "ss01" 1, "cv01" 1;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  transition: background-color var(--dur-base) var(--ease-out),
+              color var(--dur-base) var(--ease-out);
+}
+
+h1, h2, h3, h4, h5, h6 { margin: 0; font-weight: var(--weight-bold); line-height: var(--leading-snug); color: var(--text-primary); }
+p { margin: 0; }
+a { color: inherit; text-decoration: none; }
+
+::selection { background: var(--accent-tint); color: var(--text-primary); }
+
+:focus-visible {
+  outline: none;
+  box-shadow: var(--glow-accent);
+  border-radius: var(--radius-sm);
+}
+
+/* ---- Editorial display helper ---- */
+.ic-display {
+  font-family: var(--font-display);
+  font-weight: var(--weight-regular);
+  line-height: var(--leading-tight);
+  letter-spacing: var(--tracking-snug);
+}
+
+/* ---- Mono micro-label (eyebrows, ratings, kbd) ---- */
+.ic-eyebrow {
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  font-weight: var(--weight-medium);
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+/* ---- Hairline divider ---- */
+.ic-rule { height: 1px; background: var(--border); border: 0; }
+
+/* ---- Custom scrollbars (subtle) ---- */
+* { scrollbar-width: thin; scrollbar-color: var(--border) transparent; }
+*::-webkit-scrollbar { height: 8px; width: 8px; }
+*::-webkit-scrollbar-thumb { background: var(--border); border-radius: 99px; }
+*::-webkit-scrollbar-track { background: transparent; }

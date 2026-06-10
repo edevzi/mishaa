@@ -5,7 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 import { LazyMotion, domMax, m, AnimatePresence } from 'framer-motion';
-import { X, Menu, UserCircle2, Settings2 } from 'lucide-react';
+import { X, Menu, UserCircle2, Settings2, Sun, Moon } from 'lucide-react';
 import { translations, Lang } from '@/lib/translations';
 import { readStorageItem, writeStorageItem } from '@/lib/browser-storage';
 import { persistUiLangCookie } from '@/lib/i18n/ui-lang-cookie-client';
@@ -20,21 +20,30 @@ interface SessionUser {
   avatar?: string | null;
 }
 
-type NavbarProps = {
-  /** `catalog`: full-width black bar (site default). `glass`: floating pill (legacy). */
-  surface?: 'glass' | 'catalog';
-};
+type Theme = 'dark' | 'light';
 
-export default function Navbar({ surface = 'catalog' }: NavbarProps) {
+function applyTheme(theme: Theme) {
+  document.documentElement.dataset.theme = theme;
+  try {
+    localStorage.setItem('icw-theme', theme);
+  } catch {
+    // Private mode — theme still applies for this page view.
+  }
+}
+
+export default function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const [user, setUser] = useState<SessionUser | null>(null);
   const [lang, setLang] = useState<Lang>('en');
+  const [theme, setTheme] = useState<Theme>('dark');
 
   const t = translations[lang].nav;
 
   useEffect(() => {
+    setTheme(document.documentElement.dataset.theme === 'light' ? 'light' : 'dark');
+
     let t_timeout: NodeJS.Timeout;
     // Load persisted language after mount to avoid hydration mismatch
     const savedLang = readStorageItem('lang') as Lang;
@@ -63,6 +72,12 @@ export default function Navbar({ surface = 'catalog' }: NavbarProps) {
       clearTimeout(t_timeout);
     };
   }, []);
+
+  const toggleTheme = () => {
+    const next: Theme = theme === 'dark' ? 'light' : 'dark';
+    setTheme(next);
+    applyTheme(next);
+  };
 
   const handleLogout = async () => {
     try {
@@ -102,30 +117,12 @@ export default function Navbar({ surface = 'catalog' }: NavbarProps) {
     { short: 'RU', code: 'ru', ariaName: 'Russian' },
   ];
 
-  const isCatalog = surface === 'catalog';
-
   return (
     <LazyMotion features={domMax} strict>
-    <nav
-      className={
-        isCatalog
-          ? 'fixed left-0 right-0 top-0 z-[1000] border-b border-neutral-200 bg-white pt-[env(safe-area-inset-top,0px)] dark:border-white/10 dark:bg-black'
-          : 'fixed top-5 left-1/2 z-[1000] w-[min(96vw,86rem)] -translate-x-1/2 max-md:top-3'
-      }
-    >
-      <div
-        className={
-          isCatalog
-            ? 'relative mx-auto flex max-w-[100rem] items-center justify-between gap-3 overflow-visible px-4 py-2.5 sm:px-6 lg:px-10'
-            : 'glass-panel relative flex items-center justify-between overflow-hidden rounded-[1.9rem] px-3 py-2 sm:px-2'
-        }
-      >
-        {!isCatalog ? (
-          <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/30 to-transparent" />
-        ) : null}
-
-        {/* Branding */}
-        <Link href="/" className="flex min-w-0 items-center gap-3 pl-2 pr-2 py-2 sm:gap-4 sm:pl-4 md:pl-6 md:py-3 group">
+    <nav className="fixed left-0 right-0 top-0 z-[1000] border-b border-line-subtle bg-[color-mix(in_oklab,var(--surface-app)_82%,transparent)] pt-[env(safe-area-inset-top,0px)] backdrop-blur-xl">
+      <div className="mx-auto flex h-16 max-w-[var(--page-max)] items-center gap-4 px-5 sm:px-8">
+        {/* Branding — the logo stays as-is (fixed asset) */}
+        <Link href="/" className="flex min-w-0 items-center gap-3 py-2 group">
           <div className="relative flex h-10 w-10 items-center justify-center overflow-hidden rounded-2xl border border-neutral-200 bg-neutral-50 shadow-2xl transition-all duration-500 group-hover:border-[#ff5a1f]/50 md:h-12 md:w-12 dark:border-white/10 dark:bg-black/40">
             <div className="absolute inset-0 bg-gradient-to-tr from-[#ff5a1f]/20 via-transparent to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
             <span className="font-accent text-xl z-10 transition-transform duration-500 group-hover:scale-110 leading-none" style={{letterSpacing: '0.02em'}}>
@@ -141,36 +138,30 @@ export default function Navbar({ surface = 'catalog' }: NavbarProps) {
           </div>
         </Link>
 
-        {/* Desktop Menu */}
-        <div className="hidden lg:flex items-center gap-2 pr-4">
-          <div className="flex items-center gap-1 rounded-full border border-neutral-200 bg-neutral-100/90 p-1 backdrop-blur-md dark:border-white/5 dark:bg-white/[0.025]">
-            {navLinks.map((link) => {
-              const isActive = pathname === link.href;
-              return (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className={`relative rounded-full px-5 py-2.5 text-[9px] font-black uppercase tracking-[0.25em] transition-all ${isActive
-                    ? 'bg-neutral-900 text-white shadow-xl dark:bg-white dark:text-black'
-                    : 'text-neutral-600 hover:text-neutral-900 hover:bg-neutral-200/80 dark:text-white/40 dark:hover:text-white dark:hover:bg-white/5'
-                    }`}
-                >
-                  {link.name}
-                  {isActive && (
-                    <m.div
-                      layoutId="nav-active"
-                      className="absolute inset-0 rounded-full border border-black/5 dark:border-black/5"
-                    />
-                  )}
-                </Link>
-              );
-            })}
-          </div>
+        {/* Desktop nav */}
+        <div className="ml-2 hidden items-center gap-5 lg:flex">
+          {navLinks.map((link) => {
+            const isActive = pathname === link.href;
+            return (
+              <Link
+                key={link.href}
+                href={link.href}
+                aria-current={isActive ? 'page' : undefined}
+                className={`text-sm font-medium transition-colors ${
+                  isActive ? 'text-fg' : 'text-fg-secondary hover:text-fg'
+                }`}
+              >
+                {link.name}
+              </Link>
+            );
+          })}
+        </div>
 
-          <div className="mx-3 h-4 w-px bg-neutral-200 dark:bg-white/10" />
+        <div className="flex-1" />
 
-          {/* New Language Switcher */}
-          <div className="flex items-center gap-1 rounded-full border border-neutral-200 bg-neutral-100/90 p-1 backdrop-blur-md dark:border-white/5 dark:bg-white/[0.025]">
+        <div className="flex items-center gap-2">
+          {/* Language switcher */}
+          <div className="hidden items-center gap-0.5 rounded-full border border-line p-0.5 md:flex">
             {langSwitcher.map(({ short, code, ariaName }) => (
               <button
                 key={code}
@@ -178,107 +169,113 @@ export default function Navbar({ surface = 'catalog' }: NavbarProps) {
                 onClick={() => handleLangChange(code)}
                 aria-label={`Switch interface language to ${ariaName}`}
                 aria-current={lang === code ? 'true' : undefined}
-                className={`rounded-full px-2.5 py-2 text-[8px] font-black tracking-widest transition-all ${lang === code
-                  ? 'bg-[#ff5a1f] text-white shadow-lg'
-                  : 'text-neutral-500 hover:text-neutral-900 hover:bg-neutral-200/80 dark:text-white/30 dark:hover:text-white dark:hover:bg-white/5'
-                  }`}
+                className={`rounded-full px-2 py-1.5 font-mono text-[11px] tracking-[0.08em] transition-colors ${
+                  lang === code
+                    ? 'bg-accent-tint text-accent-text'
+                    : 'text-fg-muted hover:text-fg'
+                }`}
               >
                 {short}
               </button>
             ))}
           </div>
 
-          <div className="mx-3 h-4 w-px bg-neutral-200 dark:bg-white/10" />
+          {/* Theme toggle */}
+          <button
+            type="button"
+            onClick={toggleTheme}
+            aria-label={theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}
+            className="ic-iconbtn ic-iconbtn--sm ic-iconbtn--solid"
+          >
+            {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
+          </button>
 
           {user ? (
-            <div className="flex items-center gap-3">
-              <div className="relative group">
-                <Link
-                  href="/profile"
-                  className="flex h-11 w-11 items-center justify-center overflow-hidden rounded-2xl border border-neutral-200 bg-white p-0.5 backdrop-blur-xl transition-all hover:border-[#ff5a1f]/50 hover:shadow-[0_0_20px_rgba(255,90,31,0.2)] dark:border-white/10 dark:bg-white/[0.05]"
-                >
-                  <div className="h-full w-full overflow-hidden rounded-[0.9rem] bg-white">
-                    {user.avatar ? (
-                      <Image src={user.avatar} alt={user.username} width={44} height={44} className="w-full h-full object-cover" />
-                    ) : (
-                      <div className="flex h-full w-full items-center justify-center bg-black text-white">
-                        <UserCircle2 size={18} />
-                      </div>
-                    )}
-                  </div>
-                </Link>
+            <div className="relative hidden lg:block group">
+              <Link
+                href="/profile"
+                className="ic-avatar ic-avatar--md transition-shadow hover:shadow-[var(--glow-accent)]"
+                aria-label={t.accountProfile}
+              >
+                {user.avatar ? (
+                  <Image src={user.avatar} alt={user.username} width={38} height={38} className="h-full w-full object-cover" />
+                ) : (
+                  <UserCircle2 size={18} />
+                )}
+              </Link>
 
-                {/* Dropdown Menu */}
-                <div className="absolute right-0 top-full pt-4 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 transform translate-y-2 group-hover:translate-y-0 z-[1100]">
-                  <div className="w-56 rounded-2xl border border-neutral-200 bg-white p-2 shadow-2xl backdrop-blur-xl dark:border-white/10 dark:bg-[#0a0a0c]">
-                    <div className="mb-2 border-b border-neutral-100 px-4 py-3 dark:border-white/5">
-                      <p className="text-[10px] font-black uppercase tracking-tight text-neutral-900 dark:text-white">{user.firstName} {user.lastName}</p>
-                      <span className="text-[10px] font-black uppercase tracking-[0.4em] text-[#ff4d00]">{t.libraryEditionBadge}</span>
-                    </div>
-                    <Link href="/profile" className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest text-neutral-600 transition-all hover:bg-neutral-100 hover:text-neutral-900 dark:text-white/50 dark:hover:bg-white/5 dark:hover:text-white">
-                      <UserCircle2 size={14} /> {t.accountProfile}
-                    </Link>
-                    <Link href="/settings" className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest text-neutral-600 transition-all hover:bg-neutral-100 hover:text-neutral-900 dark:text-white/50 dark:hover:bg-white/5 dark:hover:text-white">
-                      <Settings2 size={14} /> {t.accountSettings}
-                    </Link>
-                    <div className="my-2 h-px bg-neutral-100 dark:bg-white/5" />
-                    <button
-                      type="button"
-                      onClick={handleLogout}
-                      className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest text-red-500 hover:bg-red-500/10 transition-all"
-                    >
-                      <X size={14} /> {t.accountLogOut}
-                    </button>
+              {/* Dropdown */}
+              <div className="invisible absolute right-0 top-full z-[1100] translate-y-2 pt-3 opacity-0 transition-all duration-200 group-hover:visible group-hover:translate-y-0 group-hover:opacity-100">
+                <div className="w-56 rounded-card border border-line bg-raised p-2 shadow-[var(--shadow-lg)]">
+                  <div className="mb-2 border-b border-line-subtle px-3 py-2.5">
+                    <p className="text-sm font-semibold text-fg">{user.firstName} {user.lastName}</p>
+                    <span className="ic-eyebrow">{t.libraryEditionBadge}</span>
                   </div>
+                  <Link href="/profile" className="flex items-center gap-2.5 rounded-btn px-3 py-2 text-sm text-fg-secondary transition-colors hover:bg-card-hov hover:text-fg">
+                    <UserCircle2 size={15} /> {t.accountProfile}
+                  </Link>
+                  <Link href="/settings" className="flex items-center gap-2.5 rounded-btn px-3 py-2 text-sm text-fg-secondary transition-colors hover:bg-card-hov hover:text-fg">
+                    <Settings2 size={15} /> {t.accountSettings}
+                  </Link>
+                  <div className="my-2 ic-rule" />
+                  <button
+                    type="button"
+                    onClick={handleLogout}
+                    className="flex w-full items-center gap-2.5 rounded-btn px-3 py-2 text-sm text-danger transition-colors hover:bg-danger/10"
+                  >
+                    <X size={15} /> {t.accountLogOut}
+                  </button>
                 </div>
               </div>
             </div>
           ) : (
-            <Link
-              href="/auth"
-              className="inline-flex min-h-11 shrink-0 items-center justify-center rounded-full bg-[#ff5a1f] px-7 py-2.5 text-center text-[10px] font-black uppercase leading-none tracking-widest text-white shadow-[0_1px_0_rgba(0,0,0,0.06)] transition-[background-color,box-shadow,transform] hover:bg-[#e64f1a] hover:shadow-md active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#ff5a1f]"
-            >
+            <Link href="/auth" className="ic-btn ic-btn--primary ic-btn--sm hidden lg:inline-flex">
               {t.registry}
             </Link>
           )}
-        </div>
 
-        {/* Mobile toggle */}
-        <button
-          type="button"
-          aria-expanded={isOpen}
-          aria-controls="navbar-mobile-menu"
-          aria-label={isOpen ? 'Close navigation menu' : 'Open navigation menu'}
-          className="mr-0 shrink-0 rounded-2xl border border-neutral-200 bg-neutral-100/80 p-2.5 text-neutral-800 transition-colors hover:text-[#ff5a1f] dark:border-white/10 dark:bg-white/5 dark:text-white lg:hidden sm:p-3"
-          onClick={() => setIsOpen(!isOpen)}
-        >
-          {isOpen ? <X size={18} /> : <Menu size={18} />}
-        </button>
+          {/* Mobile toggle */}
+          <button
+            type="button"
+            aria-expanded={isOpen}
+            aria-controls="navbar-mobile-menu"
+            aria-label={isOpen ? 'Close navigation menu' : 'Open navigation menu'}
+            className="ic-iconbtn ic-iconbtn--sm ic-iconbtn--solid lg:hidden"
+            onClick={() => setIsOpen(!isOpen)}
+          >
+            {isOpen ? <X size={17} /> : <Menu size={17} />}
+          </button>
+        </div>
       </div>
 
-      {/* Mobile Menu */}
+      {/* Mobile menu */}
       <AnimatePresence>
         {isOpen && (
           <m.div
             id="navbar-mobile-menu"
-            initial={{ opacity: 0, y: -10 }}
+            initial={{ opacity: 0, y: -6 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            className="absolute left-0 right-0 top-full mt-4 space-y-8 rounded-3xl border border-neutral-200 bg-white/95 p-5 shadow-2xl backdrop-blur-md dark:border-transparent dark:bg-[linear-gradient(180deg,rgba(255,255,255,0.08),rgba(255,255,255,0.02))] dark:shadow-[0_20px_80px_rgba(0,0,0,0.6)] lg:hidden max-md:mt-2 max-md:p-4"
+            exit={{ opacity: 0, y: -6 }}
+            transition={{ duration: 0.22, ease: [0.22, 0.61, 0.36, 1] }}
+            className="absolute left-3 right-3 top-full mt-2 rounded-sheet border border-line bg-raised p-4 shadow-[var(--shadow-lg)] lg:hidden"
           >
-            <div className="flex flex-col gap-6">
+            <div className="flex flex-col gap-1">
               {navLinks.map((link) => (
                 <Link
                   key={link.name}
                   href={link.href}
                   onClick={() => setIsOpen(false)}
-                  className={`rounded-2xl px-3 py-3 text-sm font-black uppercase tracking-[0.38em] transition-colors ${pathname === link.href ? 'bg-neutral-900 text-white dark:bg-white dark:text-black' : 'text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900 dark:text-white/70 dark:hover:bg-white/10 dark:hover:text-white'}`}
+                  className={`rounded-btn px-3 py-3 text-sm font-medium transition-colors ${
+                    pathname === link.href
+                      ? 'bg-accent-tint text-accent-text'
+                      : 'text-fg-secondary hover:bg-card-hov hover:text-fg'
+                  }`}
                 >
                   {link.name}
                 </Link>
               ))}
 
-              <div className="flex items-center gap-2 rounded-2xl border border-neutral-200 bg-neutral-50 p-1 dark:border-white/10 dark:bg-white/5">
+              <div className="my-3 flex items-center gap-1 rounded-full border border-line p-1">
                 {langSwitcher.map(({ short, code, ariaName }) => (
                   <button
                     key={code}
@@ -286,34 +283,32 @@ export default function Navbar({ surface = 'catalog' }: NavbarProps) {
                     onClick={() => { handleLangChange(code); setIsOpen(false); }}
                     aria-label={`Switch interface language to ${ariaName}`}
                     aria-current={lang === code ? 'true' : undefined}
-                    className={`flex-1 rounded-xl py-3 text-[9px] font-black tracking-widest transition-all ${lang === code
-                      ? 'bg-[#ff5a1f] text-white'
-                      : 'text-neutral-500 hover:bg-neutral-200/80 hover:text-neutral-900 dark:text-white/35 dark:hover:bg-white/5 dark:hover:text-white'
-                      }`}
+                    className={`flex-1 rounded-full py-2 font-mono text-[11px] tracking-[0.08em] transition-colors ${
+                      lang === code
+                        ? 'bg-accent-tint text-accent-text'
+                        : 'text-fg-muted hover:text-fg'
+                    }`}
                   >
                     {short}
                   </button>
                 ))}
               </div>
 
-              <div className="my-2 h-px w-full bg-neutral-200 dark:bg-white/10" />
               <Link
                 href={user ? '/profile' : '/auth'}
                 onClick={() => setIsOpen(false)}
-                className="w-full rounded-2xl border border-white/10 bg-white py-5 text-center text-[10px] font-black uppercase tracking-[0.3em] text-black transition-colors hover:bg-[#ff5a1f] hover:text-white"
+                className="ic-btn ic-btn--primary ic-btn--md ic-btn--block"
               >
                 {user ? t.accountProfile : t.registry}
               </Link>
               {user && (
-                <>
-                  <button
-                    type="button"
-                    onClick={() => { handleLogout(); setIsOpen(false); }}
-                    className="w-full rounded-2xl border border-red-500/20 bg-red-500/5 py-5 text-center text-[10px] font-black uppercase tracking-[0.3em] text-red-500 transition-colors hover:bg-red-500 hover:text-white"
-                  >
-                    {t.accountLogOut}
-                  </button>
-                </>
+                <button
+                  type="button"
+                  onClick={() => { handleLogout(); setIsOpen(false); }}
+                  className="ic-btn ic-btn--ghost ic-btn--md ic-btn--block mt-1 text-danger"
+                >
+                  {t.accountLogOut}
+                </button>
               )}
             </div>
           </m.div>

@@ -40,40 +40,39 @@ export default function FAQPageClient() {
   ];
 
   return (
-    <div className="min-h-screen bg-zinc-50 text-neutral-900 selection:bg-[#ff4d00] selection:text-white overflow-x-hidden dark:bg-[#020202] dark:text-white dark:selection:text-white ">
+    <div className="min-h-screen overflow-x-hidden bg-app text-fg">
       <Navbar />
 
-      <main className="container mx-auto px-8 pt-28 pb-24">
+      <main className="pt-nav-catalog">
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="max-w-4xl mx-auto space-y-24"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.28, ease: [0.22, 0.61, 0.36, 1] }}
+          className="wrap max-w-3xl space-y-14 py-14 sm:py-16 lg:py-20"
         >
-          <div className="text-center space-y-8">
-            <div className="inline-block bg-[#ff4d00] px-6 py-2 border border-neutral-200 dark:border-white/10 rounded-xl shadow-[6px_6px_0px_#000]">
-              <span className="text-white text-[10px] font-black uppercase tracking-[0.4em]">{t.badge}</span>
-            </div>
-            <h1 className="text-6xl md:text-9xl font-display uppercase tracking-tighter leading-none italic">
+          <div className="space-y-5">
+            <p className="ic-eyebrow">{t.badge}</p>
+            <h1 className="ic-display text-balance text-4xl sm:text-5xl md:text-6xl">
               {t.titleLine1} <br />
-              <span className="text-[#3b82f6]">{t.titleLine2}</span>
+              <span className="text-accent-text">{t.titleLine2}</span>
             </h1>
-            <p className="text-xl font-editorial italic opacity-60">&quot;{t.subtitle}&quot;</p>
+            <p className="font-display text-xl italic text-fg-secondary">&quot;{t.subtitle}&quot;</p>
           </div>
 
-          <div className="space-y-6">
+          <div className="space-y-3">
             {FAQS.map((faq, i) => (
               <div
                 key={i}
-                className={` bg-white border border-neutral-200 dark:border-white/10 rounded-xl transition-all cursor-pointer ${openIndex === i ? 'shadow-[12px_12px_0px_#ffca3a]' : 'shadow-[6px_6px_0px_#000]'}`}
+                className={`cursor-pointer rounded-card border bg-card transition-colors duration-150 ${openIndex === i ? 'border-line-strong' : 'border-line hover:bg-card-hov'}`}
                 onClick={() => setOpenIndex(openIndex === i ? null : i)}
               >
-                <div className="p-8 flex items-center justify-between gap-8">
-                  <div className="flex items-center gap-6">
-                    <span className="text-3xl font-display text-[#e63946]">0{i + 1}</span>
-                    <h3 className="text-xl sm:text-2xl font-black uppercase tracking-tight leading-none">{faq.q}</h3>
+                <div className="flex items-center justify-between gap-6 p-5 sm:p-6">
+                  <div className="flex items-baseline gap-4">
+                    <span className="font-mono text-xs text-accent-text">0{i + 1}</span>
+                    <h3 className="text-base font-semibold leading-snug sm:text-lg">{faq.q}</h3>
                   </div>
-                  <motion.div animate={{ rotate: openIndex === i ? 180 : 0 }}>
-                    <ChevronDown size={24} />
+                  <motion.div animate={{ rotate: openIndex === i ? 180 : 0 }} className="text-fg-muted">
+                    <ChevronDown size={20} />
                   </motion.div>
                 </div>
                 <motion.div
@@ -81,39 +80,39 @@ export default function FAQPageClient() {
                   animate={{ height: openIndex === i ? 'auto' : 0, opacity: openIndex === i ? 1 : 0 }}
                   className="overflow-hidden"
                 >
-                  <div className="px-8 pb-10 pt-4 border-t-2 border-neutral-100 dark:border-white/5">
-                    <p className="text-lg opacity-60 leading-relaxed font-medium max-w-2xl">{faq.a}</p>
+                  <div className="border-t border-line-subtle px-5 pb-6 pt-4 sm:px-6">
+                    <p className="max-w-2xl text-sm leading-relaxed text-fg-secondary sm:text-base">{faq.a}</p>
                   </div>
                 </motion.div>
               </div>
             ))}
           </div>
 
-          <div className="text-center space-y-8 py-20 border-t-4 border-black border-dashed">
-            <h2 className="text-4xl font-display uppercase tracking-tight">{t.stillQuestions}</h2>
-            <p className="text-lg opacity-60">{t.stillDesc}</p>
-            <div className="flex flex-wrap justify-center gap-x-8 gap-y-3">
+          <div className="space-y-6 border-t border-line py-14 text-center">
+            <h2 className="ic-display text-3xl">{t.stillQuestions}</h2>
+            <p className="text-base text-fg-secondary">{t.stillDesc}</p>
+            <div className="flex flex-wrap justify-center gap-x-6 gap-y-3">
               <Link
                 href="/icomics-wiki"
-                className="ink-stroke text-[10px] font-black uppercase tracking-[0.4em] hover:text-[#3b82f6] transition-colors"
+                className="text-sm font-medium text-fg-secondary transition-colors hover:text-accent-text"
               >
                 {t.wikiExplainerCta}
               </Link>
               <Link
                 href="/contact"
-                className="ink-stroke text-[10px] font-black uppercase tracking-[0.4em] hover:text-[#e63946] transition-colors"
+                className="text-sm font-medium text-fg-secondary transition-colors hover:text-accent-text"
               >
                 {t.dept}
               </Link>
               <Link
                 href="/guides"
-                className="ink-stroke text-[10px] font-black uppercase tracking-[0.4em] hover:text-[#ff5a1f] transition-colors"
+                className="text-sm font-medium text-fg-secondary transition-colors hover:text-accent-text"
               >
                 {footerT.guides}
               </Link>
               <Link
                 href="/reading"
-                className="ink-stroke text-[10px] font-black uppercase tracking-[0.4em] hover:text-[#ff5a1f] transition-colors"
+                className="text-sm font-medium text-fg-secondary transition-colors hover:text-accent-text"
               >
                 {footerT.readingHub}
               </Link>
@@ -121,7 +120,7 @@ export default function FAQPageClient() {
                 href="https://t.me/icomicsuz"
                 target="_blank"
                 rel="noreferrer"
-                className="ink-stroke text-[10px] font-black uppercase tracking-[0.4em] hover:text-[#3b82f6] transition-colors"
+                className="text-sm font-medium text-fg-secondary transition-colors hover:text-accent-text"
               >
                 {t.hub}
               </a>

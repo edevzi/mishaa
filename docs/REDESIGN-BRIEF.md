@@ -1,15 +1,23 @@
 # iComics.wiki — Product & Home‑Page Redesign Brief
 
-> **For the designer:** This document describes **what the product does and how it behaves** — its purpose, users, flows, and functions. It deliberately does **not** prescribe colors, spacing, type, or layout — those are yours to design. Two things are **hard constraints** and explained in detail below: (1) the **reader read‑modes** must keep working exactly as specified, and (2) the **existing logo stays as‑is** (do not redesign it).
+> **For the designer:** This document describes **what the product does and how it behaves** — its purpose, users, flows, and functions. It deliberately does **not** prescribe colors, spacing, type, or layout. **You have full creative freedom over the visual design.** Read Section 0 first — especially how to treat the attached codebase.
 
 ---
 
-## 0. Scope & constraints
+## 0. Creative direction & how to use the attached project
 
-- **Primary deliverable:** a redesign of the **Home page** (and, by extension, the overall visual language the home establishes). You may propose the visual system the rest of the app inherits.
-- **Hard constraint A — Reader read‑modes are core and must not change functionally.** Only their *visual* presentation may change. Every reading mode, reading direction, navigation gesture, and control described in **Section 6** must remain present and behave identically. See Section 6 for the exact behavior.
-- **Hard constraint B — Keep the existing logo.** The wordmark/logo is liked as‑is; do not redesign or replace it.
-- **Out of scope / non‑goals:** This is a **reader‑only** product. There is no content‑creation/“studio”/builder, and no Telegram bot — do not add or imply any authoring, uploading, or posting features.
+**Start a NEW visual identity from scratch. Do not reproduce the current look.**
+
+- A project folder is attached. **Use it only to understand FUNCTION, FLOW, DATA, and STRUCTURE — never as a visual reference.** The repo’s existing colors, components, badges, fonts, and styling are *legacy* and are **explicitly not to be copied**. If your output resembles the current site, that is a failure of this brief.
+- **Invent your own visual language.** New color system, typography, spacing, component shapes, motion, and information hierarchy. You may rethink the home page’s composition and IA entirely — the sections in Section 5 are **functional requirements (what must be possible), not a layout to replicate.** Reorder, merge, or reconceive how they’re presented.
+- **Deliver both Light and Dark modes** as your own concept (this is an explicit requirement — the product needs a real light/dark system, designed intentionally, not auto‑inverted).
+- Treat this as a genuine redesign: surprise us with a better, modern, distinctive direction for a manga/comic reader. Ignore the current palette (e.g. the existing orange‑on‑black) unless you independently choose something like it.
+
+**Hard constraints (only these are fixed):**
+- **Primary deliverable:** the **Home page** + the overall visual system it establishes (the rest of the app should inherit it).
+- **Constraint A — Reader read‑modes are core and must not change *functionally*.** You may (and should) restyle the reader, but every reading mode, direction, gesture, and control in **Section 6** must remain present and behave identically.
+- **Constraint B — Keep the existing logo.** The logo is liked as‑is; do not redesign or replace it. (Everything *around* it is open.)
+- **Out of scope / non‑goals:** This is a **reader‑only** product. There is **no** content‑creation / “studio” / builder / upload / posting anywhere. If you saw any authoring‑like UI implied by old files, ignore it — it has been removed from the product.
 
 ---
 
@@ -185,6 +193,8 @@ These aren’t the redesign focus but define the product the home leads into; ke
 
 ## 9. Design constraints checklist (for sign‑off)
 
+- ✅ **New visual identity from scratch** — the attached repo is a *functional* reference only; do **not** copy its current colors, components, badges, or styling.
+- ✅ **Light + Dark mode**, both intentionally designed (your own concept).
 - ✅ **Keep the existing logo** (no redesign).
 - ✅ **Preserve all reader read‑modes** (classic / journal / flow), **LTR/RTL direction**, the **spread‑cover** rule, every **navigation gesture** (keyboard, zones, swipe, zoom, wheel), every **control** (mode switch, direction, theme, thumbnails, fullscreen, help, chapter nav, progress, resume), and **progress tracking** semantics. Visual restyle only.
 - ✅ Support **anonymous + logged‑in** and **age‑verified + not** states everywhere relevant.

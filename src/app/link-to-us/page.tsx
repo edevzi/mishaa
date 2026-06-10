@@ -26,38 +26,32 @@ export default function LinkToUsPage() {
   return (
     <>
       <Navbar />
-      <main className="relative min-h-screen overflow-hidden bg-white pt-nav-catalog text-neutral-900 dark:bg-[#06070b] dark:text-neutral-100">
-        <div className="pointer-events-none absolute inset-0 opacity-[0.14] dark:opacity-[0.22] halftone-bg" aria-hidden />
-        <div
-          className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,90,31,0.08),transparent_36%),radial-gradient(circle_at_top_right,rgba(115,247,255,0.06),transparent_30%)] dark:bg-[radial-gradient(circle_at_top_left,rgba(255,90,31,0.14),transparent_34%),radial-gradient(circle_at_top_right,rgba(115,247,255,0.08),transparent_28%)]"
-          aria-hidden
-        />
-
-        <div className="relative z-10 mx-auto max-w-3xl px-4 py-16 sm:px-6 lg:max-w-4xl lg:px-8 lg:py-20">
-          <div className="inline-flex items-center gap-2 rounded-full border border-black/10 bg-white/90 px-4 py-2 text-[9px] font-black uppercase tracking-[0.4em] text-neutral-600 dark:border-white/10 dark:bg-black/40 dark:text-white/55">
-            <span className="h-1.5 w-1.5 rounded-full bg-[#ff5a1f]" />
-            Press · partnerships · directories
+      <main className="min-h-screen bg-app pt-nav-catalog text-fg">
+        <div className="wrap max-w-3xl py-14 sm:py-16 lg:max-w-4xl lg:py-20">
+          <div className="flex items-center gap-2">
+            <span className="h-1.5 w-1.5 rounded-full bg-accent" />
+            <span className="ic-eyebrow">Press · partnerships · directories</span>
           </div>
 
-          <h1 className="mt-6 font-display text-3xl font-black uppercase leading-[0.95] tracking-tight text-neutral-900 sm:text-4xl md:text-5xl dark:text-white">
+          <h1 className="ic-display mt-5 text-3xl text-fg sm:text-4xl md:text-5xl">
             Official linking kit
           </h1>
-          <p className="mt-5 max-w-2xl text-sm leading-relaxed text-neutral-600 dark:text-white/68 md:text-base">
-            Use these assets when you cite or recommend <strong className="font-semibold text-neutral-900 dark:text-white">iComics.wiki</strong>.
+          <p className="mt-5 max-w-2xl text-sm leading-relaxed text-fg-secondary md:text-base">
+            Use these assets when you cite or recommend <strong className="font-semibold text-fg">iComics.wiki</strong>.
             The site is an independent browser library for manga, manhwa, and vertical webtoons—it is{' '}
             <span className="whitespace-nowrap">not MangaDex.org</span>, not the discontinued DRM iOS “iComics” comic file
             manager, and not unrelated Fan wikis.
           </p>
-          <p className="mt-3 text-xs leading-relaxed text-neutral-500 dark:text-white/45">
+          <p className="mt-3 text-xs leading-relaxed text-fg-muted">
             Partnerships or corrections:{' '}
             <a
               href="mailto:info@icomics.wiki?subject=iComics.wiki%20—%20link%20%2F%20press"
-              className="font-semibold text-[#ff5a1f] underline decoration-[#ff5a1f]/35 underline-offset-4 hover:decoration-[#ff5a1f]"
+              className="font-medium text-accent-text underline decoration-line underline-offset-4 hover:decoration-accent"
             >
               info@icomics.wiki
             </a>
             . For branding context see{' '}
-            <Link href="/icomics-wiki" className="font-semibold text-[#ff5a1f] underline decoration-[#ff5a1f]/35 underline-offset-4">
+            <Link href="/icomics-wiki" className="font-medium text-accent-text underline decoration-line underline-offset-4 hover:decoration-accent">
               /icomics-wiki
             </Link>
             .
@@ -107,35 +101,35 @@ export default function LinkToUsPage() {
           </div>
 
           <section
-            className="mt-14 rounded-[1.75rem] border border-black/10 bg-white/75 p-6 dark:border-white/10 dark:bg-white/3 sm:p-8"
+            className="mt-14 rounded-card border border-line bg-card p-6 sm:p-8"
             aria-labelledby="localized-v1"
           >
-            <h2 id="localized-v1" className="text-[11px] font-black uppercase tracking-[0.32em] text-neutral-500 dark:text-white/50">
+            <h2 id="localized-v1" className="ic-eyebrow">
               Localized interface (SEO hreflang)
             </h2>
-            <p className="mt-3 max-w-2xl text-sm leading-relaxed text-neutral-600 dark:text-white/65">
-              Appending <code className="rounded-md bg-neutral-100 px-1.5 py-0.5 text-[11px] dark:bg-white/10">?ui=</code> to
+            <p className="mt-3 max-w-2xl text-sm leading-relaxed text-fg-secondary">
+              Appending <code className="rounded-md bg-inset px-1.5 py-0.5 font-mono text-[11px]">?ui=</code> to
               any path sets the UI language for that visit and matches our{' '}
-              <code className="rounded-md bg-neutral-100 px-1.5 py-0.5 text-[11px] dark:bg-white/10">hreflang</code> alternates.
+              <code className="rounded-md bg-inset px-1.5 py-0.5 font-mono text-[11px]">hreflang</code> alternates.
               Example library entry in Korean:
             </p>
-            <p className="mt-4 font-mono text-[11px] text-neutral-800 dark:text-white/80 sm:text-xs">
+            <p className="mt-4 font-mono text-[11px] text-fg sm:text-xs">
               {`${site}/library?ui=ko`}
             </p>
-            <div className="mt-6 overflow-x-auto rounded-2xl border border-black/8 dark:border-white/10">
+            <div className="mt-6 overflow-x-auto rounded-card border border-line">
               <table className="w-full min-w-[280px] border-collapse text-left text-[11px] sm:text-xs">
                 <caption className="sr-only">Supported ui parameter values</caption>
                 <thead>
-                  <tr className="border-b border-black/10 bg-neutral-50/90 dark:border-white/10 dark:bg-black/40">
-                    <th scope="col" className="px-4 py-3 font-black uppercase tracking-[0.2em] text-neutral-500 dark:text-white/45">
+                  <tr className="border-b border-line bg-sunken">
+                    <th scope="col" className="ic-eyebrow px-4 py-3">
                       ui=
                     </th>
-                    <th scope="col" className="px-4 py-3 font-black uppercase tracking-[0.2em] text-neutral-500 dark:text-white/45">
+                    <th scope="col" className="ic-eyebrow px-4 py-3">
                       Interface
                     </th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-black/8 dark:divide-white/10">
+                <tbody className="divide-y divide-line-subtle">
                   {[
                     ['en', 'English'],
                     ['ja', 'Japanese'],
@@ -143,9 +137,9 @@ export default function LinkToUsPage() {
                     ['zh', 'Chinese (Simplified)'],
                     ['ru', 'Russian'],
                   ].map(([code, label]) => (
-                    <tr key={code} className="bg-white/60 dark:bg-transparent">
-                      <td className="px-4 py-3 font-mono font-medium text-neutral-800 dark:text-white/85">{code}</td>
-                      <td className="px-4 py-3 text-neutral-600 dark:text-white/65">{label}</td>
+                    <tr key={code}>
+                      <td className="px-4 py-3 font-mono font-medium text-fg">{code}</td>
+                      <td className="px-4 py-3 text-fg-secondary">{label}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -153,15 +147,15 @@ export default function LinkToUsPage() {
             </div>
           </section>
 
-          <section className="mt-10 border-t border-black/10 pt-10 dark:border-white/10">
-            <h2 className="text-[11px] font-black uppercase tracking-[0.32em] text-neutral-500 dark:text-white/50">
+          <section className="mt-10 border-t border-line pt-10">
+            <h2 className="ic-eyebrow">
               Optional logo
             </h2>
-            <p className="mt-3 text-sm leading-relaxed text-neutral-600 dark:text-white/65">
+            <p className="mt-3 text-sm leading-relaxed text-fg-secondary">
               Square mark:{' '}
               <a
                 href={`${site}/logo.png`}
-                className="font-semibold text-[#ff5a1f] underline decoration-[#ff5a1f]/35 underline-offset-4"
+                className="font-medium text-accent-text underline decoration-line underline-offset-4 hover:decoration-accent"
               >
                 {site}/logo.png
               </a>{' '}

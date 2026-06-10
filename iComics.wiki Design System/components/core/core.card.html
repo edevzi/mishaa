@@ -1,0 +1,93 @@
+<!-- @dsCard group="Components" viewport="700x460" name="Core — buttons, badges, tags, toggles" subtitle="Actions, status, filters, avatars, switch" -->
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="stylesheet" href="../../styles.css" />
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
+<script src="../../_ds_bundle.js"></script>
+<style>
+  body { padding: 28px; }
+  .row { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-bottom: 18px; }
+  .grp { margin-bottom: 22px; }
+  .grp > .ic-eyebrow { display: block; margin-bottom: 10px; }
+  [data-lucide] { width: 18px; height: 18px; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+  const NS = window.IComicsWikiDesignSystem_3734a1;
+  const { Button, IconButton, Badge, Tag, Avatar, Switch } = NS;
+  const I = ({ n, s = 18 }) => <i data-lucide={n} style={{ width: s, height: s }} />;
+
+  function Demo() {
+    return (
+      <div>
+        <div className="grp">
+          <span className="ic-eyebrow">Buttons</span>
+          <div className="row">
+            <Button variant="primary" iconStart={<I n="book-open" size={16} />}>Read now</Button>
+            <Button variant="secondary" iconStart={<I n="bookmark" size={16} />}>Library</Button>
+            <Button variant="ghost">See all</Button>
+            <Button variant="danger" iconStart={<I n="trash-2" size={16} />}>Clear history</Button>
+            <Button variant="primary" disabled>Disabled</Button>
+          </div>
+          <div className="row">
+            <Button variant="primary" size="sm">Small</Button>
+            <Button variant="primary" size="md">Medium</Button>
+            <Button variant="primary" size="lg">Large</Button>
+          </div>
+        </div>
+
+        <div className="grp">
+          <span className="ic-eyebrow">Icon buttons</span>
+          <div className="row">
+            <IconButton label="Search"><I n="search" /></IconButton>
+            <IconButton label="Bookmark" variant="solid"><I n="bookmark" /></IconButton>
+            <IconButton label="Read" variant="accent"><I n="play" /></IconButton>
+            <IconButton label="RTL" pressed><I n="move-left" /></IconButton>
+            <IconButton label="Settings" variant="solid"><I n="settings" /></IconButton>
+          </div>
+        </div>
+
+        <div className="grp">
+          <span className="ic-eyebrow">Badges &amp; tags</span>
+          <div className="row">
+            <Badge variant="neutral">MangaDex</Badge>
+            <Badge variant="accent">New</Badge>
+            <Badge variant="success">Ongoing</Badge>
+            <Badge variant="info">Trending #1</Badge>
+            <Badge variant="danger">Hiatus</Badge>
+          </div>
+          <div className="row">
+            <Tag>Romance</Tag>
+            <Tag interactive pressed>Fantasy</Tag>
+            <Tag interactive>Drama</Tag>
+            <Tag interactive>Slice of Life</Tag>
+          </div>
+        </div>
+
+        <div className="grp">
+          <span className="ic-eyebrow">Avatars &amp; switch</span>
+          <div className="row">
+            <Avatar name="Rei Tanaka" size="sm" />
+            <Avatar name="Min Seo" size="md" />
+            <Avatar name="Avery Liu" size="lg" />
+            <span style={{ width: 16 }} />
+            <Switch defaultChecked label="On" />
+            <Switch label="Off" />
+          </div>
+        </div>
+      </div>
+    );
+  }
+  ReactDOM.createRoot(document.getElementById("root")).render(<Demo />);
+  setTimeout(() => window.lucide && window.lucide.createIcons(), 60);
+</script>
+</body>
+</html>

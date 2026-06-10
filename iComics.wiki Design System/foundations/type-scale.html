@@ -1,0 +1,24 @@
+<!-- @dsCard group="Type" viewport="700x230" name="Type scale" subtitle="11 → 88px ramp; serif for display, sans for everything else" -->
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8" />
+<link rel="stylesheet" href="../styles.css" />
+<style>
+  body { padding: 24px; }
+  .r { display:flex; align-items: baseline; gap: 16px; padding: 5px 0; border-bottom: 1px solid var(--border-subtle); }
+  .r .t { font-family: var(--font-mono); font-size: 10px; color: var(--text-muted); width: 90px; flex:none; }
+  .sans { font-family: var(--font-sans); color: var(--text-primary); }
+  .serif { font-family: var(--font-display); color: var(--text-primary); }
+</style>
+</head>
+<body>
+  <div class="r"><span class="t">display 64</span><span class="serif" style="font-size:64px;line-height:1">Reading room</span></div>
+  <div class="r"><span class="t">3xl 48 serif</span><span class="serif" style="font-size:36px">Featured today</span></div>
+  <div class="r"><span class="t">xl 28 / bold</span><span class="sans" style="font-size:28px;font-weight:700">Section heading</span></div>
+  <div class="r"><span class="t">lg 22 / 600</span><span class="sans" style="font-size:22px;font-weight:600">Card title</span></div>
+  <div class="r"><span class="t">base 16</span><span class="sans" style="font-size:16px">Body & UI default text</span></div>
+  <div class="r"><span class="t">sm 14</span><span class="sans" style="font-size:14px;color:var(--text-secondary)">Secondary UI</span></div>
+  <div class="r"><span class="t">xs 12 mono</span><span class="sans" style="font-family:var(--font-mono);font-size:12px;color:var(--text-muted)">Metadata · captions</span></div>
+</body>
+</html>

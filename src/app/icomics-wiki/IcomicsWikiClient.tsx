@@ -26,26 +26,27 @@ export default function IcomicsWikiClient() {
   }, []);
 
   return (
-    <div className="min-h-screen overflow-x-hidden bg-zinc-50 text-neutral-900 selection:bg-[#ff4d00] selection:text-white dark:bg-[#020202] dark:text-white dark:selection:text-white">
+    <div className="min-h-screen overflow-x-hidden bg-app text-fg">
       <Navbar />
 
-      <main className="container mx-auto max-w-3xl px-4 pb-24 pt-24 sm:px-6 sm:pb-28 sm:pt-28 lg:px-8 lg:pb-32 lg:pt-36">
-        <header className="space-y-4 text-center sm:space-y-6">
-          <p className="text-[10px] font-black uppercase tracking-[0.45em] text-[#ff4d00]">{t.kicker}</p>
-          <h1 className="text-balance font-display text-4xl uppercase italic tracking-tighter text-neutral-900 dark:text-white sm:text-5xl md:text-6xl">
+      <main className="pt-nav-catalog">
+        <div className="wrap max-w-3xl py-14 sm:py-16 lg:py-20">
+        <header className="space-y-5 text-center">
+          <p className="ic-eyebrow">{t.kicker}</p>
+          <h1 className="ic-display text-balance text-4xl text-fg sm:text-5xl md:text-6xl">
             {t.titleLine1}{' '}
-            <span className="text-[#3b82f6] not-italic">{t.titleLine2}</span>
+            <span className="text-accent-text">{t.titleLine2}</span>
           </h1>
-          <p className="mx-auto text-sm leading-relaxed text-neutral-600 dark:text-white/55 md:text-base">{t.lead}</p>
+          <p className="mx-auto text-sm leading-relaxed text-fg-secondary md:text-base">{t.lead}</p>
         </header>
 
-        <article className="mt-12 space-y-6 rounded-[1.75rem] border border-neutral-200 bg-white/90 p-8 text-sm leading-relaxed text-neutral-800 backdrop-blur-xl dark:border-white/10 dark:bg-white/[0.03] dark:text-white/75 md:p-12 md:text-base">
+        <article className="mt-12 space-y-6 rounded-card border border-line bg-card p-8 text-sm leading-relaxed text-fg-secondary md:p-12 md:text-base">
           <p>{t.p1}</p>
           <p>{t.p2}</p>
           <p>{t.p3}</p>
-          <section className="rounded-2xl border border-neutral-200 bg-neutral-50/80 px-6 py-5 dark:border-white/10 dark:bg-black/40">
-            <h2 className="text-[10px] font-black uppercase tracking-[0.4em] text-[#ff4d00]">{t.quickCheckTitle}</h2>
-            <ul className="mt-4 list-disc space-y-2 pl-5 marker:text-[#ff4d00]">
+          <section className="rounded-card border border-line bg-inset px-6 py-5">
+            <h2 className="ic-eyebrow text-accent-text">{t.quickCheckTitle}</h2>
+            <ul className="mt-4 list-disc space-y-2 pl-5 marker:text-accent">
               <li>{t.quickLi1}</li>
               <li>{t.quickLi2}</li>
               <li>{t.quickLi3}</li>
@@ -53,19 +54,14 @@ export default function IcomicsWikiClient() {
           </section>
         </article>
 
-        <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row sm:gap-6">
-          <Link
-            href="/faq"
-            className="rounded-xl border-2 border-black bg-[#ff4d00] px-8 py-4 text-[10px] font-black uppercase tracking-[0.35em] text-white shadow-[6px_6px_0_#000] transition-transform hover:-translate-y-0.5 dark:border-white dark:shadow-[6px_6px_0_#fff]"
-          >
+        <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row sm:gap-5">
+          <Link href="/faq" className="ic-btn ic-btn--primary ic-btn--lg">
             {t.ctaFaq}
           </Link>
-          <Link
-            href="/library"
-            className="rounded-xl border-2 border-neutral-900 bg-white px-8 py-4 text-[10px] font-black uppercase tracking-[0.35em] text-neutral-900 transition-transform hover:-translate-y-0.5 dark:border-white dark:bg-transparent dark:text-white"
-          >
+          <Link href="/library" className="ic-btn ic-btn--secondary ic-btn--lg">
             {t.ctaLibrary}
           </Link>
+        </div>
         </div>
       </main>
 

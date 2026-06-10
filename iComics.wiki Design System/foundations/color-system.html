@@ -1,0 +1,24 @@
+<!-- @dsCard group="Colors" viewport="700x150" name="System hues" subtitle="Success / danger / info / warning — restrained, used only for state" -->
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8" />
+<link rel="stylesheet" href="../styles.css" />
+<style>
+  body { padding: 22px; }
+  .scale { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; }
+  .sw { border-radius: var(--radius-md); height: 70px; border: 1px solid var(--border-subtle); }
+  .lab { font-family: var(--font-mono); font-size: 10px; margin-top: 7px; color: var(--text-muted); line-height: 1.4; }
+  .lab b { display: block; color: var(--text-secondary); font-weight: 500; }
+</style>
+</head>
+<body>
+<div class="scale">
+  <div><div class="sw" style="background:var(--success)"></div><div class="lab"><b>success</b>#3BA776</div></div>
+  <div><div class="sw" style="background:var(--danger)"></div><div class="lab"><b>danger</b>#E5565B</div></div>
+  <div><div class="sw" style="background:var(--info)"></div><div class="lab"><b>info</b>#4C8DF6</div></div>
+  <div><div class="sw" style="background:var(--warning)"></div><div class="lab"><b>warning</b>#E3B341</div></div>
+  <div><div class="sw" style="background:var(--dusk-500)"></div><div class="lab"><b>dusk</b>#6F66B8</div></div>
+</div>
+</body>
+</html>

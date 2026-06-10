@@ -36,40 +36,37 @@ export default function AboutPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-zinc-50 text-neutral-900 selection:bg-[#ff4d00] selection:text-white overflow-x-hidden dark:bg-[#020202] dark:text-white dark:selection:text-white">
-      
-      
+    <div className="min-h-screen overflow-x-hidden bg-app text-fg">
       <Navbar />
 
-      <main className="container mx-auto px-4 sm:px-6 lg:px-8 pt-24 sm:pt-28 lg:pt-36 pb-20 sm:pb-28 lg:pb-32">
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="max-w-4xl mx-auto space-y-16 sm:space-y-24"
+      <main className="pt-nav-catalog">
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.28, ease: [0.22, 0.61, 0.36, 1] }}
+          className="wrap max-w-4xl space-y-16 py-14 sm:py-16 lg:py-20"
         >
           {/* Header */}
-          <div className="text-center space-y-6 sm:space-y-8">
-            <div className="inline-block bg-[#ff4d00] px-6 py-2 border border-neutral-200 dark:border-white/10 rounded-xl shadow-[6px_6px_0px_#000]">
-              <span className="text-white text-[10px] font-black uppercase tracking-[0.4em]">{t.origin}</span>
-            </div>
-            <h1 className="text-4xl sm:text-6xl md:text-9xl font-display uppercase tracking-tighter leading-none italic text-balance">
+          <div className="space-y-6">
+            <p className="ic-eyebrow">{t.origin}</p>
+            <h1 className="ic-display text-balance text-4xl sm:text-5xl md:text-6xl">
                {t.titleLine1}{' '}
-               <span className="text-[#3b82f6]">{t.titleLine2}</span>
+               <span className="text-accent-text">{t.titleLine2}</span>
             </h1>
-            <p className="text-lg sm:text-2xl md:text-4xl font-sans font-black uppercase leading-tight tracking-tight border-y-4 border-black py-6 sm:py-8">
+            <p className="max-w-3xl border-y border-line py-6 text-lg leading-relaxed text-fg-secondary sm:text-xl">
               {t.headline}
             </p>
-            <div className="mx-auto max-w-3xl rounded-xl border border-neutral-200 bg-white/90 px-6 py-6 text-left shadow-[8px_8px_0_#000] dark:border-white/10 dark:bg-white/[0.04] sm:px-10 sm:py-8">
-              <h2 className="text-[10px] font-black uppercase tracking-[0.45em] text-[#ff4d00]">{t.trustTitle}</h2>
-              <p className="mt-4 text-sm font-medium leading-relaxed text-neutral-700 dark:text-white/70 sm:text-base">
+            <div className="max-w-3xl rounded-card border border-line bg-card px-6 py-6 text-left sm:px-8 sm:py-7">
+              <h2 className="ic-eyebrow text-accent-text">{t.trustTitle}</h2>
+              <p className="mt-4 text-sm leading-relaxed text-fg-secondary sm:text-base">
                 {t.trustBody}
               </p>
             </div>
-            <div className="mx-auto max-w-3xl rounded-xl border border-[#3b82f6]/30 bg-white/95 px-6 py-6 text-left shadow-[8px_8px_0_#000] dark:border-[#3b82f6]/25 dark:bg-white/[0.06] sm:px-10 sm:py-8">
-              <h2 className="text-[10px] font-black uppercase tracking-[0.45em] text-[#3b82f6]">{t.wikiIdentityTitle}</h2>
-              <p className="mt-4 text-sm font-medium leading-relaxed text-neutral-700 dark:text-white/70 sm:text-base">
+            <div className="max-w-3xl rounded-card border border-line bg-card px-6 py-6 text-left sm:px-8 sm:py-7">
+              <h2 className="ic-eyebrow">{t.wikiIdentityTitle}</h2>
+              <p className="mt-4 text-sm leading-relaxed text-fg-secondary sm:text-base">
                 {t.wikiIdentityBody}{' '}
-                <Link href="/icomics-wiki" className="font-semibold text-[#ff5a1f] underline decoration-[#ff5a1f]/40 underline-offset-4">
+                <Link href="/icomics-wiki" className="font-medium text-accent-text underline decoration-line underline-offset-4 hover:decoration-accent">
                   /icomics-wiki
                 </Link>
                 .
@@ -78,48 +75,48 @@ export default function AboutPage() {
           </div>
 
           {/* Grid Layout for Content */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-12">
-            <div className="p-6 sm:p-12 bg-white space-y-6 border border-neutral-200 dark:border-white/10 rounded-xl shadow-[12px_12px_0_#000]">
-              <div className="w-16 h-16 bg-[#ff4d00] border border-neutral-200 dark:border-white/10 rounded-xl flex items-center justify-center shadow-[6px_6px_0px_#000]">
-                <BookOpen size={32} />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-5 rounded-card border border-line bg-card p-6 sm:p-10">
+              <div className="flex h-14 w-14 items-center justify-center rounded-btn bg-accent-tint text-accent-text">
+                <BookOpen size={28} />
               </div>
-              <h2 className="text-3xl sm:text-4xl font-display uppercase tracking-tight text-balance">{t.missionTitle}</h2>
-              <p className="text-lg opacity-60 font-medium leading-relaxed">
+              <h2 className="ic-display text-balance text-2xl sm:text-3xl">{t.missionTitle}</h2>
+              <p className="text-base leading-relaxed text-fg-secondary">
                 {t.missionText}
               </p>
             </div>
 
-            <div className="p-6 sm:p-12 bg-[#111111] text-white space-y-6 border-4 border-white shadow-[12px_12px_0_#fff]">
-              <div className="w-16 h-16 bg-[#ff4d00] border-4 border-white flex items-center justify-center shadow-[6px_6px_0px_#fff]">
-                <Zap size={32} />
+            <div className="space-y-5 rounded-card border border-line bg-card p-6 sm:p-10">
+              <div className="flex h-14 w-14 items-center justify-center rounded-btn bg-accent-tint text-accent-text">
+                <Zap size={28} />
               </div>
-              <h2 className="text-3xl sm:text-4xl font-display uppercase tracking-tight text-balance">{t.techTitle}</h2>
-              <p className="text-lg opacity-60 font-medium leading-relaxed">
+              <h2 className="ic-display text-balance text-2xl sm:text-3xl">{t.techTitle}</h2>
+              <p className="text-base leading-relaxed text-fg-secondary">
                 {t.techText}
               </p>
             </div>
           </div>
 
-          <div className="space-y-8 sm:space-y-12">
-            <h2 className="text-3xl sm:text-5xl font-display uppercase tracking-tighter italic text-balance">{t.whyExist}</h2>
+          <div className="space-y-8">
+            <h2 className="ic-display text-balance text-3xl sm:text-4xl">{t.whyExist}</h2>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 sm:gap-8">
                {reasons.map((item, i) => (
-                 <div key={i} className="border-l-4 border-black pl-6 space-y-2">
-                   <h4 className="font-black uppercase text-[10px] tracking-[0.3em] text-[#e63946]">{item.title}</h4>
-                   <p className="text-sm font-medium opacity-60">{item.text}</p>
+                 <div key={i} className="space-y-2 border-l-2 border-accent pl-5">
+                   <h4 className="ic-eyebrow text-accent-text">{item.title}</h4>
+                   <p className="text-sm leading-relaxed text-fg-secondary">{item.text}</p>
                  </div>
                ))}
             </div>
           </div>
 
           {/* Contact Accent */}
-          <div className="bg-[#ff4d00] border border-neutral-200 dark:border-white/10 rounded-xl p-6 sm:p-12 shadow-[12px_12px_0px_#000] flex flex-col md:flex-row items-center justify-between gap-6 sm:gap-8">
+          <div className="flex flex-col items-start justify-between gap-6 rounded-card border border-line bg-card p-6 sm:p-10 md:flex-row md:items-center">
             <div>
-              <h2 className="text-3xl sm:text-4xl font-display uppercase leading-none mb-2 text-balance">{t.joinTitle}</h2>
-              <p className="font-black uppercase text-[10px] tracking-widest opacity-40">{t.joinSub}</p>
+              <h2 className="ic-display mb-2 text-balance text-2xl sm:text-3xl">{t.joinTitle}</h2>
+              <p className="ic-eyebrow">{t.joinSub}</p>
             </div>
             <Link href="/auth">
-              <button className="rounded-lg border-2 border-white bg-black px-8 py-4 uppercase font-black tracking-widest text-white transition-all hover:bg-white hover:text-black md:px-12 md:py-6">
+              <button className="ic-btn ic-btn--primary ic-btn--lg">
                 {t.activeBtn}
               </button>
             </Link>

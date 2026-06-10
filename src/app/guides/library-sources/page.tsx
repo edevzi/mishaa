@@ -14,7 +14,7 @@ export default function LibrarySourcesGuidePage() {
       {articleLd ? <JsonLd data={articleLd} /> : null}
       <GuideArticleShell
       badge="Sources & safety"
-      icon={<Database size={14} className="text-[#ff4d00]" />}
+      icon={<Database size={14} className="text-accent" />}
       title="Library sources, safety settings, and age gate"
       subtitle="Understand why titles aggregate from multiple APIs, how restricted catalogs behave, and where readers manage verification."
       sections={[

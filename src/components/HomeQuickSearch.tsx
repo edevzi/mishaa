@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { imageUnoptimizedForSrc } from '@/lib/next-image-unoptimized';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ChevronRight, Loader2, Search, X } from 'lucide-react';
+import { ArrowRight, Loader2, Search, X } from 'lucide-react';
 import type { ComicListItem } from '@/lib/comic-types';
 import type { MangaLanguage } from '@/lib/manga-language';
 import { searchComicsWithClientCache } from '@/lib/comic-search-client-cache';
@@ -126,10 +126,10 @@ export default function HomeQuickSearch({
   }, [open]);
 
   return (
-    <div ref={searchBoxRef} className="relative z-30 mb-10 sm:mb-12">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="relative flex-1">
-          <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400 dark:text-white/25" />
+    <div ref={searchBoxRef} className="relative z-30">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+        <div className="ic-input-wrap has-icon relative flex-1">
+          <Search size={16} aria-hidden />
           <input
             type="search"
             value={query}
@@ -137,44 +137,41 @@ export default function HomeQuickSearch({
             onFocus={() => trimmed.length >= 2 && setOpen(true)}
             placeholder={t.quickSearchPlaceholder}
             autoComplete="off"
-            className="w-full rounded-2xl border border-neutral-200 bg-white py-4 pl-12 pr-12 text-sm font-semibold text-neutral-900 outline-none transition placeholder:text-neutral-400 focus:border-[#ff5a1f] dark:border-white/10 dark:bg-black/50 dark:text-white dark:placeholder:text-white/30"
+            className="ic-input pr-11"
             aria-label={t.quickSearchPlaceholder}
           />
           {query ? (
             <button
               type="button"
-              className="absolute right-3 top-1/2 -translate-y-1/2 rounded-lg p-1 text-neutral-400 hover:text-neutral-900 dark:hover:text-white"
+              className="ic-iconbtn ic-iconbtn--sm absolute right-1.5 top-1/2 -translate-y-1/2"
               onClick={() => {
                 setQuery('');
                 setOpen(false);
               }}
               aria-label="Clear"
             >
-              <X size={16} />
+              <X size={15} />
             </button>
           ) : null}
         </div>
-        <Link
-          href={libraryHref}
-          className="inline-flex shrink-0 items-center justify-center rounded-2xl border border-neutral-200 bg-neutral-50 px-5 py-3 text-[10px] font-bold uppercase tracking-[0.2em] text-neutral-800 transition hover:border-[#ff5a1f] hover:text-[#ff5a1f] dark:border-white/10 dark:bg-white/5 dark:text-white dark:hover:text-[#ff5a1f]"
-        >
+        <Link href={libraryHref} className="ic-btn ic-btn--secondary ic-btn--md shrink-0">
           {t.viewAllInLibrary}
+          <ArrowRight size={15} aria-hidden />
         </Link>
       </div>
-      <p className="mt-2 text-[10px] font-medium uppercase tracking-[0.25em] text-neutral-400 dark:text-white/25">
+      <p className="ic-eyebrow mt-2 normal-case tracking-[0.04em]">
         {t.quickSearchHint}
       </p>
 
       {open && trimmed.length >= 2 ? (
-        <div className="absolute left-0 right-0 top-full z-[5000] mt-2 overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-2xl dark:border-white/10 dark:bg-[#0d0d0d] sm:left-auto sm:right-auto sm:min-w-[min(100%,28rem)]">
-          <div className="flex items-center justify-between border-b border-neutral-100 px-3 py-2 dark:border-white/5">
-            <span className="px-2 text-[9px] font-bold uppercase tracking-[0.35em] text-neutral-400 dark:text-white/35">
-              {t.quickSearchResults}
-            </span>
+        <div className="qresults sm:right-auto sm:min-w-[min(100%,28rem)]">
+          <div className="flex items-center justify-between border-b border-line-subtle px-3.5 py-2">
+            <span className="ic-eyebrow">{t.quickSearchResults}</span>
             <button
               type="button"
-              className="p-2 text-neutral-400 hover:text-neutral-900 dark:hover:text-white"
+              className="ic-iconbtn ic-iconbtn--sm"
               onClick={() => setOpen(false)}
+              aria-label="Close results"
             >
               <X size={14} />
             </button>
@@ -182,48 +179,50 @@ export default function HomeQuickSearch({
           <div className="max-h-[22rem] overflow-y-auto">
             {loading ? (
               <div className="flex flex-col items-center gap-2 px-6 py-10">
-                <Loader2 className="h-6 w-6 animate-spin text-[#ff5a1f]" />
-                <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-neutral-400 dark:text-white/30">
-                  {t.quickSearchSearching}
-                </span>
+                <Loader2 className="h-5 w-5 animate-spin text-accent" aria-hidden />
+                <span className="ic-eyebrow">{t.quickSearchSearching}</span>
               </div>
             ) : results.length === 0 ? (
-              <div className="px-6 py-8 text-center text-[10px] font-bold uppercase tracking-[0.3em] text-neutral-400 dark:text-white/25">
-                {t.quickSearchNone}
+              <div className="px-6 py-8 text-center">
+                <span className="ic-eyebrow">{t.quickSearchNone}</span>
               </div>
             ) : (
-              results.map((comic) => (
-                <button
-                  key={`${comic.source}:${comic.id}`}
-                  type="button"
-                  className="flex w-full items-center gap-3 border-b border-neutral-100 px-3 py-2 text-left transition hover:bg-neutral-50 dark:border-white/5 dark:hover:bg-white/5"
-                  onClick={() => {
-                    setOpen(false);
-                    router.push(`/library/${comic.source}/${comic.id}`);
-                  }}
+              <>
+                {results.map((comic) => (
+                  <button
+                    key={`${comic.source}:${comic.id}`}
+                    type="button"
+                    className="qresult w-full text-left"
+                    onClick={() => {
+                      setOpen(false);
+                      router.push(`/library/${comic.source}/${comic.id}`);
+                    }}
+                  >
+                    <span className="qresult__thumb">
+                      <Image
+                        src={comic.coverUrl || '/logo.png'}
+                        alt={`${comic.title} — cover`}
+                        fill
+                        sizes="30px"
+                        quality={65}
+                        unoptimized={imageUnoptimizedForSrc(comic.coverUrl || '/logo.png')}
+                        className="object-cover"
+                      />
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="qresult__t block truncate">{comic.title}</span>
+                      <span className="qresult__m block">{comic.source}</span>
+                    </span>
+                  </button>
+                ))}
+                <Link
+                  href={libraryHref}
+                  className="qresult qresult--all"
+                  onClick={() => setOpen(false)}
                 >
-                  <div className="relative aspect-[2/3] h-12 shrink-0 overflow-hidden rounded-lg border border-neutral-200 bg-neutral-100 dark:border-white/10 dark:bg-neutral-900">
-                    <Image
-                      src={comic.coverUrl || '/logo.png'}
-                      alt={`${comic.title} — cover`}
-                      fill
-                      sizes="48px"
-                      quality={65}
-                      unoptimized={imageUnoptimizedForSrc(comic.coverUrl || '/logo.png')}
-                      className="object-cover"
-                    />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="truncate text-xs font-bold uppercase tracking-tight text-neutral-900 dark:text-white">
-                      {comic.title}
-                    </div>
-                    <div className="mt-1 text-[8px] font-bold uppercase tracking-widest text-[#ff5a1f]">
-                      {comic.source}
-                    </div>
-                  </div>
-                  <ChevronRight className="h-4 w-4 shrink-0 text-neutral-300 dark:text-white/20" />
-                </button>
-              ))
+                  {t.viewAllInLibrary} →
+                </Link>
+              </>
             )}
           </div>
         </div>

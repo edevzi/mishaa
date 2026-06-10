@@ -1,0 +1,10 @@
+/* iComics.wiki — Webfonts
+   Loaded from Google Fonts. NOTE: these are CDN @imports, not self-hosted binaries.
+   If you need offline/self-hosted fonts, download the families below and swap to @font-face.
+   Families:
+     - Instrument Serif  : editorial high-contrast display (hero titles, big numerals)
+     - Onest             : UI + body grotesque (full Latin + Cyrillic)
+     - IBM Plex Mono     : metadata, scores, kbd, labels (Latin + Cyrillic)
+     - Noto Sans JP/KR/SC: CJK fallbacks so JA/KO/ZH UI text renders correctly
+*/
+@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Onest:wght@300..800&family=IBM+Plex+Mono:wght@400;500;600&family=Noto+Sans+JP:wght@400;500;700&family=Noto+Sans+KR:wght@400;500;700&family=Noto+Sans+SC:wght@400;500;700&display=swap');

@@ -1,0 +1,145 @@
+/* ============================================================================
+   iComics.wiki — COLOR SYSTEM
+   Concept "Reading Room": warm plum-ink dark, warm paper light, marigold signal.
+   Base palettes are constant; semantic aliases flip per theme.
+   Dark is the default (:root). Light overrides live under [data-theme="light"].
+   ============================================================================ */
+
+:root {
+  /* ---- Base palette: INK (warm plum-charcoal neutrals, dark surfaces) ---- */
+  --ink-990: #0C0B10;   /* deepest — reader bg, overlays */
+  --ink-950: #110F16;   /* app background */
+  --ink-900: #16131C;   /* app background (raised base) */
+  --ink-850: #1C1925;   /* raised surface / sticky bars */
+  --ink-800: #221E2D;   /* card surface */
+  --ink-750: #2A2637;   /* card hover */
+  --ink-700: #342F43;   /* hairline border (strong) */
+  --ink-650: #403A52;   /* border */
+  --ink-500: #5A5470;   /* disabled / faint */
+
+  /* ---- Base palette: PAPER (warm off-whites, light surfaces + dark text) ---- */
+  --paper-0:   #FFFFFF;
+  --paper-50:  #FBF8F3;  /* warm paper — light app bg */
+  --paper-100: #F4F0E8;  /* raised */
+  --paper-150: #ECE7DC;  /* card hover (light) */
+  --paper-200: #E4DED1;  /* border (light) */
+  --paper-300: #D6CFBE;  /* border strong (light) */
+
+  /* ---- Text neutrals ---- */
+  --warm-white:  #F8F5F0;  /* primary text on dark */
+  --warm-300:    #C7C1D2;  /* secondary on dark */
+  --warm-500:    #948EA6;  /* muted on dark */
+  --warm-ink:    #1B1822;  /* primary text on light */
+  --warm-ink-600:#4B4658;  /* secondary on light */
+  --warm-ink-400:#787287;  /* muted on light */
+
+  /* ---- Brand: MARIGOLD (the signature warm accent) ---- */
+  --marigold-200: #FCD9A8;
+  --marigold-300: #FBC685;
+  --marigold-400: #F7AE5A;
+  --marigold-500: #F2994A;   /* BRAND CORE */
+  --marigold-600: #E07F2E;   /* pressed */
+  --marigold-700: #B5611C;   /* deep — accent text on light */
+  --marigold-800: #8A4A18;
+
+  /* ---- Secondary editorial tint: DUSK (cool plum-blue, used sparingly) ---- */
+  --dusk-400: #8E86C9;
+  --dusk-500: #6F66B8;
+  --dusk-600: #574FA0;
+
+  /* ---- Semantic hues (content + system states) ---- */
+  --green-500:  #3BA776;   --green-600:  #1F8A5B;
+  --red-500:    #E5565B;   --red-600:    #CF3338;
+  --blue-500:   #4C8DF6;   --blue-600:   #2F6FD6;
+  --yellow-500: #E3B341;   --yellow-600: #C5972A;
+  --pink-500:   #E0568F;   --pink-600:   #C53C77;
+
+  /* ---- Content-rating accents (safe / suggestive / erotica) ---- */
+  --rating-safe:       var(--green-500);
+  --rating-suggestive: var(--yellow-500);
+  --rating-erotica:    var(--pink-500);
+
+  /* ========================================================================
+     SEMANTIC ALIASES — DARK (default)
+     ======================================================================== */
+  --surface-app:      var(--ink-950);
+  --surface-base:     var(--ink-900);
+  --surface-raised:   var(--ink-850);
+  --surface-card:     var(--ink-800);
+  --surface-card-hov: var(--ink-750);
+  --surface-sunken:   var(--ink-990);
+  --surface-inset:    rgba(255,255,255,0.03);
+
+  --text-primary:   var(--warm-white);
+  --text-secondary: var(--warm-300);
+  --text-muted:     var(--warm-500);
+  --text-on-accent: #2A1705;            /* dark ink on marigold */
+
+  --border:         var(--ink-650);
+  --border-subtle:  var(--ink-700);
+  --border-strong:  var(--ink-500);
+
+  --accent:         var(--marigold-500);
+  --accent-hover:   var(--marigold-400);
+  --accent-press:   var(--marigold-600);
+  --accent-text:    var(--marigold-400);  /* accent used as text on dark */
+  --accent-tint:    rgba(242,153,74,0.14);
+  --accent-tint-2:  rgba(242,153,74,0.08);
+
+  --focus-ring:     var(--marigold-400);
+  --focus-ring-offset: var(--ink-950);
+
+  --success: var(--green-500);
+  --danger:  var(--red-500);
+  --info:    var(--blue-500);
+  --warning: var(--yellow-500);
+
+  /* Reader background themes (the reading canvas) */
+  --reader-dark-bg:  #0C0B10;  --reader-dark-fg:  #E9E5EE;
+  --reader-light-bg: #F6F3EC;  --reader-light-fg: #221E2D;
+  --reader-sepia-bg: #F0E2C6;  --reader-sepia-fg: #4A3B26;
+
+  /* Scrim / protection gradients */
+  --scrim-strong: linear-gradient(180deg, transparent 0%, rgba(8,7,11,0.55) 55%, rgba(8,7,11,0.92) 100%); /* @kind color */
+  --scrim-side:   linear-gradient(90deg, rgba(8,7,11,0.94) 0%, rgba(8,7,11,0.6) 45%, transparent 100%); /* @kind color */
+}
+
+/* ========================================================================
+   SEMANTIC ALIASES — LIGHT
+   ======================================================================== */
+[data-theme="light"] {
+  --surface-app:      var(--paper-50);
+  --surface-base:     var(--paper-50);
+  --surface-raised:   var(--paper-0);
+  --surface-card:     var(--paper-0);
+  --surface-card-hov: var(--paper-100);
+  --surface-sunken:   var(--paper-100);
+  --surface-inset:    rgba(27,24,34,0.03);
+
+  --text-primary:   var(--warm-ink);
+  --text-secondary: var(--warm-ink-600);
+  --text-muted:     var(--warm-ink-400);
+  --text-on-accent: #2A1705;
+
+  --border:         var(--paper-200);
+  --border-subtle:  var(--paper-150);
+  --border-strong:  var(--paper-300);
+
+  --accent:         var(--marigold-500);
+  --accent-hover:   var(--marigold-600);
+  --accent-press:   var(--marigold-700);
+  --accent-text:    var(--marigold-700);  /* deep marigold for contrast on paper */
+  --accent-tint:    rgba(242,153,74,0.16);
+  --accent-tint-2:  rgba(242,153,74,0.09);
+
+  --focus-ring:     var(--marigold-600);
+  --focus-ring-offset: var(--paper-50);
+
+  --success: var(--green-600);
+  --danger:  var(--red-600);
+  --info:    var(--blue-600);
+  --warning: var(--yellow-600);
+
+  --scrim-strong: linear-gradient(180deg, transparent 0%, rgba(20,16,24,0.35) 55%, rgba(20,16,24,0.78) 100%); /* @kind color */
+  --scrim-side:   linear-gradient(90deg, rgba(20,16,24,0.82) 0%, rgba(20,16,24,0.45) 45%, transparent 100%); /* @kind color */
+}

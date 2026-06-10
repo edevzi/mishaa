@@ -1,11 +1,10 @@
 import type { Metadata, Viewport } from "next";
 import { Suspense } from "react";
 import { cookies, headers } from "next/headers";
-import { Outfit, Bricolage_Grotesque, JetBrains_Mono } from "next/font/google";
+import { Onest, Instrument_Serif, IBM_Plex_Mono, Bricolage_Grotesque } from "next/font/google";
 import "./globals.css";
 import { getPublicSiteUrl } from "@/lib/og-metadata";
 import { ICS_SITE_DISPLAY_NAME } from "@/lib/seo/page-metadata";
-import SmoothAnimations from "@/components/SmoothAnimations";
 import RegionalShell from "@/components/RegionalShell";
 import CookieConsentBanner from "@/components/CookieConsentBanner";
 import GlobalAgeGate from "@/components/GlobalAgeGate";
@@ -26,31 +25,44 @@ function htmlLangFromUiCookie(value: string | undefined): string {
 
 const SITE_ORIGIN = getPublicSiteUrl().replace(/\/$/, "");
 
-const outfit = Outfit({
-  variable: "--font-outfit",
+const onest = Onest({
+  variable: "--font-onest",
+  subsets: ["latin", "cyrillic"],
+  display: "swap",
+});
+
+const instrumentSerif = Instrument_Serif({
+  variable: "--font-instrument-serif",
+  weight: "400",
+  style: ["normal", "italic"],
   subsets: ["latin"],
   display: "swap",
 });
 
+const plexMono = IBM_Plex_Mono({
+  variable: "--font-plex-mono",
+  weight: ["400", "500", "600"],
+  subsets: ["latin"],
+  display: "swap",
+});
+
+/* The logo wordmark keeps its original face — loaded only for the logo. */
 const bricolage = Bricolage_Grotesque({
   variable: "--font-bricolage",
   subsets: ["latin"],
   display: "swap",
 });
 
-const jetBrainsMono = JetBrains_Mono({
-  variable: "--font-mono",
-  subsets: ["latin"],
-  display: "swap",
-});
+/* Apply the persisted theme before first paint (dark is the default). */
+const THEME_BOOTSTRAP = `try{var t=localStorage.getItem("icw-theme");document.documentElement.dataset.theme=t==="light"?"light":"dark"}catch(e){}`;
 
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#fafafa" },
-    { media: "(prefers-color-scheme: dark)", color: "#050505" },
+    { media: "(prefers-color-scheme: light)", color: "#FBF8F3" },
+    { media: "(prefers-color-scheme: dark)", color: "#110F16" },
   ],
 };
 
@@ -147,9 +159,14 @@ export default async function RootLayout({
   return (
     <html
       lang={htmlLang}
-      className={`${outfit.variable} ${bricolage.variable} ${jetBrainsMono.variable} h-full min-h-dvh antialiased`}
+      data-theme="dark"
+      suppressHydrationWarning
+      className={`${onest.variable} ${instrumentSerif.variable} ${plexMono.variable} ${bricolage.variable} h-full min-h-dvh antialiased`}
     >
-      <body className="min-h-dvh flex flex-col bg-transparent pb-[env(safe-area-inset-bottom)]">
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: THEME_BOOTSTRAP }} />
+      </head>
+      <body className="min-h-dvh flex flex-col pb-[env(safe-area-inset-bottom)]">
         <RegionalShell
           analyticsConsentRequired={analyticsConsentRequired}
           eastAsiaAgeCopy={eastAsiaAgeCopy}
@@ -157,11 +174,10 @@ export default async function RootLayout({
         >
           <a
             href="#main-content"
-            className="sr-only focus:not-sr-only fixed left-4 top-4 z-[99999] rounded-xl bg-white px-4 py-3 text-[10px] font-black uppercase tracking-[0.35em] text-black"
+            className="sr-only focus:not-sr-only fixed left-4 top-4 z-[99999] rounded-btn bg-accent px-4 py-3 font-mono text-[11px] font-medium uppercase tracking-[0.12em] text-on-accent"
           >
             {skipToContentLabel}
           </a>
-          <SmoothAnimations />
           <LocaleBootstrap />
           <GlobalAgeGate />
           <JsonLd data={buildOrganizationJsonLd()} />

@@ -121,9 +121,9 @@ async function BrowseTitlesNav() {
   return (
     <nav
       aria-label="Browse popular series"
-      className="mx-auto max-w-6xl border-t border-neutral-200 px-4 py-10 dark:border-white/10"
+      className="mx-auto max-w-6xl border-t border-line px-4 py-10"
     >
-      <h2 className="mb-4 text-sm font-semibold uppercase tracking-widest text-neutral-500 dark:text-zinc-400">
+      <h2 className="ic-eyebrow mb-4">
         Popular series
       </h2>
       <ul className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm sm:grid-cols-3 lg:grid-cols-4">
@@ -131,7 +131,7 @@ async function BrowseTitlesNav() {
           <li key={item.id} className="truncate">
             <Link
               href={`/library/mangadex/${item.id}`}
-              className="text-neutral-600 transition-colors hover:text-[#ff4d00] dark:text-zinc-400 dark:hover:text-[#ff4d00]"
+              className="text-fg-secondary transition-colors hover:text-accent-text"
             >
               {item.title}
             </Link>

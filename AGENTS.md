@@ -4,13 +4,17 @@
 This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` before writing any code. Heed deprecation notices.
 <!-- END:nextjs-agent-rules -->
 
-## UI Direction Notes
+## UI Direction Notes — "Reading Room" design system
 
-- Keep hero layouts minimal unless the user explicitly asks for more density.
+The app follows the design system in `iComics.wiki Design System/` (tokens ported into `src/app/globals.css`). Read its `readme.md` before styling anything.
+
+- Calm, editorial, cover-art-forward. Dark default (warm plum-ink), light mode (warm paper) via `data-theme`; semantic token utilities (`bg-app`, `bg-card`, `text-fg`, `text-fg-secondary`, `border-line`, `bg-accent`, …) flip automatically.
+- ONE accent: marigold `#F2994A` (`--accent`). Never reintroduce the legacy orange-on-black palette, gradients, glass/halftone/neon effects, or decorative motion.
+- Type: Onest (sans, UI/body) · Instrument Serif (display, regular weight, never uppercase) · IBM Plex Mono (micro-labels). Sentence case everywhere; uppercase only in `.ic-eyebrow` mono micro-labels.
+- Reusable primitives are CSS classes in globals.css (`.ic-btn`, `.ic-input`, `.ic-tabs`, `.ic-cover`, `.ic-dialog`, `.ic-eyebrow`, `.section`, `.shelf`, `.sk`, `.state-block`, …) — use them instead of re-deriving styles.
+- Motion is minimal and accessibility-first: fades/tiny slides, 140–360ms, honor `prefers-reduced-motion`.
+- THE LOGO IS FIXED: the `iC` monogram + `iComics·wiki` wordmark (font-accent, `#ff5a1f`/`#ffd36b`) must never be restyled.
 - Avoid AI-flavored filler copy such as `Live feature`, `Featured now`, `Focus`, `Neural`, or similar decorative labels.
-- Preferred hero structure: background image with color wash, poster card on the right, title and rating on the left.
-- Do not add extra badges, stats, or ornamental copy when a simpler composition is requested.
-- If the user asks for a Netflix-style hero, keep it borderless or nearly borderless, cinematic, and poster-led. Prefer large title, short metadata, subtle gradient wash, and one prominent poster without stacked cards or heavy frames.
 
 ## Server surface (official)
 

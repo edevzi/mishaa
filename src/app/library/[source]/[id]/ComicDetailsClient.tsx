@@ -310,7 +310,7 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
           id: 'twitter' as const,
           name: t.socialTwitterX,
           Icon: XShareIcon,
-          iconClass: 'text-neutral-800 dark:text-zinc-100',
+          iconClass: 'text-fg',
         },
         {
           id: 'whatsapp' as const,
@@ -322,7 +322,7 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
           id: 'copy' as const,
           name: t.socialCopyLink,
           Icon: LinkShareIcon,
-          iconClass: 'text-neutral-600 dark:text-zinc-200',
+          iconClass: 'text-fg-secondary',
         },
       ] as const,
     [t.socialTwitterX, t.socialCopyLink],
@@ -410,7 +410,7 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
 
   if (restrictedSource && !isAgeVerified) {
     return (
-      <div className="min-h-dvh bg-zinc-50 text-neutral-900 overflow-x-hidden selection:bg-[#ff4d00] selection:text-white dark:bg-[#020202] dark:text-white dark:selection:text-white">
+      <div className="min-h-dvh overflow-x-hidden bg-app text-fg">
         <AnimatePresence>
           <AgeGateOverlay
             title={t.restricted}
@@ -427,17 +427,17 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
   }
 
   if (loading) return (
-    <div className="min-h-dvh flex items-center justify-center bg-zinc-50 dark:bg-[#020202]">
+    <div className="min-h-dvh flex items-center justify-center bg-app">
       <div className="flex flex-col items-center gap-6">
-        <Loader2 className="w-12 h-12 text-[#ff4d00] animate-spin" />
-        <div className="text-[10px] font-bold uppercase tracking-[0.5em] text-neutral-400 dark:text-white/20">{t.loadingComic}</div>
+        <Loader2 className="h-12 w-12 animate-spin text-accent" />
+        <div className="ic-eyebrow">{t.loadingComic}</div>
       </div>
     </div>
   );
 
   if (!comic && showAgeGate) {
     return (
-      <div className="min-h-dvh bg-zinc-50 text-neutral-900 overflow-x-hidden selection:bg-[#ff4d00] selection:text-white dark:bg-[#020202] dark:text-white dark:selection:text-white">
+      <div className="min-h-dvh overflow-x-hidden bg-app text-fg">
         <AnimatePresence>
           {showAgeGate && (
             <AgeGateOverlay
@@ -459,10 +459,10 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
 
   if (comic.source === 'marvel' && !marvelIssue) {
     return (
-      <div className="min-h-dvh flex items-center justify-center bg-zinc-50 dark:bg-[#020202]">
+      <div className="min-h-dvh flex items-center justify-center bg-app">
         <div className="flex flex-col items-center gap-6">
-          <Loader2 className="w-12 h-12 text-[#ff4d00] animate-spin" />
-          <div className="text-[10px] font-black uppercase tracking-[0.5em] text-neutral-400 dark:text-white/20">{t.loadingIssue}</div>
+          <Loader2 className="h-12 w-12 animate-spin text-accent" />
+          <div className="ic-eyebrow">{t.loadingIssue}</div>
         </div>
       </div>
     );
@@ -470,29 +470,15 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
 
   if (comic.source === 'marvel' && marvelIssue) {
     return (
-      <div className="min-h-dvh bg-zinc-50 text-neutral-900 overflow-x-hidden selection:bg-[#ff4d00] selection:text-white dark:bg-[#020202] dark:text-white dark:selection:text-white">
-        <div className="fixed inset-0 z-0 h-[45vh] md:h-[65vh]">
-          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#050505]/85 to-[#050505] z-10" />
-          <Image
-            src={comic.bannerUrl || comic.coverUrl}
-            fill
-            className="object-cover opacity-20 grayscale blur-3xl scale-110"
-            alt={`${comic.title} — backdrop`}
-            priority
-            sizes="100vw"
-            quality={65}
-            unoptimized={imageUnoptimizedForSrc(comic.bannerUrl || comic.coverUrl)}
-          />
-        </div>
-
+      <div className="min-h-dvh overflow-x-hidden bg-app text-fg">
         <main className="relative z-10 pt-24 md:pt-28 pb-24 px-4 md:px-20 max-w-7xl mx-auto">
           <motion.button
-            initial={{ opacity: 0, x: -20 }}
+            initial={{ opacity: 0, x: -12 }}
             animate={{ opacity: 1, x: 0 }}
             onClick={() => router.back()}
-            className="mb-10 flex items-center gap-3 text-[10px] font-black uppercase tracking-widest text-neutral-500 dark:text-white/40 hover:text-[#ff4d00] transition-all group"
+            className="group mb-10 flex items-center gap-2 text-sm font-medium text-fg-secondary transition-colors hover:text-accent-text"
           >
-            <ChevronLeft size={16} className="group-hover:-translate-x-1 transition-transform" />
+            <ChevronLeft size={16} className="transition-transform group-hover:-translate-x-0.5" />
             Back
           </motion.button>
 
@@ -502,7 +488,7 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
               animate={{ opacity: 1, y: 0 }}
               className="space-y-6 lg:sticky lg:top-28"
             >
-              <div className="relative aspect-[2/3] w-full overflow-hidden border border-neutral-200 dark:border-white/10 bg-neutral-100 dark:bg-[#0a0a0a]">
+              <div className="relative aspect-[2/3] w-full overflow-hidden rounded-cover bg-card [box-shadow:var(--cover-frame),var(--shadow-md)]">
                 <Image
                   src={comic.coverUrl}
                   fill
@@ -513,17 +499,8 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
                   priority
                   unoptimized={imageUnoptimizedForSrc(comic.coverUrl)}
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent" />
-                <div className="absolute top-4 left-4 px-3 py-1 bg-[#ff4d00] text-white text-[9px] font-black uppercase tracking-[0.35em]">
-                  Marvel
-                </div>
-                <div className="absolute bottom-4 left-4 right-4">
-                  <div className="text-[10px] font-black uppercase tracking-[0.35em] text-[#ff4d00]">
-                    Issue {marvelIssue.issueNumber || '?'}
-                  </div>
-                  <div className="mt-2 text-2xl font-black uppercase tracking-tighter leading-[0.9]">
-                    {comic.title}
-                  </div>
+                <div className="absolute left-3 top-3">
+                  <span className="ic-badge ic-badge--solid">Marvel</span>
                 </div>
               </div>
 
@@ -532,69 +509,59 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
                   href={marvelIssue.detailUrl}
                   target="_blank"
                   rel="noreferrer"
-                  className="py-4 px-4 bg-white text-black text-[10px] font-black uppercase tracking-[0.25em] hover:bg-[#ff4d00] hover:text-white transition-all text-center"
+                  className="ic-btn ic-btn--primary ic-btn--md"
                 >
                   Official site
                 </a>
                 <button
                   onClick={() => router.push('/library')}
-                  className="border border-neutral-200 bg-neutral-100/90 px-4 py-4 text-[10px] font-black uppercase tracking-[0.25em] text-neutral-700 transition-all hover:border-[#ff4d00]/50 hover:bg-neutral-200/80 dark:border-white/10 dark:bg-white/5 dark:text-white/60 dark:hover:bg-white/10 dark:hover:text-white"
+                  className="ic-btn ic-btn--secondary ic-btn--md"
                 >
                   Library
                 </button>
               </div>
 
-              <div className="bg-black/[0.04] dark:bg-white/5 border border-neutral-200 dark:border-white/10 p-5 space-y-3">
-                <div className="text-[9px] font-black uppercase tracking-[0.35em] text-neutral-500 dark:text-white/30">Issue details</div>
-                <div className="grid grid-cols-2 gap-3 text-[10px] uppercase tracking-[0.2em] text-neutral-600 dark:text-white/55">
+              <div className="space-y-3 rounded-card border border-line bg-card p-5">
+                <div className="ic-eyebrow">Issue details</div>
+                <div className="grid grid-cols-2 gap-3 text-sm">
                   <div>
-                    <div className="text-neutral-400 dark:text-white/25">Series</div>
-                    <div className="mt-1 font-black text-neutral-900 dark:text-white">{marvelIssue.seriesName}</div>
+                    <div className="text-xs text-fg-muted">Series</div>
+                    <div className="mt-1 font-medium text-fg">{marvelIssue.seriesName}</div>
                   </div>
                   <div>
-                    <div className="text-neutral-400 dark:text-white/25">Year</div>
-                    <div className="mt-1 font-black text-neutral-900 dark:text-white">{marvelIssue.yearPage || 'Unknown'}</div>
+                    <div className="text-xs text-fg-muted">Year</div>
+                    <div className="mt-1 font-mono text-fg">{marvelIssue.yearPage || 'Unknown'}</div>
                   </div>
                   <div>
-                    <div className="text-neutral-400 dark:text-white/25">On Sale</div>
-                    <div className="mt-1 font-black text-neutral-900 dark:text-white">{formatMarvelDate(marvelIssue.onSaleDate)}</div>
+                    <div className="text-xs text-fg-muted">On sale</div>
+                    <div className="mt-1 font-mono text-fg">{formatMarvelDate(marvelIssue.onSaleDate)}</div>
                   </div>
                   <div>
-                    <div className="text-neutral-400 dark:text-white/25">Unlimited</div>
-                    <div className="mt-1 font-black text-neutral-900 dark:text-white">{formatMarvelDate(marvelIssue.unlimitedDate)}</div>
+                    <div className="text-xs text-fg-muted">Unlimited</div>
+                    <div className="mt-1 font-mono text-fg">{formatMarvelDate(marvelIssue.unlimitedDate)}</div>
                   </div>
                   <div>
-                    <div className="text-neutral-400 dark:text-white/25">Pages</div>
-                    <div className="mt-1 font-black text-neutral-900 dark:text-white">{marvelIssue.pageCount ?? 'Unknown'}</div>
+                    <div className="text-xs text-fg-muted">Pages</div>
+                    <div className="mt-1 font-mono text-fg">{marvelIssue.pageCount ?? 'Unknown'}</div>
                   </div>
                   <div>
-                    <div className="text-neutral-400 dark:text-white/25">Modified</div>
-                    <div className="mt-1 font-black text-neutral-900 dark:text-white">{formatMarvelDate(marvelIssue.modified)}</div>
+                    <div className="text-xs text-fg-muted">Modified</div>
+                    <div className="mt-1 font-mono text-fg">{formatMarvelDate(marvelIssue.modified)}</div>
                   </div>
                 </div>
               </div>
 
               {marvelCharacters.length > 0 && (
-                <div className="bg-black/[0.04] dark:bg-white/5 border border-neutral-200 dark:border-white/10 p-5 space-y-4">
-                  <div className="flex items-center justify-between gap-3">
-                    <div className="text-[9px] font-black uppercase tracking-[0.35em] text-neutral-500 dark:text-white/30">Featured characters</div>
-                    <Sparkles className="text-[#ff4d00]" size={16} />
-                  </div>
+                <div className="space-y-4 rounded-card border border-line bg-card p-5">
+                  <div className="ic-eyebrow">Featured characters</div>
                   <div className="flex flex-wrap gap-2">
                     {marvelCharacters.slice(0, 10).map((character) => (
                       <button
                         key={character.id}
                         onClick={() => router.push(`/library?tab=Marvel%20Universe&q=${encodeURIComponent(character.name || '')}`)}
-                        className="group px-3 py-2 bg-black/40 border border-neutral-200 dark:border-white/10 hover:border-[#ff4d00]/50 hover:bg-[#ff4d00]/10 transition-all text-left"
+                        className="ic-tag ic-tag--interactive"
                       >
-                        <div className="text-[9px] font-black uppercase tracking-[0.25em] text-white group-hover:text-[#ff4d00]">
-                          {character.name}
-                        </div>
-                        {character.description && (
-                          <div className="mt-1 max-w-[150px] text-[8px] uppercase tracking-[0.18em] text-neutral-400 dark:text-white/25 group-hover:text-neutral-600 dark:text-white/45 line-clamp-2">
-                            {trimText(character.description, 90)}
-                          </div>
-                        )}
+                        {character.name}
                       </button>
                     ))}
                   </div>
@@ -609,104 +576,102 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
               className="space-y-10"
             >
               <div className="space-y-6">
-                <div className="flex flex-wrap items-center gap-3">
-                  <span className="px-4 py-2 bg-[#ff4d00] text-white text-[10px] font-black uppercase tracking-[0.3em]">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="ic-badge ic-badge--solid">
                     Marvel Comics
                   </span>
-                  <span className="px-4 py-2 bg-black/[0.04] dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-600 dark:text-white/45 text-[10px] font-black uppercase tracking-[0.3em]">
+                  <span className="ic-badge ic-badge--neutral">
                     Issue #{marvelIssue.issueNumber || '?'}
                   </span>
-                  <span className="px-4 py-2 bg-black/[0.04] dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-600 dark:text-white/45 text-[10px] font-black uppercase tracking-[0.3em]">
+                  <span className="ic-badge ic-badge--neutral">
                     {comic.rating}
                   </span>
                 </div>
 
-                <h1 className="text-4xl md:text-7xl font-black italic uppercase tracking-tighter leading-[0.88] text-neutral-900 dark:text-white">
+                <h1 className="ic-display text-4xl text-fg md:text-6xl">
                   {comic.title}
                 </h1>
-                <p className="max-w-3xl text-neutral-600 dark:text-white/45 text-sm md:text-base leading-relaxed">
+                <p className="max-w-3xl text-sm leading-relaxed text-fg-muted md:text-base">
                   {t.titlePageSeoIntroLegacyIssue.replace(/\{\{title\}\}/g, comic.title)}
                 </p>
-                <p className="max-w-3xl text-neutral-600 dark:text-white/55 text-base md:text-lg leading-relaxed">
+                <p className="max-w-3xl text-base leading-relaxed text-fg-secondary md:text-lg">
                   {comic.description}
                 </p>
               </div>
 
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="bg-black/[0.04] dark:bg-white/5 border border-neutral-200 dark:border-white/10 p-5">
-                  <div className="text-[9px] uppercase tracking-[0.35em] text-neutral-400 dark:text-white/25">Series</div>
-                  <div className="mt-2 text-sm font-black uppercase tracking-tight text-neutral-900 dark:text-white">{marvelIssue.seriesName}</div>
+                <div className="rounded-card border border-line bg-card p-5">
+                  <div className="ic-eyebrow">Series</div>
+                  <div className="mt-2 text-sm font-medium text-fg">{marvelIssue.seriesName}</div>
                 </div>
-                <div className="bg-black/[0.04] dark:bg-white/5 border border-neutral-200 dark:border-white/10 p-5">
-                  <div className="text-[9px] uppercase tracking-[0.35em] text-neutral-400 dark:text-white/25">Issue</div>
-                  <div className="mt-2 text-sm font-black uppercase tracking-tight text-neutral-900 dark:text-white">#{marvelIssue.issueNumber || '?'}</div>
+                <div className="rounded-card border border-line bg-card p-5">
+                  <div className="ic-eyebrow">Issue</div>
+                  <div className="mt-2 font-mono text-sm text-fg">#{marvelIssue.issueNumber || '?'}</div>
                 </div>
-                <div className="bg-black/[0.04] dark:bg-white/5 border border-neutral-200 dark:border-white/10 p-5">
-                  <div className="text-[9px] uppercase tracking-[0.35em] text-neutral-400 dark:text-white/25">Year</div>
-                  <div className="mt-2 text-sm font-black uppercase tracking-tight text-neutral-900 dark:text-white">{marvelIssue.yearPage || 'Unknown'}</div>
+                <div className="rounded-card border border-line bg-card p-5">
+                  <div className="ic-eyebrow">Year</div>
+                  <div className="mt-2 font-mono text-sm text-fg">{marvelIssue.yearPage || 'Unknown'}</div>
                 </div>
-                <div className="bg-black/[0.04] dark:bg-white/5 border border-neutral-200 dark:border-white/10 p-5">
-                  <div className="text-[9px] uppercase tracking-[0.35em] text-neutral-400 dark:text-white/25">Pages</div>
-                  <div className="mt-2 text-sm font-black uppercase tracking-tight text-neutral-900 dark:text-white">{marvelIssue.pageCount ?? 'Unknown'}</div>
+                <div className="rounded-card border border-line bg-card p-5">
+                  <div className="ic-eyebrow">Pages</div>
+                  <div className="mt-2 font-mono text-sm text-fg">{marvelIssue.pageCount ?? 'Unknown'}</div>
                 </div>
               </div>
 
               <div className="grid grid-cols-1 xl:grid-cols-[1.1fr_0.9fr] gap-8">
-                <div className="bg-neutral-100 dark:bg-[#0a0a0a] border border-neutral-200 dark:border-white/10 p-6 md:p-8 space-y-6">
+                <div className="space-y-6 rounded-card border border-line bg-card p-6 md:p-8">
                   <div className="flex items-center justify-between gap-4">
                     <div>
-                      <div className="text-[9px] uppercase tracking-[0.35em] text-neutral-400 dark:text-white/25">Creators</div>
-                      <h2 className="mt-2 text-2xl font-black uppercase tracking-tight text-neutral-900 dark:text-white">Credits</h2>
+                      <div className="ic-eyebrow">Creators</div>
+                      <h2 className="ic-display mt-2 text-2xl text-fg">Credits</h2>
                     </div>
-                    <BookOpen className="text-[#ff4d00]" />
+                    <BookOpen className="text-fg-muted" />
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     {(marvelIssue.creators || []).map((creator) => (
-                      <div key={`${creator.id}-${creator.role}`} className="p-4 bg-black/[0.04] dark:bg-white/5 border border-neutral-200 dark:border-white/10">
-                        <div className="text-[8px] uppercase tracking-[0.35em] text-neutral-400 dark:text-white/25">{creator.role}</div>
-                        <div className="mt-2 text-sm font-black uppercase leading-tight text-neutral-900 dark:text-white">{creator.name}</div>
+                      <div key={`${creator.id}-${creator.role}`} className="rounded-btn border border-line bg-inset p-4">
+                        <div className="ic-eyebrow">{creator.role}</div>
+                        <div className="mt-2 text-sm font-medium leading-tight text-fg">{creator.name}</div>
                       </div>
                     ))}
                     {(marvelIssue.creators || []).length === 0 && (
-                      <div className="sm:col-span-2 p-6 text-center text-neutral-500 dark:text-white/30 text-[10px] font-black uppercase tracking-[0.35em] border border-dashed border-neutral-200 dark:border-white/10">
-                        No creator metadata available.
+                      <div className="state-block sm:col-span-2">
+                        <p>No creator metadata available.</p>
                       </div>
                     )}
                   </div>
                 </div>
 
-                <div className="bg-neutral-100 dark:bg-[#0a0a0a] border border-neutral-200 dark:border-white/10 p-6 md:p-8 space-y-6">
+                <div className="space-y-6 rounded-card border border-line bg-card p-6 md:p-8">
                   <div className="flex items-center justify-between gap-4">
                     <div>
-                      <div className="text-[9px] uppercase tracking-[0.35em] text-neutral-400 dark:text-white/25">Series Order</div>
-                      <h2 className="mt-2 text-2xl font-black uppercase tracking-tight text-neutral-900 dark:text-white">Issues</h2>
+                      <div className="ic-eyebrow">Series order</div>
+                      <h2 className="ic-display mt-2 text-2xl text-fg">Issues</h2>
                     </div>
-                    <span className="text-[10px] font-black uppercase tracking-[0.35em] text-neutral-500 dark:text-white/35">
+                    <span className="font-mono text-xs text-fg-muted">
                       {marvelSeriesIssues.length} total
                     </span>
                   </div>
 
-                  <div className="max-h-[640px] overflow-auto pr-2 space-y-3">
+                  <div className="max-h-[640px] divide-y divide-line-subtle overflow-auto pr-2">
                     {marvelSeriesIssues.slice(0, 18).map((issue) => (
                       <button
                         key={issue.id}
                         onClick={() => router.push(`/library/marvel/${issue.id}`)}
-                        className="w-full text-left p-4 bg-black/[0.04] dark:bg-white/5 border border-neutral-200 dark:border-white/10 hover:border-[#ff4d00]/60 hover:bg-[#ff4d00]/10 transition-all flex items-center justify-between gap-4"
+                        className="group flex w-full items-center justify-between gap-4 px-2 py-3 text-left transition-colors hover:bg-inset"
                       >
                         <div className="min-w-0">
-                          <div className="text-[8px] uppercase tracking-[0.35em] text-neutral-400 dark:text-white/25">
+                          <div className="font-mono text-xs text-fg-muted">
                             #{issue.issueNumber || issue.id}
                           </div>
-                          <div className="mt-2 truncate text-sm font-black uppercase leading-tight text-neutral-900 dark:text-white">
+                          <div className="mt-1 truncate text-sm font-medium leading-tight text-fg">
                             {issue.title}
                           </div>
-                          <div className="mt-1 text-[9px] uppercase tracking-[0.25em] text-neutral-500 dark:text-white/30 truncate">
+                          <div className="mt-0.5 truncate font-mono text-xs text-fg-muted">
                             {formatMarvelDate(issue.onSaleDate)}
                           </div>
                         </div>
-                        <div className="text-[#ff4d00] text-[9px] font-black uppercase tracking-[0.3em]">
-                          Open
-                        </div>
+                        <ChevronRight size={16} className="shrink-0 text-fg-muted transition-colors group-hover:text-accent-text" />
                       </button>
                     ))}
                   </div>
@@ -714,17 +679,17 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
               </div>
 
               {marvelSeries && (
-                <div className="bg-neutral-100 dark:bg-[#0a0a0a] border border-neutral-200 dark:border-white/10 p-6 md:p-8 space-y-6">
+                <div className="space-y-6 rounded-card border border-line bg-card p-6 md:p-8">
                   <div className="flex items-center justify-between gap-4">
                     <div>
-                      <div className="text-[9px] uppercase tracking-[0.35em] text-neutral-400 dark:text-white/25">Series</div>
-                      <h2 className="mt-2 text-2xl font-black uppercase tracking-tight text-neutral-900 dark:text-white">About this series</h2>
+                      <div className="ic-eyebrow">Series</div>
+                      <h2 className="ic-display mt-2 text-2xl text-fg">About this series</h2>
                     </div>
-                    <Globe className="text-[#ff4d00]" />
+                    <Globe className="text-fg-muted" />
                   </div>
 
                   <div className="grid grid-cols-1 lg:grid-cols-[220px_1fr] gap-6">
-                    <div className="aspect-[2/3] bg-black border border-neutral-200 dark:border-white/10 overflow-hidden relative">
+                    <div className="relative aspect-[2/3] overflow-hidden rounded-cover bg-sunken [box-shadow:var(--cover-frame)]">
                       <Image
                         src={normalizeMarvelImageToProxyUrl(marvelSeries.thumbnail) || comic.coverUrl}
                         alt={`${marvelSeries.title || marvelIssue.seriesName || 'Series'} — cover`}
@@ -739,30 +704,30 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
                     </div>
                     <div className="space-y-4">
                       <div>
-                        <div className="text-[10px] font-black uppercase tracking-[0.35em] text-[#ff4d00]">
+                        <div className="text-sm font-semibold text-fg">
                           {marvelSeries.title || marvelIssue.seriesName}
                         </div>
-                        <p className="mt-3 max-w-3xl text-neutral-600 dark:text-white/55 text-base leading-relaxed">
+                        <p className="mt-3 max-w-3xl text-base leading-relaxed text-fg-secondary">
                           {trimText(marvelSeries.description, 300) || 'Series description from Marvel.'}
                         </p>
                       </div>
 
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                        <div className="bg-black/[0.04] dark:bg-white/5 border border-neutral-200 dark:border-white/10 p-4">
-                          <div className="text-[8px] uppercase tracking-[0.35em] text-neutral-400 dark:text-white/25">Series ID</div>
-                          <div className="mt-2 text-sm font-black uppercase tracking-tight text-neutral-900 dark:text-white">{marvelSeries.id}</div>
+                        <div className="rounded-btn border border-line bg-inset p-4">
+                          <div className="ic-eyebrow">Series ID</div>
+                          <div className="mt-2 font-mono text-sm text-fg">{marvelSeries.id}</div>
                         </div>
-                        <div className="bg-black/[0.04] dark:bg-white/5 border border-neutral-200 dark:border-white/10 p-4">
-                          <div className="text-[8px] uppercase tracking-[0.35em] text-neutral-400 dark:text-white/25">Start Year</div>
-                          <div className="mt-2 text-sm font-black uppercase tracking-tight text-neutral-900 dark:text-white">{marvelSeries.startYear || 'Unknown'}</div>
+                        <div className="rounded-btn border border-line bg-inset p-4">
+                          <div className="ic-eyebrow">Start year</div>
+                          <div className="mt-2 font-mono text-sm text-fg">{marvelSeries.startYear || 'Unknown'}</div>
                         </div>
-                        <div className="bg-black/[0.04] dark:bg-white/5 border border-neutral-200 dark:border-white/10 p-4">
-                          <div className="text-[8px] uppercase tracking-[0.35em] text-neutral-400 dark:text-white/25">End Year</div>
-                          <div className="mt-2 text-sm font-black uppercase tracking-tight text-neutral-900 dark:text-white">{marvelSeries.endYear || 'Ongoing'}</div>
+                        <div className="rounded-btn border border-line bg-inset p-4">
+                          <div className="ic-eyebrow">End year</div>
+                          <div className="mt-2 font-mono text-sm text-fg">{marvelSeries.endYear || 'Ongoing'}</div>
                         </div>
-                        <div className="bg-black/[0.04] dark:bg-white/5 border border-neutral-200 dark:border-white/10 p-4">
-                          <div className="text-[8px] uppercase tracking-[0.35em] text-neutral-400 dark:text-white/25">Updated</div>
-                          <div className="mt-2 text-sm font-black uppercase tracking-tight text-neutral-900 dark:text-white">{formatMarvelDate(marvelSeries.modified)}</div>
+                        <div className="rounded-btn border border-line bg-inset p-4">
+                          <div className="ic-eyebrow">Updated</div>
+                          <div className="mt-2 font-mono text-sm text-fg">{formatMarvelDate(marvelSeries.modified)}</div>
                         </div>
                       </div>
                     </div>
@@ -788,25 +753,12 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
             ? 'text-[clamp(1.55rem,3vw+0.55rem,3.35rem)] sm:text-[clamp(1.85rem,3.2vw+0.7rem,3.85rem)]'
             : 'text-[clamp(1.75rem,3.5vw+0.45rem,3.85rem)] sm:text-[clamp(2rem,3.8vw+0.5rem,4.5rem)]';
   const titleTrackingClass =
-    titleLength > 70 ? 'tracking-normal sm:tracking-tight md:tracking-tighter' : 'tracking-tight md:tracking-tighter';
-  const pageBackdropStyle = {
-    backgroundImage: `
-      radial-gradient(circle at 18% 18%, rgba(${dominantColor}, 0.15), transparent 30%),
-      radial-gradient(circle at 82% 12%, rgba(255, 255, 255, 0.05), transparent 22%),
-      radial-gradient(circle at 50% 100%, rgba(${dominantColor}, 0.08), transparent 40%),
-      linear-gradient(180deg, #090909 0%, #050505 45%, #020202 100%)
-    `
-  };
-
-  const pageBackdropAccentsLight = {
-    backgroundImage: `
-      radial-gradient(circle at 18% 18%, rgba(${dominantColor}, 0.14), transparent 32%),
-      radial-gradient(circle at 50% 100%, rgba(${dominantColor}, 0.07), transparent 42%)
-    `
-  };
+    titleLength > 70 ? 'tracking-normal sm:tracking-tight' : 'tracking-tight';
+  /** Quiet editorial wash from the cover's dominant color — flat tint, no gradients. */
+  const backdropTintStyle = { backgroundColor: `rgba(${dominantColor}, 0.06)` };
 
   return (
-    <div className="min-h-dvh overflow-x-hidden bg-zinc-50 text-neutral-900 selection:bg-[#ff4d00] selection:text-white dark:bg-[#020202] dark:text-white dark:selection:text-white">
+    <div className="min-h-dvh overflow-x-hidden bg-app text-fg">
       {/* Age Gate Overlay */}
       <AnimatePresence>
         {showAgeGate && (
@@ -822,38 +774,14 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
         )}
       </AnimatePresence>
 
-      {/* Backdrop — system light vs dark */}
-      <div
-        className="pointer-events-none fixed inset-0 z-0 overflow-hidden bg-gradient-to-b from-zinc-100 via-white to-zinc-100 dark:hidden"
-        style={pageBackdropAccentsLight}
-        aria-hidden
-      >
-        <div
-          className="absolute inset-0 opacity-[0.4]"
-          style={{
-            backgroundImage:
-              'linear-gradient(to right, rgba(0,0,0,0.05) 1px, transparent 1px), linear-gradient(to bottom, rgba(0,0,0,0.05) 1px, transparent 1px)',
-            backgroundSize: '72px 72px',
-          }}
-        />
-      </div>
-      <div className="pointer-events-none fixed inset-0 z-0 hidden overflow-hidden bg-[#020202] dark:block" style={pageBackdropStyle} aria-hidden>
-        <div
-          className="absolute inset-0 opacity-[0.08] mix-blend-soft-light"
-          style={{
-            backgroundImage:
-              'linear-gradient(to right, rgba(255,255,255,0.08) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,0.08) 1px, transparent 1px)',
-            backgroundSize: '72px 72px',
-          }}
-        />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0%,rgba(0,0,0,0.2)_58%,rgba(0,0,0,0.6)_100%)]" />
-      </div>
+      {/* Backdrop — flat tint sampled from the cover, follows the active theme */}
+      <div className="pointer-events-none fixed inset-0 z-0" style={backdropTintStyle} aria-hidden />
 
       <main className="relative z-10 mx-auto max-w-[min(100%,88rem)] px-4 pb-28 pt-20 sm:px-6 lg:px-10">
         <motion.div initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }}>
           <Link
             href="/library"
-            className="mb-10 flex items-center gap-3 text-xs font-semibold tracking-wide text-neutral-600 transition-colors hover:text-[#ff4d00] dark:text-zinc-400 dark:hover:text-[#ff4d00] group"
+            className="group mb-10 flex items-center gap-2 text-sm font-medium text-fg-secondary transition-colors hover:text-accent-text"
           >
             <ChevronLeft size={18} className="transition-transform group-hover:-translate-x-0.5" /> {t.backToLibrary}
           </Link>
@@ -866,7 +794,7 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
         >
           <section className="flex flex-col gap-10 lg:flex-row lg:items-start lg:gap-12 xl:gap-16">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mx-auto w-full max-w-[14rem] shrink-0 sm:max-w-[15rem] lg:mx-0 lg:max-w-[15.5rem] xl:max-w-[16.5rem] lg:sticky lg:top-24">
-            <div className="relative aspect-[2/3] w-full overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-xl shadow-black/10 ring-1 ring-black/5 dark:border-white/12 dark:bg-zinc-900 dark:shadow-[0_24px_60px_rgba(0,0,0,0.55)] dark:ring-white/10">
+            <div className="relative aspect-[2/3] w-full overflow-hidden rounded-cover bg-card [box-shadow:var(--cover-frame),var(--shadow-md)]">
                <Image 
                  src={comic.coverUrl} 
                  fill
@@ -882,53 +810,33 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
             
             <div className="mt-6 grid grid-cols-1 gap-3">
                {comic.source !== 'superhero' && (
-                 <motion.button 
+                 <button
                    type="button"
                    onClick={startReading}
                    aria-busy={primaryReadPending}
-                   whileHover={{ scale: 1.02 }}
-                   whileTap={{ scale: 0.98 }}
-                   className={`group relative flex w-full min-h-0 items-center justify-center gap-2.5 overflow-hidden border border-transparent bg-neutral-900 font-black uppercase text-white shadow-lg transition-all dark:border-white/12 dark:bg-white/[0.07] dark:text-white dark:shadow-[0_16px_40px_rgba(0,0,0,0.45)] dark:backdrop-blur-sm ${
-                     primaryReadPending ? 'px-3 py-3.5' : 'px-4 py-[1.125rem]'
-                   }`}
+                   className="ic-btn ic-btn--primary ic-btn--lg w-full"
                  >
-                   <motion.div 
-                     animate={{ 
-                       opacity: [0, 0.2, 0],
-                       scale: [1, 1.5, 1]
-                     }}
-                     transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-                     className="absolute inset-0 bg-[#ff4d00] blur-3xl z-0 opacity-70 dark:opacity-40"
-                   />
-                   <span
-                     className={`relative z-10 flex items-center justify-center gap-2.5 text-center ${
-                       primaryReadPending
-                         ? 'text-[10px] leading-snug tracking-[0.08em] max-w-[11.5rem] sm:max-w-none'
-                         : 'text-[12px] tracking-[0.38em]'
-                     }`}
-                   >
-                     {primaryReadPending ? (
-                       <Loader2 className="h-4 w-4 shrink-0 animate-spin text-[#ff4d00]" aria-hidden />
-                     ) : (
-                       <Play fill="currentColor" size={16} className="shrink-0" aria-hidden />
-                     )}
-                     {primaryReadPending ? t.openingReader : t.read}
-                   </span>
-                 </motion.button>
+                   {primaryReadPending ? (
+                     <Loader2 className="h-4 w-4 shrink-0 animate-spin" aria-hidden />
+                   ) : (
+                     <Play fill="currentColor" size={16} className="shrink-0" aria-hidden />
+                   )}
+                   <span className="truncate">{primaryReadPending ? t.openingReader : t.read}</span>
+                 </button>
                )}
-               
+
                {lastReadChapter && (
                  <motion.div
-                   initial={{ opacity: 0, scale: 0.95 }}
-                   animate={{ opacity: 1, scale: 1 }}
+                   initial={{ opacity: 0, y: 4 }}
+                   animate={{ opacity: 1, y: 0 }}
                  >
                    <button
                      type="button"
                      onClick={() => navigateToReaderChapter(lastReadChapter.id, 'continue')}
                      aria-busy={readNavPending && pendingReadVia === 'continue' && pendingReadChapterId === lastReadChapter.id}
-                     className="flex w-full flex-col items-center justify-center gap-1 overflow-hidden border border-neutral-200 bg-neutral-100 py-4 font-black uppercase tracking-widest text-[9px] text-neutral-900 transition-all hover:bg-neutral-200/80 dark:border-white/15 dark:bg-white/10 dark:text-white dark:hover:bg-white/15"
+                     className="flex w-full flex-col items-center justify-center gap-1 overflow-hidden rounded-btn border border-line bg-card px-4 py-3 transition-colors hover:bg-card-hov"
                    >
-                     <span className="flex items-center gap-2 text-[#ff4d00]">
+                     <span className="flex items-center gap-2 text-xs font-semibold text-accent-text">
                        {readNavPending && pendingReadVia === 'continue' && pendingReadChapterId === lastReadChapter.id ? (
                          <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin" aria-hidden />
                        ) : null}
@@ -936,36 +844,33 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
                          ? t.openingReader
                          : t.continueReading}
                      </span>
-                     <span className="w-full truncate px-4 text-center text-neutral-600 dark:text-white/50">{lastReadChapter.title}</span>
+                     <span className="w-full truncate text-center text-xs text-fg-secondary">{lastReadChapter.title}</span>
                      {typeof lastReadChapter.progressPercent === 'number' && (
-                       <span className="text-[8px] font-black uppercase tracking-[0.35em] text-neutral-500 dark:text-white/35">
+                       <span className="font-mono text-[11px] text-fg-muted">
                          {t.progressComplete.replace('{percent}', String(lastReadChapter.progressPercent))}
                        </span>
                      )}
                    </button>
                  </motion.div>
                )}
-              <div className="grid grid-cols-2 gap-4">
-                  <button 
+              <div className="grid grid-cols-2 gap-3">
+                  <button
                     onClick={toggleBookmark}
-                    className={`flex items-center justify-center gap-2 border py-4 text-[9px] font-black uppercase tracking-widest transition-all ${
-                      isBookmarked 
-                        ? 'border-[#ff4d00] bg-[#ff4d00] text-white' 
-                        : 'border-neutral-200 bg-neutral-100 text-neutral-800 hover:bg-neutral-200/80 dark:border-white/15 dark:bg-white/10 dark:text-white/80 dark:hover:bg-white/15'
-                    }`}
+                    aria-pressed={isBookmarked}
+                    className={`ic-btn ic-btn--md ${isBookmarked ? 'ic-btn--primary' : 'ic-btn--secondary'}`}
                   >
-                    <Bookmark size={14} fill={isBookmarked ? "currentColor" : "none"} /> 
-                    {isBookmarked ? t.bookmarked : t.bookmark}
+                    <Bookmark size={14} fill={isBookmarked ? "currentColor" : "none"} />
+                    <span className="truncate">{isBookmarked ? t.bookmarked : t.bookmark}</span>
                   </button>
-                  <button 
+                  <button
                     onClick={() => setShowShareModal(true)}
-                    className="flex items-center justify-center gap-2 border border-neutral-200 bg-neutral-100 py-4 text-[9px] font-black uppercase tracking-widest text-neutral-800 transition-all hover:bg-neutral-200/80 dark:border-white/15 dark:bg-white/10 dark:text-white/80 dark:hover:bg-white/15"
+                    className="ic-btn ic-btn--secondary ic-btn--md"
                   >
-                    <Share2 size={14} /> {t.share}
+                    <Share2 size={14} /> <span className="truncate">{t.share}</span>
                   </button>
                   <button
                     onClick={reportIssue}
-                    className="col-span-2 py-4 border border-[#ff4d00]/30 bg-[#ff4d00]/10 flex items-center justify-center gap-2 text-[9px] font-black uppercase tracking-widest text-[#ff4d00] hover:bg-[#ff4d00] hover:text-white transition-all"
+                    className="col-span-2 inline-flex h-10 items-center justify-center gap-2 rounded-btn border border-line text-xs font-semibold text-danger transition-colors hover:bg-card"
                   >
                     {t.reportIssue}
                   </button>
@@ -978,33 +883,33 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
           <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }} className="min-w-0 space-y-6">
             <div className="min-w-0 space-y-5">
               <div className="flex min-w-0 max-w-full flex-wrap items-center gap-x-4 gap-y-3">
-                 <div className="flex shrink-0 items-center gap-2 rounded-full border border-neutral-200 bg-neutral-100 px-4 py-2 dark:border-white/15 dark:bg-white/10">
-                    <Star size={12} className="shrink-0 text-[#ff4d00]" fill="#ff4d00" /><span className="text-[12px] font-black tracking-tighter text-neutral-900 dark:text-white">{comic.rating}</span>
-                 </div>
-                 <div className="shrink-0 rounded-full border border-neutral-200 bg-neutral-100 px-4 py-2 text-[10px] font-black uppercase tracking-[0.3em] text-neutral-600 dark:border-white/15 dark:bg-white/10 dark:text-white/45">
+                 <span className="ic-score shrink-0">
+                    <Star size={13} fill="currentColor" aria-hidden /> {comic.rating}
+                 </span>
+                 <span className="ic-badge ic-badge--neutral shrink-0">
                     {comic.source}
-                 </div>
-                 <div className="flex shrink-0 items-center gap-2 text-[10px] font-black uppercase tracking-[0.3em] text-neutral-600 dark:text-white/45"><Clock size={12} className="shrink-0" aria-hidden /> {comic.year || 'N/A'}</div>
+                 </span>
+                 <span className="flex shrink-0 items-center gap-1.5 font-mono text-xs text-fg-muted"><Clock size={12} className="shrink-0" aria-hidden /> {comic.year || 'N/A'}</span>
                  {comic.author && (
-                   <div className="flex min-w-0 w-full basis-full flex-col gap-1 text-[10px] font-black uppercase tracking-[0.3em] text-neutral-600 dark:text-white/45 sm:basis-auto sm:max-w-[min(100%,42rem)] sm:flex-row sm:items-baseline sm:gap-2">
-                     <span className="shrink-0 text-[#ff4d00]">{t.authorLabel}</span>
-                     <span className="min-w-0 wrap-anywhere leading-snug normal-case tracking-normal">{comic.author}</span>
-                   </div>
+                   <span className="flex min-w-0 w-full basis-full flex-col gap-1 text-sm text-fg-secondary sm:basis-auto sm:max-w-[min(100%,42rem)] sm:flex-row sm:items-baseline sm:gap-2">
+                     <span className="ic-eyebrow shrink-0">{t.authorLabel}</span>
+                     <span className="min-w-0 wrap-anywhere leading-snug">{comic.author}</span>
+                   </span>
                  )}
-                 <div className="shrink-0 rounded-full border border-[#ff4d00]/30 bg-[#ff4d00]/10 px-4 py-2 text-[10px] font-black uppercase tracking-widest text-[#ff4d00] dark:border-[#ff4d00]/30">{comic.status}</div>
+                 <span className="ic-badge ic-badge--accent shrink-0">{comic.status}</span>
               </div>
 
               {comic.source === 'mangadex' && comic.mangaDexStats && (
                 <div className="-mt-1 flex flex-wrap items-center gap-2">
                   {comic.mangaDexStats.follows != null && comic.mangaDexStats.follows > 0 ? (
-                    <div className="inline-flex items-center gap-2 rounded-full border border-neutral-200 bg-neutral-50 px-3 py-1.5 text-[9px] font-black uppercase tracking-widest text-neutral-700 dark:border-white/12 dark:bg-white/5 dark:text-white/65">
-                      <Users size={12} className="text-[#ff4d00]" aria-hidden />
-                      <span>MangaDex {comic.mangaDexStats.follows.toLocaleString()} follows</span>
+                    <div className="inline-flex items-center gap-1.5 rounded-btn border border-line bg-card px-3 py-1.5 text-xs text-fg-secondary">
+                      <Users size={12} className="text-fg-muted" aria-hidden />
+                      <span>MangaDex · {comic.mangaDexStats.follows.toLocaleString()} follows</span>
                     </div>
                   ) : null}
                   {(comic.mangaDexStats.ratingBayesian != null || comic.mangaDexStats.ratingAverage != null) ? (
-                    <div className="inline-flex items-center gap-2 rounded-full border border-neutral-200 bg-neutral-50 px-3 py-1.5 text-[9px] font-black uppercase tracking-widest text-neutral-700 dark:border-white/12 dark:bg-white/5 dark:text-white/65">
-                      <BarChart2 size={12} className="text-[#ff4d00]" aria-hidden />
+                    <div className="inline-flex items-center gap-1.5 rounded-btn border border-line bg-card px-3 py-1.5 text-xs text-fg-secondary">
+                      <BarChart2 size={12} className="text-fg-muted" aria-hidden />
                       <span>
                         {comic.mangaDexStats.ratingAverage != null
                           ? `Avg ${comic.mangaDexStats.ratingAverage.toFixed(2)}`
@@ -1019,27 +924,27 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
                     </div>
                   ) : null}
                   {(comic.mangaDexStats.unavailableChaptersCount ?? 0) > 0 ? (
-                    <div className="inline-flex rounded-full border border-amber-500/35 bg-amber-500/10 px-3 py-1.5 text-[9px] font-black uppercase tracking-widest text-amber-900 dark:border-amber-400/35 dark:bg-amber-500/15 dark:text-amber-100">
+                    <div className="inline-flex rounded-btn border border-line bg-card px-3 py-1.5 text-xs text-warning">
                       Some chapters unavailable ({comic.mangaDexStats.unavailableChaptersCount})
                     </div>
                   ) : null}
                 </div>
               )}
-              
-                <h1 
+
+                <h1
                   itemProp="name"
-                  className={`${titleSizeClass} ${titleTrackingClass} w-full min-w-0 max-w-full hyphens-auto font-black italic uppercase text-neutral-900 md:leading-[1.05] leading-snug text-balance wrap-anywhere dark:text-white`}
+                  className={`${titleSizeClass} ${titleTrackingClass} ic-display w-full min-w-0 max-w-full hyphens-auto text-fg leading-snug md:leading-[1.05] text-balance wrap-anywhere`}
                 >
                   {comic.title}
                 </h1>
 
-                <p className="wrap-anywhere hyphens-auto text-pretty text-neutral-600 dark:text-white/45 text-sm md:text-base leading-relaxed">
+                <p className="wrap-anywhere hyphens-auto text-pretty text-sm leading-relaxed text-fg-muted md:text-base">
                   {t.titlePageSeoIntro.replace(/\{\{title\}\}/g, comic.title)}
                 </p>
 
               <div className="flex min-w-0 max-w-full flex-wrap gap-2 pt-4">
                 {comic.genres.map(genre => (
-                  <span key={genre} className="cursor-default max-w-[min(100%,100vw-2rem)] wrap-anywhere rounded-md border border-neutral-200 bg-neutral-100 px-4 py-2 text-center text-[9px] font-black uppercase tracking-[0.15em] text-neutral-800 transition-all hover:border-neutral-400 hover:text-neutral-900 dark:border-white/15 dark:bg-white/10 dark:text-zinc-300 dark:hover:border-white/30 dark:hover:text-white">
+                  <span key={genre} className="ic-tag max-w-[min(100%,100vw-2rem)] wrap-anywhere">
                     {genre}
                   </span>
                 ))}
@@ -1049,13 +954,13 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
 
             <div className="min-w-0 space-y-12 lg:space-y-14">
             <section className="space-y-4">
-                  <div className="flex items-center gap-3 border-b border-neutral-200 pb-3 dark:border-white/10">
-                     <h2 className="text-sm font-semibold text-[#ff4d00]">{t.synopsis}</h2>
-                     <div className="h-px flex-1 bg-gradient-to-r from-neutral-300 to-transparent dark:from-white/10" />
+                  <div className="flex items-center gap-3 pb-1">
+                     <h2 className="text-base font-semibold text-fg">{t.synopsis}</h2>
+                     <div className="ic-rule flex-1" />
                   </div>
-                  <div 
+                  <div
                     itemProp="description"
-                    className="description-content max-h-[min(70vh,48rem)] overflow-y-auto rounded-xl border border-neutral-200 bg-white p-5 text-[0.95rem] leading-relaxed text-neutral-800 md:p-6 md:text-[1.02rem] dark:border-white/10 dark:bg-black/50 dark:text-zinc-200"
+                    className="description-content max-h-[min(70vh,48rem)] overflow-y-auto rounded-card border border-line bg-card p-5 text-[0.95rem] leading-relaxed text-fg-secondary md:p-6 md:text-[1.02rem]"
                   >
                     <RichTextContent
                       content={String(comic.description || "")
@@ -1068,45 +973,40 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
             </section>
 
                {comic.related && comic.related.length > 0 && (
-                 <section className="space-y-4 rounded-xl border border-neutral-200 bg-zinc-50/90 p-4 md:p-5 dark:border-white/10 dark:bg-black/40">
+                 <section className="space-y-4">
                    <div className="flex flex-wrap items-end justify-between gap-3">
-                      <div className="flex items-center gap-2">
-                        <Sparkles className="text-[#ff4d00]" size={15} />
-                        <h2 className="text-sm font-semibold text-neutral-900 dark:text-white">{t.moreLikeThis}</h2>
+                      <div className="section__titles">
+                        <span className="ic-eyebrow">{t.similarTitles}</span>
+                        <h2 className="text-base font-semibold text-fg">{t.moreLikeThis}</h2>
                       </div>
-                      <span className="text-[10px] font-medium uppercase tracking-widest text-neutral-500 dark:text-zinc-400">{t.similarTitles}</span>
                    </div>
 
                    <div className="flex gap-3 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden snap-x snap-mandatory">
                      {comic.related.map((item) => (
-                       <motion.div
+                       <div
                          key={item.id}
-                         whileHover={{ y: -3 }}
-                         transition={{ type: 'spring', stiffness: 420, damping: 28 }}
                          className="w-[6.75rem] shrink-0 snap-start sm:w-[7.25rem]"
                        >
                          <Link
                            href={`/library/${item.source}/${item.id}`}
-                           className="group/rail block text-left"
+                           className="ic-cover block text-left"
                          >
-                           <div className="overflow-hidden rounded-lg border border-neutral-200 bg-white shadow-md transition-colors group-hover/rail:border-[#ff4d00]/40 dark:border-white/10 dark:bg-zinc-900">
-                             <div className="relative h-[7.5rem] w-full sm:h-[8rem]">
-                               <Image
-                                 src={item.coverUrl}
-                                 fill
-                                 sizes="116px"
-                                 quality={68}
-                                 unoptimized={imageUnoptimizedForSrc(item.coverUrl)}
-                                 className="object-cover"
-                                 alt={`${item.title} — cover`}
-                               />
-                             </div>
+                           <div className="ic-cover__poster">
+                             <Image
+                               src={item.coverUrl}
+                               fill
+                               sizes="116px"
+                               quality={68}
+                               unoptimized={imageUnoptimizedForSrc(item.coverUrl)}
+                               className="object-cover"
+                               alt={`${item.title} — cover`}
+                             />
                            </div>
-                           <p className="mt-2 line-clamp-2 px-0.5 text-[9px] font-medium uppercase leading-snug tracking-tight text-neutral-600 group-hover/rail:text-neutral-900 dark:text-zinc-400 dark:group-hover/rail:text-zinc-200">
+                           <p className="ic-cover__title text-xs">
                              {item.title}
                            </p>
                          </Link>
-                       </motion.div>
+                       </div>
                      ))}
                    </div>
                  </section>
@@ -1115,34 +1015,29 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
                 {/* Big Data - Characters & Actors Section */}
                 {comic.aniListData && (comic.aniListData.characters?.edges?.length ?? 0) > 0 && (
                   <div className="space-y-6 pt-2">
-                    <div className="flex items-center justify-between gap-4 border-b border-neutral-200 pb-3 dark:border-white/10">
-                      <div className="flex items-center gap-2">
-                        <Sparkles className="text-[#ff4d00]" size={15} />
-                        <h2 className="text-sm font-semibold text-neutral-900 dark:text-white">Characters & cast</h2>
-                      </div>
+                    <div className="flex items-center gap-3 pb-1">
+                      <h2 className="text-base font-semibold text-fg">Characters & cast</h2>
+                      <div className="ic-rule flex-1" />
                     </div>
-                    
+
                     <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-8">
                       {(comic.aniListData?.characters?.edges ?? []).map((edge, index) => (
                         <div key={edge.node?.id ?? `char-${index}`} className="group cursor-default">
-                          <div className="relative aspect-[3/4] overflow-hidden rounded-lg border border-neutral-200 bg-neutral-100 dark:border-white/10 dark:bg-zinc-900">
-                            <Image 
-                              src={edge.node?.image?.large || '/logo.png'} 
+                          <div className="relative aspect-[3/4] overflow-hidden rounded-cover bg-card [box-shadow:var(--cover-frame)]">
+                            <Image
+                              src={edge.node?.image?.large || '/logo.png'}
                               alt={edge.node?.name?.full ? `${edge.node.name.full} — character` : 'Character'}
                               fill
                               sizes="80px"
                               quality={62}
                               className="object-cover object-top"
                             />
-                            <div className="absolute top-2 right-2 px-1.5 py-0.5 bg-black/60 backdrop-blur-md text-[6px] font-black uppercase tracking-widest text-white/90 border border-white/15">
-                              {edge.role}
-                            </div>
                           </div>
                           <div className="mt-2 space-y-0.5">
-                            <div className="truncate text-[9px] font-medium uppercase tracking-wide text-neutral-600 dark:text-zinc-400">
+                            <div className="truncate text-xs font-medium text-fg-secondary">
                               {edge.node?.name?.userPreferred}
                             </div>
-                            <div className="text-[8px] font-medium uppercase tracking-wider text-neutral-500 dark:text-zinc-500">
+                            <div className="ic-eyebrow">
                               {edge.role === 'MAIN' ? 'Main' : 'Support'}
                             </div>
                           </div>
@@ -1155,40 +1050,40 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
                 {/* Advanced Metadata Stats */}
                 {(comic.aniListData || comic.jikanData) && (
                   <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4">
-                    <div className="border border-neutral-200 bg-neutral-50 p-4 md:p-6 space-y-3 min-w-0 dark:bg-white/5 dark:border-white/10">
-                      <div className="text-[8px] md:text-[9px] font-black uppercase tracking-widest text-neutral-500 dark:text-white/35">Community score</div>
+                    <div className="min-w-0 space-y-3 rounded-card border border-line bg-card p-4 md:p-6">
+                      <div className="ic-eyebrow">Community score</div>
                       <div className="flex items-baseline gap-1.5 flex-wrap">
-                        <div className="text-2xl md:text-4xl lg:text-5xl font-black text-[#ff4d00] italic leading-none">
+                        <div className="ic-display text-2xl leading-none text-accent-text md:text-4xl lg:text-5xl">
                           {Math.round(Number(comic.aniListData?.averageScore || (comic.jikanData?.score ? (comic.jikanData.score * 10) : 85)))}
                         </div>
-                        <div className="text-xs md:text-sm font-black text-neutral-500 dark:text-white/35">/100</div>
+                        <div className="font-mono text-xs text-fg-muted md:text-sm">/100</div>
                       </div>
-                      <div className="text-[7px] md:text-[8px] font-bold uppercase tracking-widest text-neutral-600 dark:text-white/45">
+                      <div className="text-xs text-fg-muted">
                         Based on {comic.aniListData?.popularity || comic.jikanData?.members || '15k'} users
                       </div>
                     </div>
-                    
-                    <div className="border border-neutral-200 bg-neutral-50 p-4 md:p-6 space-y-3 min-w-0 dark:bg-white/5 dark:border-white/10">
-                      <div className="text-[8px] md:text-[9px] font-black uppercase tracking-widest text-neutral-500 dark:text-white/35">Trending rank</div>
+
+                    <div className="min-w-0 space-y-3 rounded-card border border-line bg-card p-4 md:p-6">
+                      <div className="ic-eyebrow">Trending rank</div>
                       <div className="flex items-baseline gap-1.5 flex-wrap">
-                        <div className="text-2xl md:text-4xl lg:text-5xl font-black text-neutral-900 italic leading-none dark:text-white">
+                        <div className="ic-display text-2xl leading-none text-fg md:text-4xl lg:text-5xl">
                           #{comic.aniListData?.trending || comic.jikanData?.rank || '42'}
                         </div>
-                        <div className="text-xs md:text-sm font-black text-neutral-500 dark:text-white/35">TOP</div>
+                        <div className="font-mono text-xs text-fg-muted md:text-sm">top</div>
                       </div>
-                      <div className="text-[7px] md:text-[8px] font-bold uppercase tracking-widest text-neutral-600 dark:text-white/45">
+                      <div className="text-xs text-fg-muted">
                         Trending globally
                       </div>
                     </div>
 
-                    <div className="border border-neutral-200 bg-neutral-50 p-4 md:p-6 space-y-3 min-w-0 dark:bg-white/5 dark:border-white/10">
-                      <div className="text-[8px] md:text-[9px] font-black uppercase tracking-widest text-neutral-500 dark:text-white/35">Series status</div>
+                    <div className="min-w-0 space-y-3 rounded-card border border-line bg-card p-4 md:p-6">
+                      <div className="ic-eyebrow">Series status</div>
                       <div className="flex items-baseline gap-2 overflow-hidden">
-                        <div className="text-lg md:text-xl lg:text-2xl font-black uppercase text-neutral-900 italic leading-none truncate dark:text-white">
+                        <div className="ic-display truncate text-lg leading-none text-fg md:text-xl lg:text-2xl">
                           {comic.status}
                         </div>
                       </div>
-                      <div className="text-[7px] md:text-[8px] font-bold uppercase tracking-widest text-neutral-600 dark:text-white/45">
+                      <div className="text-xs text-fg-muted">
                         {comic.year ? `Since ${comic.year}` : 'Active timeline'}
                       </div>
                     </div>
@@ -1200,14 +1095,14 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
             {comic.source === 'superhero' && (comic as any).superheroData ? (
                <div className="space-y-10">
                   <div className="space-y-6">
-                     <div className="flex items-center justify-between border-b border-neutral-200 dark:border-white/10 pb-4">
-                        <h3 className="text-[11px] font-black uppercase tracking-[0.5em] text-[#ff4d00]">Power stats</h3>
+                     <div className="flex items-center gap-3 border-b border-line pb-4">
+                        <h3 className="text-base font-semibold text-fg">Power stats</h3>
                      </div>
                      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                         {Object.entries((comic as any).superheroData.powerstats || {}).map(([stat, val]) => (
-                           <div key={stat} className="flex flex-col items-center justify-center gap-2 border border-neutral-200 bg-neutral-50 p-5 dark:border-white/10 dark:bg-white/5">
-                              <span className="text-[9px] font-black uppercase tracking-[0.3em] text-neutral-500 dark:text-white/40">{stat}</span>
-                              <span className="text-2xl font-black italic text-neutral-900 dark:text-white">{val === 'null' ? '?' : String(val)}</span>
+                           <div key={stat} className="flex flex-col items-center justify-center gap-2 rounded-card border border-line bg-card p-5">
+                              <span className="ic-eyebrow">{stat}</span>
+                              <span className="ic-display text-2xl text-fg">{val === 'null' ? '?' : String(val)}</span>
                            </div>
                         ))}
                      </div>
@@ -1215,82 +1110,81 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                      <div className="space-y-4">
-                        <div className="text-[10px] font-black uppercase tracking-[0.4em] text-neutral-500 dark:text-white/50 border-b border-neutral-200 dark:border-white/10 pb-2">Appearance</div>
-                        <div className="space-y-2 text-xs font-bold text-neutral-700 dark:text-white/70 uppercase tracking-widest leading-relaxed">
-                           <p><span className="text-[#ff4d00]">Gender:</span> {(comic as any).superheroData.appearance?.gender}</p>
-                           <p><span className="text-[#ff4d00]">Race:</span> {(comic as any).superheroData.appearance?.race}</p>
-                           <p><span className="text-[#ff4d00]">Height:</span> {(comic as any).superheroData.appearance?.height?.join(' / ')}</p>
-                           <p><span className="text-[#ff4d00]">Weight:</span> {(comic as any).superheroData.appearance?.weight?.join(' / ')}</p>
+                        <div className="ic-eyebrow border-b border-line pb-2">Appearance</div>
+                        <div className="space-y-2 text-sm leading-relaxed text-fg-secondary">
+                           <p><span className="text-fg-muted">Gender:</span> {(comic as any).superheroData.appearance?.gender}</p>
+                           <p><span className="text-fg-muted">Race:</span> {(comic as any).superheroData.appearance?.race}</p>
+                           <p><span className="text-fg-muted">Height:</span> {(comic as any).superheroData.appearance?.height?.join(' / ')}</p>
+                           <p><span className="text-fg-muted">Weight:</span> {(comic as any).superheroData.appearance?.weight?.join(' / ')}</p>
                         </div>
                      </div>
                      <div className="space-y-4">
-                        <div className="text-[10px] font-black uppercase tracking-[0.4em] text-neutral-500 dark:text-white/50 border-b border-neutral-200 dark:border-white/10 pb-2">Work & base</div>
-                        <div className="space-y-2 text-xs font-bold text-neutral-700 dark:text-white/70 uppercase tracking-widest leading-relaxed">
-                           <p><span className="text-[#ff4d00]">Occupation:</span> {(comic as any).superheroData.work?.occupation}</p>
-                           <p><span className="text-[#ff4d00]">Base:</span> {(comic as any).superheroData.work?.base}</p>
+                        <div className="ic-eyebrow border-b border-line pb-2">Work & base</div>
+                        <div className="space-y-2 text-sm leading-relaxed text-fg-secondary">
+                           <p><span className="text-fg-muted">Occupation:</span> {(comic as any).superheroData.work?.occupation}</p>
+                           <p><span className="text-fg-muted">Base:</span> {(comic as any).superheroData.work?.base}</p>
                         </div>
                      </div>
                   </div>
-                  
+
                   <div className="space-y-4">
-                     <div className="text-[10px] font-black uppercase tracking-[0.4em] text-neutral-500 dark:text-white/50 border-b border-neutral-200 dark:border-white/10 pb-2">Connections</div>
-                     <div className="bg-white/[0.02] border border-neutral-100 dark:border-white/5 p-6 space-y-4 text-xs font-bold text-neutral-700 dark:text-white/70 leading-loose">
-                        <p><span className="text-[#ff4d00] uppercase tracking-widest mr-2">Affiliation:</span> {(comic as any).superheroData.connections?.['group-affiliation']}</p>
-                        <p><span className="text-[#ff4d00] uppercase tracking-widest mr-2">Relatives:</span> {(comic as any).superheroData.connections?.relatives}</p>
+                     <div className="ic-eyebrow border-b border-line pb-2">Connections</div>
+                     <div className="space-y-4 rounded-card border border-line bg-card p-6 text-sm leading-loose text-fg-secondary">
+                        <p><span className="mr-2 text-fg-muted">Affiliation:</span> {(comic as any).superheroData.connections?.['group-affiliation']}</p>
+                        <p><span className="mr-2 text-fg-muted">Relatives:</span> {(comic as any).superheroData.connections?.relatives}</p>
                      </div>
                   </div>
                </div>
             ) : (
-              <div id="chapters-section" className="space-y-8">
-                 <div className="flex items-center justify-between border-b border-neutral-200 pb-4 dark:border-white/10">
-                    <h3 className="text-[11px] font-black uppercase tracking-[0.5em] text-neutral-500 dark:text-white/45">{t.chaptersHeading}</h3>
-                    <span className="text-[10px] font-black text-[#ff4d00] uppercase tracking-widest">{t.chaptersTotal.replace('{count}', String(chapters.length))}</span>
+              <div id="chapters-section" className="space-y-6">
+                 <div className="flex items-center justify-between border-b border-line pb-4">
+                    <h3 className="text-base font-semibold text-fg">{t.chaptersHeading}</h3>
+                    <span className="font-mono text-xs text-fg-muted">{t.chaptersTotal.replace('{count}', String(chapters.length))}</span>
                  </div>
-                 <div className="grid grid-cols-1 gap-3 max-h-[min(70vh,44rem)] overflow-y-auto custom-scrollbar pr-2 md:pr-4 md:gap-4">
+                 <div className="max-h-[min(70vh,44rem)] overflow-y-auto custom-scrollbar pr-2 md:pr-4 divide-y divide-line-subtle">
                     {chapters.length > 0 ? (
                       chapters.slice(0, visibleChapterCount).map((ch) => {
                         const sharedClass =
-                          'group relative flex w-full items-center gap-4 border border-neutral-200 bg-white p-5 text-left transition-all hover:border-[#ff4d00]/45 hover:bg-[#ff4d00]/5 dark:border-white/8 dark:bg-white/5 dark:hover:bg-[#ff4d00]/10 md:p-6';
+                          'group relative flex w-full items-center gap-4 px-2 py-4 text-left transition-colors hover:bg-inset md:px-3';
                         const chapterOpening =
                           readNavPending && pendingReadVia === 'list' && pendingReadChapterId === ch.id;
                         const inner = (
                           <>
-                            <div className="absolute inset-0 bg-gradient-to-r from-[#ff4d00]/5 to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
-                            <div className="relative z-10 min-w-0 flex-1 space-y-1.5">
+                            <div className="relative z-10 min-w-0 flex-1 space-y-1">
                               <div className="flex flex-wrap items-center gap-2">
-                                <div className="text-[10px] font-black uppercase tracking-[0.28em] text-[#ff4d00]">
-                                  Vol.{ch.volume || '0'} Ch.{ch.chapterNum}
+                                <div className="font-mono text-xs text-fg-muted">
+                                  Vol. {ch.volume || '0'} · Ch. {ch.chapterNum}
                                 </div>
                                 {ch.externalUrl && (
-                                  <div className="rounded-sm border border-blue-500/30 bg-blue-500/10 px-2 py-0.5 text-[7px] font-black uppercase tracking-widest text-blue-500">
+                                  <div className="ic-badge ic-badge--info">
                                     {t.externalChapter}
                                   </div>
                                 )}
                               </div>
-                              <div className="wrap-anywhere line-clamp-2 text-[13px] font-black uppercase leading-snug tracking-tight text-neutral-900 transition-colors group-hover:text-neutral-950 md:text-[15px] dark:text-white/90 dark:group-hover:text-white">
+                              <div className="wrap-anywhere line-clamp-2 text-sm font-medium leading-snug text-fg md:text-[15px]">
                                 {ch.title || t.chapterTitleFallback.replace('{num}', String(ch.chapterNum))}
                               </div>
                               {ch.scanlationGroup ? (
-                                <div className="text-[9px] font-bold uppercase tracking-widest text-neutral-400 dark:text-white/35">
-                                  Group: <span className="text-neutral-600 dark:text-white/55">{ch.scanlationGroup}</span>
+                                <div className="text-xs text-fg-muted">
+                                  Group: <span className="text-fg-secondary">{ch.scanlationGroup}</span>
                                 </div>
                               ) : null}
                             </div>
                             {ch.externalUrl ? (
                               <ExternalLink
-                                size={20}
-                                className="relative z-10 shrink-0 text-neutral-400 transition-all group-hover:text-blue-500 dark:text-white/35 dark:group-hover:text-blue-400"
+                                size={18}
+                                className="relative z-10 shrink-0 text-fg-muted transition-colors group-hover:text-info"
                               />
                             ) : chapterOpening ? (
                               <Loader2
-                                size={20}
-                                className="relative z-10 shrink-0 animate-spin text-[#ff4d00]"
+                                size={18}
+                                className="relative z-10 shrink-0 animate-spin text-accent"
                                 aria-hidden
                               />
                             ) : (
                               <ChevronRight
-                                size={20}
-                                className="relative z-10 shrink-0 text-neutral-400 transition-all group-hover:translate-x-0.5 group-hover:text-[#ff4d00] dark:text-white/35 dark:group-hover:text-[#ff4d00]"
+                                size={18}
+                                className="relative z-10 shrink-0 text-fg-muted transition-all group-hover:translate-x-0.5 group-hover:text-accent-text"
                               />
                             )}
                           </>
@@ -1324,30 +1218,30 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
                         );
                       })
                     ) : (
-                      <div className="col-span-full flex flex-col items-center justify-center border border-dashed border-neutral-200 py-20 text-center dark:border-white/10 px-10">
-                         <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-neutral-100 dark:bg-white/5">
-                            <BookOpen className="text-neutral-400 dark:text-white/35" size={32} />
-                         </div>
-                         <h4 className="mb-3 text-[11px] font-black uppercase tracking-[0.5em] text-neutral-900 dark:text-white">{t.noChaptersForLanguage}</h4>
-                         <p className="text-sm text-neutral-500 dark:text-white/30 max-w-sm leading-relaxed mb-8">
+                      <div className="state-block">
+                         <BookOpen className="text-fg-muted" size={28} />
+                         <h4>{t.noChaptersForLanguage}</h4>
+                         <p>
                             {t.noChaptersHintBefore}
                             <b>{mangaLanguage.toUpperCase()}</b>
                             {t.noChaptersHintAfter}
                          </p>
                          <div className="flex flex-wrap justify-center gap-3">
-                            <span className="text-[9px] font-black uppercase tracking-widest text-[#ff4d00]">{t.tryHeaderLanguage}</span>
+                            <span className="text-xs font-medium text-accent-text">{t.tryHeaderLanguage}</span>
                          </div>
                       </div>
                     )}
                     {chapters.length > visibleChapterCount && (
-                      <button
-                        type="button"
-                        onClick={() => setVisibleChapterCount((count) => count + CHAPTER_RENDER_BATCH)}
-                        className="group flex w-full items-center justify-center gap-3 border border-dashed border-neutral-300 bg-white p-5 text-[10px] font-black uppercase tracking-[0.28em] text-neutral-500 transition-all hover:border-[#ff4d00]/45 hover:text-[#ff4d00] dark:border-white/15 dark:bg-white/5 dark:text-white/45 dark:hover:text-[#ff4d00]"
-                      >
-                        Show more chapters ({chapters.length - visibleChapterCount})
-                        <ChevronRight size={14} className="rotate-90 transition-transform group-hover:translate-y-0.5" />
-                      </button>
+                      <div className="pt-4">
+                        <button
+                          type="button"
+                          onClick={() => setVisibleChapterCount((count) => count + CHAPTER_RENDER_BATCH)}
+                          className="ic-btn ic-btn--secondary ic-btn--md ic-btn--block"
+                        >
+                          Show more chapters ({chapters.length - visibleChapterCount})
+                          <ChevronRight size={14} className="rotate-90" />
+                        </button>
+                      </div>
                     )}
                  </div>
               </div>
@@ -1361,49 +1255,47 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
       <AnimatePresence>
         {showShareModal && (
           <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4">
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setShowShareModal(false)}
-              className="absolute inset-0 bg-black/80 backdrop-blur-md"
+              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
             />
-            
+
             <motion.div
-              initial={{ scale: 0.9, opacity: 0, y: 20 }}
-              animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.9, opacity: 0, y: 20 }}
-              className="relative w-full max-w-md overflow-hidden rounded-[2rem] border border-neutral-200 bg-white p-8 text-neutral-900 shadow-[0_50px_100px_rgba(0,0,0,0.12)] dark:border-white/10 dark:bg-[#0a0a0a] dark:text-white dark:shadow-[0_50px_100px_rgba(0,0,0,0.8)]"
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 12 }}
+              transition={{ duration: 0.22, ease: [0.22, 0.61, 0.36, 1] }}
+              className="ic-dialog relative w-full max-w-md"
             >
-              {/* Pulse Glow Effect */}
-              <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-32 bg-[#ff4d00]/20 blur-[60px] rounded-full pointer-events-none" />
-              
-              <div className="flex items-center justify-between mb-8">
+              <div className="mb-6 flex items-center justify-between">
                 <div className="space-y-1">
-                  <div className="text-[10px] font-black uppercase tracking-[0.4em] text-[#ff4d00]">{t.shareModalKicker}</div>
-                  <div className="text-xl font-black uppercase tracking-tight text-neutral-900 dark:text-white">{t.shareModalTitle}</div>
+                  <div className="ic-eyebrow">{t.shareModalKicker}</div>
+                  <div className="ic-dialog__title">{t.shareModalTitle}</div>
                 </div>
-                <button 
+                <button
                   onClick={() => setShowShareModal(false)}
-                  className="flex h-10 w-10 items-center justify-center rounded-xl border border-neutral-200 bg-neutral-100 text-neutral-800 transition-all hover:bg-red-600 hover:text-white active:scale-95 dark:border-white/10 dark:bg-white/5 dark:text-white"
+                  className="ic-iconbtn ic-iconbtn--solid ic-iconbtn--sm"
                 >
-                  <X size={20} />
+                  <X size={18} />
                 </button>
               </div>
 
-              {/* Comic Preview Card */}
-              <div className="mb-8 flex items-center gap-4 rounded-2xl border border-neutral-200 bg-neutral-50 p-4 dark:border-white/5 dark:bg-white/5">
-                 <div className="relative w-16 aspect-[2/3] flex-shrink-0 overflow-hidden rounded-lg">
+              {/* Comic preview card */}
+              <div className="mb-6 flex items-center gap-4 rounded-card border border-line bg-card p-4">
+                 <div className="relative aspect-[2/3] w-14 flex-shrink-0 overflow-hidden rounded-cover [box-shadow:var(--cover-frame)]">
                     <Image src={comic.coverUrl} fill sizes="64px" quality={62} unoptimized={imageUnoptimizedForSrc(comic.coverUrl)} className="object-cover" alt={`${comic.title} — cover`} />
                  </div>
                  <div className="min-w-0 flex-1">
-                    <div className="mb-1 text-xs font-black uppercase tracking-tight text-neutral-500 dark:text-white/40">{comic.source}</div>
-                    <div className="truncate text-sm font-black uppercase tracking-tight text-neutral-900 dark:text-white">{comic.title}</div>
+                    <div className="ic-eyebrow mb-1">{comic.source}</div>
+                    <div className="truncate text-sm font-semibold text-fg">{comic.title}</div>
                  </div>
               </div>
 
-              {/* Social Grid */}
-              <div className="grid grid-cols-4 gap-4 mb-8">
+              {/* Social grid */}
+              <div className="mb-6 grid grid-cols-4 gap-4">
                 {socialShares.map((social) => (
                   <button
                     key={social.id}
@@ -1415,34 +1307,34 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
                       }
                       openExternalShare(social.id);
                     }}
-                    className="flex flex-col items-center gap-3 group cursor-pointer border-0 bg-transparent p-0 text-left"
+                    className="group flex cursor-pointer flex-col items-center gap-2 border-0 bg-transparent p-0 text-left"
                   >
-                    <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-neutral-200 bg-black/[0.04] shadow-lg transition-all group-hover:-translate-y-1 group-hover:border-[#ff4d00] group-hover:bg-[#ff4d00] dark:border-white/10 dark:bg-white/5">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-btn border border-line bg-card transition-colors group-hover:bg-card-hov">
                       <social.Icon
-                        className={`h-6 w-6 shrink-0 ${social.iconClass} opacity-90 transition-[opacity,color] group-hover:text-white group-hover:opacity-100`}
+                        className={`h-5 w-5 shrink-0 ${social.iconClass} opacity-90 transition-opacity group-hover:opacity-100`}
                       />
                     </div>
-                    <span className="text-[9px] font-black uppercase tracking-widest text-neutral-600 transition-colors group-hover:text-neutral-900 dark:text-white/30 dark:group-hover:text-white">
+                    <span className="text-xs text-fg-muted transition-colors group-hover:text-fg">
                       {social.name}
                     </span>
                   </button>
                 ))}
               </div>
 
-              {/* Copy Field */}
-              <div className="space-y-3">
-                 <div className="text-[9px] font-black uppercase tracking-[0.3em] text-neutral-500 dark:text-white/30 ml-1">{t.pageLinkLabel}</div>
-                 <div className="relative group">
-                    <input 
-                      type="text" 
-                      readOnly 
-                      value={typeof window !== 'undefined' ? window.location.href : ''} 
-                      className="w-full rounded-xl border border-neutral-200 bg-neutral-100 p-4 font-mono text-[11px] text-neutral-800 transition-all focus:border-[#ff4d00]/50 focus:outline-none dark:border-white/10 dark:bg-white/5 dark:text-white/60"
+              {/* Copy field */}
+              <div className="space-y-2">
+                 <div className="ic-field__label">{t.pageLinkLabel}</div>
+                 <div className="relative">
+                    <input
+                      type="text"
+                      readOnly
+                      value={typeof window !== 'undefined' ? window.location.href : ''}
+                      className="h-11 w-full rounded-btn border border-line bg-card pl-4 pr-24 font-mono text-xs text-fg-secondary outline-none transition-colors focus:border-accent"
                     />
-                    <button 
+                    <button
                       onClick={copyToClipboard}
-                      className={`absolute right-2 top-2 bottom-2 px-4 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${
-                        linkCopied ? 'bg-green-500 text-white' : 'bg-[#ff4d00] text-white hover:brightness-110 active:scale-95'
+                      className={`absolute bottom-1.5 right-1.5 top-1.5 rounded-btn px-3 text-xs font-semibold transition-colors ${
+                        linkCopied ? 'bg-success text-white' : 'bg-accent text-on-accent hover:bg-accent-hover'
                       }`}
                     >
                       {linkCopied ? t.copiedButton : t.copyButton}
@@ -1450,14 +1342,7 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
                  </div>
               </div>
 
-              {/* Footer Decoration */}
-              <div className="mt-10 flex items-center gap-4">
-                 <div className="h-px flex-1 bg-black/[0.04] dark:bg-white/5" />
-                 <div className="flex gap-1">
-                    {[1,2,3].map(i => <div key={i} className="w-1 h-1 bg-[#ff4d00]/30 rounded-full" />)}
-                 </div>
-                 <div className="h-px flex-1 bg-black/[0.04] dark:bg-white/5" />
-              </div>
+              <div className="ic-rule mt-8" />
             </motion.div>
           </div>
         )}
@@ -1466,14 +1351,10 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
       <style jsx global>{`
         .custom-scrollbar::-webkit-scrollbar { width: 4px; height: 4px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255, 77, 0, 0.2); border-radius: 10px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(255, 77, 0, 0.5); }
-        .description-content strong { color: rgb(39 39 42); }
-        .description-content em { color: rgb(82 82 91); font-style: italic; }
-        @media (prefers-color-scheme: dark) {
-          .description-content strong { color: rgb(244 244 245); }
-          .description-content em { color: rgb(161 161 170); }
-        }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: var(--border-strong); }
+        .description-content strong { color: var(--text-primary); }
+        .description-content em { color: var(--text-secondary); font-style: italic; }
       `}</style>
     </div>
   );

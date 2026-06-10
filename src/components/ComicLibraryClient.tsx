@@ -3,8 +3,8 @@
 import React, { useState, useEffect, useRef, useCallback, useSyncExternalStore, useMemo } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { LazyMotion, domMax, m, AnimatePresence } from 'framer-motion';
-import { 
-  BookOpen, Search, X, ChevronLeft, ChevronRight, 
+import {
+  BookOpen, Search, X, ChevronLeft, ChevronRight, ChevronDown,
   Eye, EyeOff,
   ZoomIn, ZoomOut, Sparkles, Shuffle, Globe, Flag,
   Maximize2, Loader2
@@ -718,65 +718,67 @@ export default function ComicLibraryClient({ initialAgeVerified = false }: Comic
     <LazyMotion features={domMax} strict>
     <>
     <Navbar />
-    <div className="min-h-screen bg-zinc-50 pt-nav-catalog text-neutral-900 dark:bg-[#020202] dark:text-white">
+    <div className="min-h-screen bg-app pt-nav-catalog text-fg">
       {/* Unrestricted Access */}
 
       {!selectedComic && (
-        <div className="px-4 py-6 md:p-16">
-          <header className="max-w-7xl mx-auto mb-16">
+        <div className="mx-auto max-w-[1320px] px-5 py-8 sm:px-8 md:py-12">
+          <header className="mb-12">
             <div className="flex flex-col gap-6">
               <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                 <button
                   onClick={() => router.push('/')}
-                  className="inline-flex w-full items-center justify-center gap-3 border border-neutral-200 bg-neutral-100/80 px-4 py-3 text-[10px] font-black uppercase tracking-[0.35em] text-neutral-600 transition-all hover:bg-neutral-200/90 hover:text-neutral-900 dark:border-white/10 dark:bg-white/5 dark:text-white/70 dark:hover:bg-white/10 dark:hover:text-white md:w-auto"
+                  className="ic-btn ic-btn--secondary ic-btn--sm w-full md:w-auto"
                 >
                   <ChevronLeft size={14} />
                   Back
                 </button>
 
-                <div className="hidden md:flex items-center gap-4 text-[9px] font-black uppercase tracking-[0.45em] text-neutral-400 dark:text-white/25">
-                  <div className="h-[2px] w-16 bg-[#ff4d00]" />
-                  <span>Library</span>
+                <div className="hidden md:flex items-center gap-4">
+                  <span className="ic-eyebrow">Library</span>
                 </div>
 
                 <div className="flex w-full flex-col gap-3 md:w-auto md:flex-row md:items-center">
-                  <div className="flex items-center gap-2 border border-neutral-200 bg-neutral-100/80 px-4 py-3 dark:border-white/10 dark:bg-white/5">
-                    <Globe size={14} className="text-[#ff4d00]" />
-                    <span className="text-[9px] font-black uppercase tracking-[0.35em] text-neutral-500 dark:text-white/40">Manga Language</span>
+                  <div className="flex items-center gap-2">
+                    <Globe size={14} className="text-fg-muted" />
+                    <span className="ic-field__label">Manga language</span>
                   </div>
-                  <select
-                    value={mangaLanguage}
-                    onChange={(e) => setMangaLanguage(e.target.value as MangaLanguage)}
-                    className="w-full bg-neutral-100 dark:bg-[#0a0a0a] border border-neutral-200 dark:border-white/10 px-4 py-3 text-[10px] font-black uppercase tracking-widest text-neutral-900 outline-none dark:text-white focus:border-[#ff4d00] md:min-w-[220px] md:w-auto"
-                  >
-                    {MANGA_LANGUAGE_OPTIONS.map((option) => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </select>
+                  <div className="relative flex w-full items-center md:w-[220px]">
+                    <select
+                      value={mangaLanguage}
+                      onChange={(e) => setMangaLanguage(e.target.value as MangaLanguage)}
+                      className="ic-select"
+                    >
+                      {MANGA_LANGUAGE_OPTIONS.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                    <ChevronDown size={16} className="pointer-events-none absolute right-3 text-fg-muted" aria-hidden />
+                  </div>
                 </div>
               </div>
 
-              <nav className="flex flex-wrap items-center gap-x-5 gap-y-2 border-y border-neutral-200 py-4 dark:border-white/10">
-                <span className="text-[8px] font-black uppercase tracking-[0.4em] text-neutral-400 dark:text-white/25">
+              <nav className="flex flex-wrap items-center gap-x-5 gap-y-2 border-y border-line py-4">
+                <span className="ic-eyebrow">
                   Learn
                 </span>
                 <Link
                   href="/guides"
-                  className="text-[9px] font-black uppercase tracking-[0.35em] text-neutral-600 underline-offset-4 hover:text-[#ff4d00] hover:underline dark:text-white/50 dark:hover:text-[#ff5a1f]"
+                  className="text-sm font-medium text-fg-secondary underline-offset-4 transition-colors hover:text-accent-text hover:underline"
                 >
                   Guides
                 </Link>
                 <Link
                   href="/reading"
-                  className="text-[9px] font-black uppercase tracking-[0.35em] text-neutral-600 underline-offset-4 hover:text-[#ff4d00] hover:underline dark:text-white/50 dark:hover:text-[#ff5a1f]"
+                  className="text-sm font-medium text-fg-secondary underline-offset-4 transition-colors hover:text-accent-text hover:underline"
                 >
                   Reading hub
                 </Link>
                 <Link
                   href="/faq"
-                  className="text-[9px] font-black uppercase tracking-[0.35em] text-neutral-600 underline-offset-4 hover:text-[#ff4d00] hover:underline dark:text-white/50 dark:hover:text-[#ff5a1f]"
+                  className="text-sm font-medium text-fg-secondary underline-offset-4 transition-colors hover:text-accent-text hover:underline"
                 >
                   FAQ
                 </Link>
@@ -792,9 +794,9 @@ export default function ComicLibraryClient({ initialAgeVerified = false }: Comic
                     setOffset(randomOffset);
                     loadData(randomOffset, false);
                   }}
-                  className="h-12 w-full flex items-center justify-center border border-neutral-200 dark:border-white/10 text-neutral-400 transition-all hover:bg-[#ff4d00] hover:text-white dark:text-white/20 md:h-16 md:w-16 shrink-0"
+                  className="ic-iconbtn ic-iconbtn--solid h-11 w-full shrink-0 md:w-11"
                 >
-                  <Shuffle size={20} />
+                  <Shuffle size={18} />
                 </button>
                 <button
                   type="button"
@@ -810,80 +812,78 @@ export default function ComicLibraryClient({ initialAgeVerified = false }: Comic
                       setRandomMangaBusy(false);
                     }
                   }}
-                  className="h-12 w-full flex items-center justify-center gap-2 border border-neutral-200 px-4 text-neutral-600 transition-all hover:border-[#ff4d00]/55 hover:bg-[#ff4d00]/10 hover:text-[#ff4d00] dark:border-white/10 dark:text-white/45 md:h-16 md:w-auto shrink-0 disabled:opacity-40"
+                  className="ic-btn ic-btn--secondary ic-btn--md w-full shrink-0 md:w-auto"
                 >
-                  {randomMangaBusy ? <Loader2 size={18} className="animate-spin" /> : <Sparkles size={18} />}
-                  <span className="text-[9px] font-black uppercase tracking-[0.3em]">MD random</span>
+                  {randomMangaBusy ? <Loader2 size={16} className="animate-spin" /> : <Sparkles size={16} />}
+                  <span>Random manga</span>
                 </button>
                 <div ref={searchBoxRef} className="relative flex-1 md:w-96">
-                  <input 
-                    type="text" 
-                    placeholder="Search comics, manga, manhwa..."
-                    className="w-full border border-neutral-200 bg-white py-4 pl-12 pr-4 text-[11px] font-black uppercase text-neutral-900 outline-none transition-all placeholder:text-neutral-400 focus:border-[#ff4d00] dark:border-white/10 dark:bg-black/[0.04] dark:text-white dark:placeholder:text-white/25 md:py-5 md:px-12"
-                    value={searchQuery} 
-                    onChange={e => handleSearchQueryChange(e.target.value)}
-                    onFocus={() => searchQuery.length >= 3 && setShowDropdown(true)}
-                  />
-                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400 dark:text-white/20" />
+                  <div className="ic-input-wrap has-icon">
+                    <Search size={16} aria-hidden />
+                    <input
+                      type="text"
+                      placeholder="Search comics, manga, manhwa…"
+                      className="ic-input"
+                      value={searchQuery}
+                      onChange={e => handleSearchQueryChange(e.target.value)}
+                      onFocus={() => searchQuery.length >= 3 && setShowDropdown(true)}
+                    />
+                  </div>
                   
-                  {/* Professional Search Dropdown */}
+                  {/* Search dropdown */}
                   <AnimatePresence>
                     {showDropdown && (
-                      <m.div 
-                        initial={{ opacity: 0, y: 10, scale: 0.98 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: 10, scale: 0.98 }}
-                        className="absolute top-full left-0 right-0 mt-2 z-[6000] bg-white dark:bg-[#0d0d0d] border border-neutral-200 dark:border-white/10 shadow-[0_30px_60px_rgba(0,0,0,0.8)] backdrop-blur-xl overflow-hidden"
+                      <m.div
+                        initial={{ opacity: 0, y: 6 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: 6 }}
+                        transition={{ duration: 0.18, ease: [0.22, 0.61, 0.36, 1] }}
+                        className="qresults"
+                        style={{ zIndex: 6000 }}
                       >
-                        <div className="p-2 border-b border-neutral-100 dark:border-white/5 flex items-center justify-between">
-                          <span className="text-[8px] font-black uppercase tracking-[0.4em] text-neutral-400 dark:text-white/20 px-2">Results</span>
+                        <div className="flex items-center justify-between border-b border-line-subtle p-2">
+                          <span className="ic-eyebrow px-2">Results</span>
                           <button
                             type="button"
+                            className="ic-iconbtn ic-iconbtn--sm"
                             onClick={(event) => {
                               event.preventDefault();
                               event.stopPropagation();
                               closeSearchDropdown();
                             }}
                           >
-                            <X size={12} className="text-neutral-400 dark:text-white/20 hover:text-neutral-900 dark:hover:text-white" />
+                            <X size={14} />
                           </button>
                         </div>
                         <div className="max-h-[400px] overflow-y-auto custom-scrollbar">
                           {loading && fetchSearchQueryTrimmed.length >= 3 ? (
                             <div className="p-8 text-center">
-                              <Loader2 className="w-5 h-5 text-[#ff4d00] animate-spin mx-auto mb-3" />
-                              <span className="text-[9px] font-black uppercase tracking-[0.5em] text-neutral-400 dark:text-white/10">{t_hero.quickSearchSearching}</span>
+                              <Loader2 className="mx-auto mb-3 h-5 w-5 animate-spin text-accent" />
+                              <span className="ic-eyebrow">{t_hero.quickSearchSearching}</span>
                             </div>
                           ) : autoCompletePreview.length === 0 ? (
-                            <div className="p-8 text-center text-[9px] font-black uppercase tracking-[0.5em] text-neutral-400 dark:text-white/10">{t_hero.quickSearchNone}</div>
+                            <div className="ic-eyebrow p-8 text-center">{t_hero.quickSearchNone}</div>
                           ) : (
                             autoCompletePreview.map(comic => (
-                              <button 
+                              <button
                                 key={`${comic.source}:${comic.id}`}
                                 onClick={() => {
                                   closeSearchDropdown();
                                   router.push(`/library/${comic.source}/${comic.id}`);
                                 }}
-                                className="w-full p-3 flex items-center gap-4 hover:bg-black/[0.05] dark:hover:bg-black/[0.04] dark:bg-white/5 border-b border-neutral-100 dark:border-white/5 transition-all text-left group"
+                                className="qresult group w-full border-b border-line-subtle text-left"
                               >
-                                <div className="relative w-10 aspect-[2/3] bg-black border border-neutral-200 dark:border-white/10 shrink-0">
+                                <div className="qresult__thumb">
                                   <Image src={comic.coverUrl || '/logo.png'} fill sizes="40px" quality={65} unoptimized={imageUnoptimizedForSrc(comic.coverUrl || '/logo.png')} className="object-cover" alt={`${comic.title} — cover`} />
                                 </div>
-                                <div className="flex-1 min-w-0">
-                                  <div className="text-[10px] font-black uppercase tracking-widest text-neutral-800 dark:text-white/80 group-hover:text-[#ff4d00] transition-colors truncate">{comic.title}</div>
-                                  <div className="flex items-center gap-2 mt-1">
-                                    <span className={`px-1 py-0.5 text-[6px] font-black uppercase tracking-tighter ${
-                                      comic.source === 'mangadex' ? 'bg-orange-500/20 text-orange-400' :
-                                      comic.source === 'marvel' ? 'bg-red-600/20 text-red-500' :
-                                      comic.source === 'archive' ? 'bg-blue-500/20 text-blue-400' :
-                                      'bg-black/[0.06] dark:bg-white/10 text-neutral-500 dark:text-white/40'
-                                    }`}>
-                                      {comic.source}
-                                    </span>
-                                    <span className="text-[8px] font-bold uppercase tracking-[0.2em] text-neutral-400 dark:text-white/10">{comic.rating}</span>
+                                <div className="min-w-0 flex-1">
+                                  <div className="qresult__t truncate">{comic.title}</div>
+                                  <div className="qresult__m mt-0.5 flex items-center gap-2">
+                                    <span>{comic.source}</span>
+                                    <span>· {comic.rating}</span>
                                   </div>
                                 </div>
-                                <ChevronRight size={14} className="text-neutral-400 dark:text-white/10 group-hover:text-[#ff4d00] transition-all" />
+                                <ChevronRight size={14} className="shrink-0 text-fg-muted transition-colors group-hover:text-accent-text" />
                               </button>
                             ))
                           )}
@@ -897,76 +897,79 @@ export default function ComicLibraryClient({ initialAgeVerified = false }: Comic
                   onClick={handleNsfwToggle}
                   aria-pressed={nsfwEnabled}
                   aria-label={nsfwEnabled ? t_cat.nsfwToggleOn : t_cat.nsfwToggleOff}
-                  className={`h-12 w-full flex items-center justify-center border transition-all md:h-16 md:w-16 ${nsfwEnabled ? 'bg-red-600 border-red-600' : 'border-neutral-200 dark:border-white/10 text-neutral-400 dark:text-white/20'}`}
+                  className="ic-iconbtn ic-iconbtn--solid h-11 w-full shrink-0 md:w-11"
                 >
-                  {isMounted && nsfwEnabled ? <Eye aria-hidden /> : <EyeOff aria-hidden />}
+                  {isMounted && nsfwEnabled ? <Eye size={18} aria-hidden /> : <EyeOff size={18} aria-hidden />}
                 </button>
               </div>
 
               <div className="grid gap-3 md:grid-cols-[1.4fr_1fr_auto]">
-                <div className="flex items-center gap-2 rounded-2xl border border-neutral-200 bg-neutral-100/80 px-4 py-3 dark:border-white/10 dark:bg-white/5">
-                  <span className="text-[8px] font-black uppercase tracking-[0.35em] text-neutral-500 dark:text-white/30">{t_cat.filterLabel}</span>
-                  <select
-                    value={sourceFilter}
-                    onChange={(e) => setSourceFilter(e.target.value as typeof sourceFilter)}
-                    className="flex-1 bg-transparent text-[10px] font-black uppercase tracking-[0.25em] text-neutral-900 outline-none dark:text-white"
-                  >
-                    <option value="all">{t_cat.allSources}</option>
-                    <option value="mangadex">MangaDex</option>
-                    <option value="marvel">Marvel</option>
-                    <option value="archive">Archive</option>
-                    <option value="superhero">Superheroes</option>
-                    {isAgeVerified && nsfwEnabled && (
-                      <>
-                        <option value="nhentai">nhentai</option>
-                        <option value="e621">e621</option>
-                        <option value="danbooru">danbooru</option>
-                        <option value="gelbooru">gelbooru</option>
-                      </>
-                    )}
-                  </select>
+                <div className="ic-field">
+                  <span className="ic-field__label">{t_cat.filterLabel}</span>
+                  <div className="ic-select-wrap">
+                    <select
+                      value={sourceFilter}
+                      onChange={(e) => setSourceFilter(e.target.value as typeof sourceFilter)}
+                      className="ic-select"
+                    >
+                      <option value="all">{t_cat.allSources}</option>
+                      <option value="mangadex">MangaDex</option>
+                      <option value="marvel">Marvel</option>
+                      <option value="archive">Archive</option>
+                      <option value="superhero">Superheroes</option>
+                      {isAgeVerified && nsfwEnabled && (
+                        <>
+                          <option value="nhentai">nhentai</option>
+                          <option value="e621">e621</option>
+                          <option value="danbooru">danbooru</option>
+                          <option value="gelbooru">gelbooru</option>
+                        </>
+                      )}
+                    </select>
+                    <ChevronDown size={16} aria-hidden />
+                  </div>
                 </div>
 
-                <div className="flex items-center gap-2 rounded-2xl border border-neutral-200 bg-neutral-100/80 px-4 py-3 dark:border-white/10 dark:bg-white/5">
-                  <span className="text-[8px] font-black uppercase tracking-[0.35em] text-neutral-500 dark:text-white/30">{t_cat.sortLabel}</span>
-                  <select
-                    value={sortOrder}
-                    onChange={(e) => setSortOrder(e.target.value as typeof sortOrder)}
-                    className="flex-1 bg-transparent text-[10px] font-black uppercase tracking-[0.25em] text-neutral-900 outline-none dark:text-white"
-                  >
-                    <option value="featured">{t_cat.sortFeatured}</option>
-                    <option value="recent">{t_cat.recentlyRead}</option>
-                    <option value="saved">{t_cat.savedFirst}</option>
-                    <option value="title-asc">{t_cat.titleAsc}</option>
-                    <option value="title-desc">{t_cat.titleDesc}</option>
-                  </select>
+                <div className="ic-field">
+                  <span className="ic-field__label">{t_cat.sortLabel}</span>
+                  <div className="ic-select-wrap">
+                    <select
+                      value={sortOrder}
+                      onChange={(e) => setSortOrder(e.target.value as typeof sortOrder)}
+                      className="ic-select"
+                    >
+                      <option value="featured">{t_cat.sortFeatured}</option>
+                      <option value="recent">{t_cat.recentlyRead}</option>
+                      <option value="saved">{t_cat.savedFirst}</option>
+                      <option value="title-asc">{t_cat.titleAsc}</option>
+                      <option value="title-desc">{t_cat.titleDesc}</option>
+                    </select>
+                    <ChevronDown size={16} aria-hidden />
+                  </div>
                 </div>
 
                 <button
                   onClick={() => setSavedOnly((current) => !current)}
-                  className={`rounded-2xl border px-4 py-3 text-[10px] font-black uppercase tracking-[0.35em] transition-all ${
-                    savedOnly
-                      ? 'border-[#ff4d00] bg-[#ff4d00] text-white'
-                      : 'border-neutral-200 bg-black/[0.04] text-neutral-500 hover:border-neutral-400 hover:text-neutral-900 dark:border-white/10 dark:bg-white/5 dark:text-white/40 dark:hover:border-white/30 dark:hover:text-white'
-                  }`}
+                  aria-pressed={savedOnly}
+                  className={`ic-btn ic-btn--md self-end ${savedOnly ? 'ic-btn--primary' : 'ic-btn--secondary'}`}
                 >
                   {t_cat.savedOnly}
                 </button>
               </div>
             </div>
 
-            <div className="flex gap-2 overflow-x-auto pb-2 pt-6 border-t border-neutral-100 dark:border-white/5 md:flex-wrap md:overflow-visible md:gap-3 md:pb-0">
+            <div className="ic-tabs mt-6">
               {visibleCategories.map(cat => (
-                <button 
-                  key={cat.label} 
-                  onClick={() => handleCategoryChange(cat)} 
-                  className={`shrink-0 whitespace-nowrap px-4 py-2 text-[10px] font-black uppercase tracking-widest border transition-all md:px-6 md:py-3 ${activeCategory === cat.label ? 'bg-[#ff4d00] border-[#ff4d00] text-white' : 'border-neutral-200 text-neutral-500 hover:border-neutral-400 dark:border-white/10 dark:text-white/30 dark:hover:border-white/80'}`}
+                <button
+                  key={cat.label}
+                  onClick={() => handleCategoryChange(cat)}
+                  className={`ic-tab${activeCategory === cat.label ? ' is-active' : ''}`}
                 >
-                  {cat.source === 'all' && <Globe size={10} className="inline mr-2" />}
-                  {cat.source === 'archive' && <Flag size={10} className="inline mr-2" />}
-                  {(cat.source === 'marvel' || cat.source === 'superhero') && <BookOpen size={10} className="inline mr-2" />}
+                  {cat.source === 'all' && <Globe size={12} className="mr-1.5 inline-block align-[-1px]" />}
+                  {cat.source === 'archive' && <Flag size={12} className="mr-1.5 inline-block align-[-1px]" />}
+                  {(cat.source === 'marvel' || cat.source === 'superhero') && <BookOpen size={12} className="mr-1.5 inline-block align-[-1px]" />}
                   {(cat.source === 'e621' || cat.source === 'danbooru' || cat.source === 'gelbooru' || cat.source === 'rule34') && (
-                    <Sparkles size={10} className="inline mr-2" />
+                    <Sparkles size={12} className="mr-1.5 inline-block align-[-1px]" />
                   )}
                   {cat.label}
                 </button>
@@ -975,69 +978,57 @@ export default function ComicLibraryClient({ initialAgeVerified = false }: Comic
           </header>
 
           {loading ? (
-            <div className="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-x-4 gap-y-10 md:gap-x-10 md:gap-y-20">
+            <div className="mtgrid">
               {[...Array(12)].map((_, i) => <ComicSkeleton key={i} />)}
             </div>
           ) : visibleComics.length === 0 ? (
-             <div className="max-w-3xl mx-auto py-28 text-center">
-                <Sparkles className="mx-auto mb-6 w-12 h-12 text-neutral-200 dark:text-white/5" />
-                <h3 className="text-[10px] font-black uppercase tracking-[0.8em] text-neutral-400 dark:text-white/20">No results found</h3>
-                <p className="mt-4 text-sm text-neutral-500 dark:text-white/35 leading-relaxed">
+             <div className="state-block mx-auto max-w-3xl">
+                <Sparkles className="h-7 w-7 text-fg-muted" />
+                <h4>No results found</h4>
+                <p>
                   {savedOnly
-                    ? 'You are filtering to saved items only. Try turning off Saved Only or clear the source filter.'
+                    ? 'You are filtering to saved items only. Try turning off saved only or clear the source filter.'
                     : searchQuery
                       ? `Nothing matches "${searchQuery}". Try a broader title or switch the source filter.`
-                      : 'This section is currently empty. Pick a different category or come back after the next sync.'}
+                      : 'This shelf is currently empty. Pick a different category or come back after the next sync.'}
                 </p>
                 {searchQuery.trim().length >= 2 && !(isAgeVerified && nsfwEnabled) ? (
-                  <p className="mt-4 max-w-xl mx-auto text-xs text-neutral-600 dark:text-white/45 leading-relaxed">
-                    MangaDex titles marked <span className="font-bold text-neutral-800 dark:text-white/70">erotica</span> or{' '}
-                    <span className="font-bold text-neutral-800 dark:text-white/70">pornographic</span> are excluded from search
+                  <p className="text-xs leading-relaxed text-fg-muted">
+                    MangaDex titles marked <span className="font-semibold text-fg">erotica</span> or{' '}
+                    <span className="font-semibold text-fg">pornographic</span> are excluded from search
                     until age verification is on and adult shelves are enabled (library NSFW toggle).
                   </p>
                 ) : null}
-                <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+                <div className="mt-2 flex flex-wrap items-center justify-center gap-3">
                   <button
                     onClick={() => {
                       setSavedOnly(false);
                       setSourceFilter('all');
                       setSortOrder('featured');
                     }}
-                    className="rounded-2xl border border-neutral-200 bg-neutral-100/90 px-5 py-3 text-[10px] font-black uppercase tracking-[0.35em] text-neutral-600 transition-all hover:border-neutral-300 hover:text-neutral-900 dark:border-white/10 dark:bg-white/5 dark:text-white/60 dark:hover:border-white/25 dark:hover:text-white"
+                    className="ic-btn ic-btn--secondary ic-btn--md"
                   >
-                    Reset Filters
+                    Reset filters
                   </button>
                   <button
                     onClick={() => router.push('/support')}
-                    className="rounded-2xl bg-[#ff4d00] px-5 py-3 text-[10px] font-black uppercase tracking-[0.35em] text-white transition-all hover:bg-white hover:text-black"
+                    className="ic-btn ic-btn--primary ic-btn--md"
                   >
-                    Report Issue
+                    Report issue
                   </button>
                 </div>
              </div>
           ) : (
-            <div className="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-x-4 gap-y-10 md:gap-x-10 md:gap-y-20">
+            <div className="mtgrid">
               {visibleComics.map((comic, index) => {
                 const adultContent = isAdultComic(comic);
                 const shouldBlur = adultContent && !isAgeVerified;
-                const coverClassName = `object-cover opacity-100 transition-transform duration-700 ${
-                  shouldBlur ? 'scale-105' : 'scale-100'
-                } group-hover:scale-110`;
-                const coverStyle = shouldBlur
-                  ? { filter: 'blur(6px)' }
-                  : { filter: 'none' };
+                const coverClassName = 'object-cover';
 
                 return (
-                  <m.div 
+                  <m.div
                     ref={visibleComics.length === index + 1 ? lastComicRef : null}
-                    key={`${comic.source}:${comic.id}`} 
-                    whileHover={{ 
-                      y: -15, 
-                      scale: 1.04,
-                      rotateX: -5,
-                      rotateY: 5,
-                      transition: { type: "spring", stiffness: 400, damping: 25 }
-                    }}
+                    key={`${comic.source}:${comic.id}`}
                     onClick={(event) => {
                       if (adultContent && !isAgeVerified) {
                         event.preventDefault();
@@ -1047,13 +1038,12 @@ export default function ComicLibraryClient({ initialAgeVerified = false }: Comic
 
                       router.push(`/library/${comic.source}/${comic.id}`);
                     }}
-                    className="relative group cursor-pointer perspective-container"
+                    className={`ic-cover group${shouldBlur ? ' ic-cover--adult' : ''}`}
                   >
-                    <div className="aspect-[2/3] overflow-hidden relative border border-neutral-200 bg-neutral-100 shadow-lg transition-shadow duration-500 dark:border-white/5 dark:bg-[#0a0a0a] dark:shadow-[0_40px_80px_rgba(0,0,0,0.8)] group-hover:shadow-[0_0_50px_rgba(255,90,31,0.2)]">
-                      <div className="absolute inset-0 bg-gradient-to-tr from-[#ff4d00]/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 z-10 pointer-events-none" />
+                    <div className="ic-cover__poster">
                       {comic.source === 'marvel' ? (
                         comic.coverUrl ? (
-                          <div className="relative w-full h-full">
+                          <div className="relative h-full w-full">
                             <Image
                               src={comic.coverUrl}
                               fill
@@ -1061,28 +1051,24 @@ export default function ComicLibraryClient({ initialAgeVerified = false }: Comic
                               quality={72}
                               unoptimized={imageUnoptimizedForSrc(comic.coverUrl)}
                               className={coverClassName}
-                              style={coverStyle}
                               alt={`${comic.title} — cover`}
                             />
                           </div>
                         ) : (
-                          <div className="w-full h-full relative overflow-hidden bg-[radial-gradient(circle_at_top,_rgba(255,77,0,0.3),_transparent_45%),linear-gradient(180deg,#171717_0%,#060606_100%)]">
-                            <div className="absolute inset-0 opacity-[0.08]" style={{ backgroundImage: 'linear-gradient(rgba(255,255,255,0.4) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.4) 1px, transparent 1px)', backgroundSize: '20px 20px' }} />
-                            <div className="absolute inset-0 flex flex-col justify-between p-4">
-                              <div className="flex items-center justify-between gap-2">
-                                <span className="bg-neutral-900 px-2 py-1 text-[7px] font-black uppercase tracking-[0.35em] text-white">MARVEL</span>
-                                <span className="text-[8px] font-black uppercase tracking-[0.4em] text-neutral-500 dark:text-white/35">{comic.yearPage || '----'}</span>
-                              </div>
-                              <div className="space-y-2">
-                                <div className="text-[11px] font-black uppercase tracking-[0.35em] text-[#ff4d00]">Issue {comic.issueNumber || '?'}</div>
-                                <div className="line-clamp-3 text-xl font-black uppercase leading-[0.9] tracking-tighter text-neutral-900 dark:text-white">{comic.title}</div>
-                                <div className="text-[8px] uppercase tracking-[0.28em] text-neutral-500 dark:text-white/35 line-clamp-2">{comic.seriesName || comic.description}</div>
-                              </div>
+                          <div className="absolute inset-0 flex flex-col justify-between bg-card p-3">
+                            <div className="flex items-center justify-between gap-2">
+                              <span className="ic-badge ic-badge--neutral">Marvel</span>
+                              <span className="ic-eyebrow">{comic.yearPage || '----'}</span>
+                            </div>
+                            <div className="space-y-1.5">
+                              <div className="ic-eyebrow">Issue {comic.issueNumber || '?'}</div>
+                              <div className="ic-display line-clamp-3 text-lg text-fg">{comic.title}</div>
+                              <div className="line-clamp-2 text-[11px] text-fg-muted">{comic.seriesName || comic.description}</div>
                             </div>
                           </div>
                         )
                       ) : comic.source === 'superhero' ? (
-                        <div className="relative w-full h-full">
+                        <div className="relative h-full w-full">
                           <Image
                             src={comic.coverUrl || '/logo.png'}
                             fill
@@ -1090,12 +1076,11 @@ export default function ComicLibraryClient({ initialAgeVerified = false }: Comic
                             quality={72}
                             unoptimized={imageUnoptimizedForSrc(comic.coverUrl || '/logo.png')}
                             className={coverClassName}
-                            style={coverStyle}
                             alt={`${comic.title} — cover`}
                           />
                         </div>
                       ) : (
-                        <div className="relative w-full h-full">
+                        <div className="relative h-full w-full">
                           <Image
                             src={comic.coverUrl || '/logo.png'}
                             fill
@@ -1103,34 +1088,31 @@ export default function ComicLibraryClient({ initialAgeVerified = false }: Comic
                             quality={72}
                             unoptimized={imageUnoptimizedForSrc(comic.coverUrl || '/logo.png')}
                             className={coverClassName}
-                            style={coverStyle}
                             alt={`${comic.title} — cover`}
                           />
                         </div>
                       )}
                       {shouldBlur && (
-                        <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/20 backdrop-blur-[2px] opacity-100">
-                          <div className="rounded-full border border-neutral-300 dark:border-white/15 bg-black/60 px-3 py-1 text-[8px] font-black uppercase tracking-[0.4em] text-white">
-                            Tap to reveal
-                          </div>
+                        <div className="ic-cover__lock">
+                          <span>18+ · tap to reveal</span>
                         </div>
                       )}
-                      <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black to-transparent flex items-center justify-between">
-                         <span className="text-[7px] font-black uppercase tracking-widest text-[#ff4d00]">{comic.source}</span>
-                         {comic.source === 'marvel' ? (
-                           <span className="text-[6px] font-black uppercase tracking-[0.35em] text-neutral-500 dark:text-white/40">{comic.onSaleDate ? formatMarvelDate(comic.onSaleDate) : 'Metadata only'}</span>
-                         ) : (
-                           isAdultComic(comic) && <span className="px-1.5 py-0.5 bg-red-600 text-white text-[6px] font-black uppercase">18+</span>
-                         )}
-                      </div>
                     </div>
-                    <h3 className="mt-6 text-[10px] font-black uppercase tracking-widest text-neutral-400 leading-relaxed line-clamp-2 group-hover:text-neutral-900 dark:text-white/20 dark:group-hover:text-white">
+                    <h3 className="ic-cover__title">
                       {comic.title}
                     </h3>
+                    <div className="ic-cover__meta">
+                      <span className="ic-eyebrow">{comic.source}</span>
+                      {comic.source === 'marvel' ? (
+                        <span className="ic-eyebrow">{comic.onSaleDate ? formatMarvelDate(comic.onSaleDate) : 'Metadata only'}</span>
+                      ) : (
+                        isAdultComic(comic) && <span className="ic-badge ic-badge--danger">18+</span>
+                      )}
+                    </div>
                     {comic.source === 'marvel' && (
-                      <div className="mt-2 flex flex-wrap gap-2">
-                        <span className="px-2 py-1 border border-neutral-200 dark:border-white/10 text-[7px] font-black uppercase tracking-[0.25em] text-neutral-600 dark:text-white/45">#{comic.issueNumber || '?'}</span>
-                        <span className="px-2 py-1 border border-neutral-200 dark:border-white/10 text-[7px] font-black uppercase tracking-[0.25em] text-neutral-600 dark:text-white/45">{comic.pageCount ? `${comic.pageCount} p.` : 'No pages'}</span>
+                      <div className="flex flex-wrap gap-1.5">
+                        <span className="ic-badge ic-badge--neutral">#{comic.issueNumber || '?'}</span>
+                        <span className="ic-badge ic-badge--neutral">{comic.pageCount ? `${comic.pageCount} p.` : 'No pages'}</span>
                       </div>
                     )}
                   </m.div>
@@ -1140,7 +1122,7 @@ export default function ComicLibraryClient({ initialAgeVerified = false }: Comic
           )}
 
           {loadingMore && (
-            <div className="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-x-4 gap-y-10 md:gap-x-10 md:gap-y-20 mt-20">
+            <div className="mtgrid mt-8">
               {[...Array(6)].map((_, i) => <ComicSkeleton key={i} />)}
             </div>
           )}
@@ -1153,16 +1135,16 @@ export default function ComicLibraryClient({ initialAgeVerified = false }: Comic
           <m.div ref={readerRef} initial={{ opacity: 0, scale: 1.1 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 1.1 }} className="fixed inset-0 z-[5000] bg-black flex flex-col">
              <div className="h-20 bg-black border-b border-white/10 flex items-center justify-between px-8 max-md:h-auto max-md:flex-col max-md:items-stretch max-md:gap-3 max-md:px-3 max-md:py-3">
                 <div className="flex items-center gap-4 max-md:justify-between max-md:gap-3">
-                  <button onClick={() => setSelectedComic(null)} className="w-10 h-10 border border-white/10 flex items-center justify-center hover:bg-red-600 max-md:w-9 max-md:h-9"><X /></button>
+                  <button onClick={() => setSelectedComic(null)} className="w-10 h-10 rounded-btn border border-white/10 flex items-center justify-center transition-colors hover:bg-white/10 max-md:w-9 max-md:h-9"><X /></button>
                   <div className="hidden md:block">
-                     <h4 className="text-[10px] font-black uppercase tracking-widest text-white/40 max-w-xs truncate">{selectedComic.title}</h4>
+                     <h4 className="max-w-xs truncate text-xs font-medium text-white/60">{selectedComic.title}</h4>
                   </div>
                 </div>
 
                 <div className="flex w-full flex-wrap justify-center bg-white/5 p-1 border border-white/10 rounded-full max-md:justify-between max-md:rounded-2xl max-md:p-1.5">
-                  <button onClick={() => setViewMode('single')} className={`px-4 py-2 text-[9px] font-black uppercase rounded-full transition-all max-md:px-3 max-md:py-2 ${viewMode === 'single' ? 'bg-[#ff4d00]' : 'text-white/20 hover:text-white'}`}>Single</button>
-                  <button onClick={() => setViewMode('spread')} className={`px-4 py-2 text-[9px] font-black uppercase rounded-full transition-all max-md:px-3 max-md:py-2 ${viewMode === 'spread' ? 'bg-[#ff4d00]' : 'text-white/20 hover:text-white'}`}>Journal</button>
-                  <button onClick={() => setViewMode('webtoon')} className={`px-4 py-2 text-[9px] font-black uppercase rounded-full transition-all max-md:px-3 max-md:py-2 ${viewMode === 'webtoon' ? 'bg-[#ff4d00]' : 'text-white/20 hover:text-white'}`}>Vertical</button>
+                  <button onClick={() => setViewMode('single')} className={`px-4 py-2 text-xs font-medium rounded-full transition-all max-md:px-3 max-md:py-2 ${viewMode === 'single' ? 'bg-accent text-on-accent' : 'text-white/50 hover:text-white'}`}>Single</button>
+                  <button onClick={() => setViewMode('spread')} className={`px-4 py-2 text-xs font-medium rounded-full transition-all max-md:px-3 max-md:py-2 ${viewMode === 'spread' ? 'bg-accent text-on-accent' : 'text-white/50 hover:text-white'}`}>Journal</button>
+                  <button onClick={() => setViewMode('webtoon')} className={`px-4 py-2 text-xs font-medium rounded-full transition-all max-md:px-3 max-md:py-2 ${viewMode === 'webtoon' ? 'bg-accent text-on-accent' : 'text-white/50 hover:text-white'}`}>Vertical</button>
                 </div>
 
                 <div className="flex items-center gap-4 max-md:w-full max-md:justify-between">
@@ -1179,12 +1161,12 @@ export default function ComicLibraryClient({ initialAgeVerified = false }: Comic
                      <Maximize2 size={16} />
                    </button>
                    <div className="hidden md:flex items-center gap-2 mr-4">
-                      <button onClick={() => setZoom(z => Math.max(0.5, z - 0.2))} className="w-8 h-8 hover:bg-white/5 flex items-center justify-center"><ZoomOut size={14}/></button>
-                      <span className="text-[8px] font-black text-white/20 w-8 text-center">{Math.round(zoom * 100)}%</span>
-                      <button onClick={() => setZoom(z => Math.min(3, z + 0.2))} className="w-8 h-8 hover:bg-white/5 flex items-center justify-center"><ZoomIn size={14}/></button>
+                      <button onClick={() => setZoom(z => Math.max(0.5, z - 0.2))} className="w-8 h-8 rounded-btn hover:bg-white/5 flex items-center justify-center"><ZoomOut size={14}/></button>
+                      <span className="w-8 text-center font-mono text-[11px] text-white/50">{Math.round(zoom * 100)}%</span>
+                      <button onClick={() => setZoom(z => Math.min(3, z + 0.2))} className="w-8 h-8 rounded-btn hover:bg-white/5 flex items-center justify-center"><ZoomIn size={14}/></button>
                    </div>
-                   <div className="text-[10px] font-black uppercase tracking-widest text-[#ff4d00]">
-                      {currentPage + 1} <span className="text-white/20">/</span> {pages.length}
+                   <div className="font-mono text-xs text-accent">
+                      {currentPage + 1} <span className="text-white/40">/</span> {pages.length}
                    </div>
                 </div>
              </div>
@@ -1324,17 +1306,7 @@ export default function ComicLibraryClient({ initialAgeVerified = false }: Comic
 
       <style jsx global>{`
         .custom-scrollbar::-webkit-scrollbar { width: 4px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #1a1a1a; border-radius: 10px; }
-        
-        @keyframes shimmer {
-          0% { background-position: -1000px 0; }
-          100% { background-position: 1000px 0; }
-        }
-        .shimmer {
-          animation: shimmer 2s infinite linear;
-          background: linear-gradient(to right, #0a0a0a 4%, #1a1a1a 25%, #0a0a0a 36%);
-          background-size: 1000px 100%;
-        }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
       `}</style>
     </div>
     </>
@@ -1343,18 +1315,16 @@ export default function ComicLibraryClient({ initialAgeVerified = false }: Comic
 }
 
 const ComicSkeleton = () => (
-  <div className="space-y-6">
-    <div className="aspect-[2/3] border border-neutral-200 bg-neutral-200/80 shimmer dark:border-white/5 dark:bg-[#0a0a0a]" />
-    <div className="space-y-2">
-      <div className="h-2 w-full shimmer bg-neutral-200 dark:bg-[#0a0a0a]" />
-      <div className="h-2 w-2/3 shimmer bg-neutral-100 dark:bg-[#0a0a0a]" />
-    </div>
+  <div>
+    <div className="sk sk-cover" />
+    <div className="sk sk-line w-[85%]" />
+    <div className="sk sk-line w-[55%]" />
   </div>
 );
 
 const ReaderSkeleton = () => (
   <div className="w-full max-w-4xl mx-auto space-y-8 py-10">
-     <div className="aspect-[2/3] w-full shimmer bg-[#0a0a0a]" />
-     <div className="aspect-[2/3] w-full shimmer bg-[#0a0a0a]" />
+     <div className="sk sk-cover w-full" />
+     <div className="sk sk-cover w-full" />
   </div>
 );

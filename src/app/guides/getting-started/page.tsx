@@ -18,7 +18,7 @@ export default function GettingStartedGuidePage() {
       <JsonLd data={buildGettingStartedHowToJsonLd()} />
       <GuideArticleShell
       badge="Getting started"
-      icon={<Compass size={14} className="text-[#ff4d00]" />}
+      icon={<Compass size={14} className="text-accent" />}
       title="Getting started with the iComics.wiki reader"
       subtitle="Use this checklist on your first visit: find titles quickly, open a stable chapter reader, and keep mobile scrolling smooth."
       sections={[

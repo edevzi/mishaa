@@ -11,7 +11,7 @@ export default function Image() {
     (
       <div
         style={{
-          background: 'linear-gradient(145deg, #090a0f 0%, #151828 45%, #1f1520 100%)',
+          background: '#110F16',
           width: '100%',
           height: '100%',
           display: 'flex',
@@ -25,9 +25,9 @@ export default function Image() {
         <div
           style={{
             fontSize: 72,
-            fontWeight: 800,
-            letterSpacing: '-0.04em',
-            color: '#fafafa',
+            fontWeight: 700,
+            letterSpacing: '-0.02em',
+            color: '#F8F5F0',
           }}
         >
           iComics.wiki
@@ -35,15 +35,16 @@ export default function Image() {
         <div
           style={{
             marginTop: 20,
-            fontSize: 28,
-            fontWeight: 600,
-            color: '#ff5a1f',
-            letterSpacing: '0.02em',
+            fontSize: 26,
+            fontWeight: 500,
+            color: '#F2994A',
+            letterSpacing: '0.12em',
+            textTransform: 'uppercase',
           }}
         >
           Manga · Manhwa · Comics
         </div>
-        <div style={{ marginTop: 12, fontSize: 22, color: 'rgba(250,250,250,0.55)' }}>
+        <div style={{ marginTop: 12, fontSize: 22, color: '#948EA6' }}>
           Read online — reader-first library
         </div>
       </div>

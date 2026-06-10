@@ -1,0 +1,24 @@
+<!-- @dsCard group="Type" viewport="700x320" name="Multilingual — 5 UI languages" subtitle="EN / JA / KO / ZH / RU — design for text expansion" -->
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8" />
+<link rel="stylesheet" href="../styles.css" />
+<style>
+  body { padding: 24px; font-family: var(--font-sans); }
+  .grid { display:grid; grid-template-columns: 60px 1fr; gap: 10px 16px; align-items:center; }
+  .lang { font-family: var(--font-mono); font-size: 11px; color: var(--text-muted); letter-spacing:.08em; }
+  .line { font-size: 19px; font-weight: 600; color: var(--text-primary); }
+  .sub { font-size: 13px; color: var(--text-secondary); }
+</style>
+</head>
+<body>
+<div class="grid">
+  <span class="lang">EN</span><div><div class="line">Continue reading</div><div class="sub">Resume where you left off</div></div>
+  <span class="lang">JA</span><div><div class="line">読書を続ける</div><div class="sub">前回の続きから再開</div></div>
+  <span class="lang">KO</span><div><div class="line">계속 읽기</div><div class="sub">마지막으로 본 곳부터</div></div>
+  <span class="lang">ZH</span><div><div class="line">继续阅读</div><div class="sub">从上次离开的地方继续</div></div>
+  <span class="lang">RU</span><div><div class="line">Продолжить чтение</div><div class="sub">С того места, где вы остановились</div></div>
+</div>
+</body>
+</html>

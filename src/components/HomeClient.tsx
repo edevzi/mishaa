@@ -6,18 +6,14 @@ import React, { useEffect, useMemo, useState, useRef, useCallback, useLayoutEffe
 import { LazyMotion, domAnimation, m, AnimatePresence } from 'framer-motion';
 import {
   ArrowRight,
-  Clock,
   Search,
-  Flame,
-  TrendingUp,
-  LayoutGrid,
-  Star,
-  Heart,
-  Zap,
   BookOpen,
-  Theater,
+  ChevronLeft,
+  ChevronRight,
+  Lock,
 } from 'lucide-react';
 import Navbar from '@/components/Navbar';
+import Footer from '@/components/Footer';
 import HomeQuickSearch from '@/components/HomeQuickSearch';
 import {
   MangaLanguage,
@@ -72,7 +68,15 @@ interface ShelfDefinition {
   key: ShelfKey;
   title: string;
   subtitle: string;
-  icon: React.ReactNode;
+}
+
+interface ContinueItem {
+  id: string;
+  source: string;
+  title: string;
+  coverUrl?: string;
+  progressPercent?: number;
+  timestamp: number;
 }
 
 const DEFAULT_IMAGE_SRC = '/logo.png';
@@ -181,78 +185,18 @@ function SafeCoverImage({
 }
 
 const SHELVES: ShelfDefinition[] = [
-  {
-    key: 'romance',
-    title: 'Romance',
-    subtitle: 'Reader picks',
-    icon: <Heart className="text-rose-400" size={18} />,
-  },
-  {
-    key: 'fantasy',
-    title: 'Fantasy',
-    subtitle: 'Adventure reads',
-    icon: <BookOpen className="text-emerald-400" size={18} />,
-  },
-  {
-    key: 'drama',
-    title: 'Drama',
-    subtitle: 'Emotional storytelling',
-    icon: <Theater className="text-indigo-400" size={18} />,
-  },
-  {
-    key: 'trending',
-    title: 'Trending',
-    subtitle: 'Popular now',
-    icon: <Flame className="text-orange-500" size={18} />,
-  },
-  {
-    key: 'for-you',
-    title: 'For You',
-    subtitle: 'From your library',
-    icon: <Star className="text-[#ffca3a]" size={18} />,
-  },
-  {
-    key: 'manga-hub',
-    title: 'Manga',
-    subtitle: 'Japanese comics',
-    icon: <LayoutGrid className="text-pink-500" size={18} />,
-  },
-  {
-    key: 'new',
-    title: 'New',
-    subtitle: 'Recently added',
-    icon: <Clock className="text-green-500" size={18} />,
-  },
-  {
-    key: 'manhwa',
-    title: 'Manhwa',
-    subtitle: 'Korean comics',
-    icon: <TrendingUp className="text-cyan-500" size={18} />,
-  },
-  {
-    key: 'webtoons',
-    title: 'Webtoons',
-    subtitle: 'Vertical reads',
-    icon: <Clock className="text-amber-500" size={18} />,
-  },
-  {
-    key: 'doujinshi',
-    title: 'Doujinshi',
-    subtitle: 'Fan comics',
-    icon: <Star className="text-yellow-500" size={18} />,
-  },
-  {
-    key: 'milf',
-    title: 'Mature',
-    subtitle: '18+ titles',
-    icon: <Heart className="text-red-500" size={18} />,
-  },
-  {
-    key: 'ntr',
-    title: 'NTR',
-    subtitle: 'Drama-focused',
-    icon: <Zap className="text-purple-500" size={18} />,
-  },
+  { key: 'romance', title: 'Romance', subtitle: 'Reader picks' },
+  { key: 'fantasy', title: 'Fantasy', subtitle: 'Adventure reads' },
+  { key: 'drama', title: 'Drama', subtitle: 'Emotional storytelling' },
+  { key: 'trending', title: 'Trending', subtitle: 'Popular now' },
+  { key: 'for-you', title: 'For You', subtitle: 'From your library' },
+  { key: 'manga-hub', title: 'Manga', subtitle: 'Japanese comics' },
+  { key: 'new', title: 'New', subtitle: 'Recently added' },
+  { key: 'manhwa', title: 'Manhwa', subtitle: 'Korean comics' },
+  { key: 'webtoons', title: 'Webtoons', subtitle: 'Vertical reads' },
+  { key: 'doujinshi', title: 'Doujinshi', subtitle: 'Fan comics' },
+  { key: 'milf', title: 'Mature', subtitle: '18+ titles' },
+  { key: 'ntr', title: 'NTR', subtitle: 'Drama-focused' },
 ];
 
 import AgeGateOverlay from './AgeGateOverlay';
@@ -275,13 +219,11 @@ function homeAdultCoverUi(
   const ageBlocked = adultContent && !isAgeVerified;
   const politeBlur = adultContent && isAgeVerified;
 
-  const motion = useRichMotion
-    ? 'transition-all duration-500 motion-safe:duration-300'
-    : 'transition-all duration-500';
+  const motion = 'transition-[filter,transform] duration-[var(--dur-slow)]';
 
   if (ageBlocked) {
     return {
-      imageClass: `object-cover object-center ${motion} scale-105 blur-md`,
+      imageClass: `object-cover object-center ${motion} scale-105 blur-lg saturate-[0.7]`,
       showRestrictedOverlay: true,
       useRestrictedAlt: true,
       maskText: true,
@@ -290,7 +232,7 @@ function homeAdultCoverUi(
 
   if (politeBlur) {
     return {
-      imageClass: `object-cover object-center ${motion} scale-105 blur-md group-hover:blur-none group-hover:scale-[1.03] group-focus-within:blur-none group-focus-within:scale-[1.03] group-active:blur-none group-active:scale-100`,
+      imageClass: `object-cover object-center ${motion} scale-105 blur-lg saturate-[0.7] group-hover:blur-none group-hover:saturate-100 group-hover:scale-[1.03] group-focus-within:blur-none group-focus-within:saturate-100 group-focus-within:scale-[1.03] group-active:blur-none group-active:saturate-100 group-active:scale-100`,
       showRestrictedOverlay: false,
       useRestrictedAlt: false,
       maskText: false,
@@ -298,11 +240,67 @@ function homeAdultCoverUi(
   }
 
   return {
-    imageClass: `object-cover object-center ${motion} scale-100${useRichMotion ? ' group-hover:scale-[1.03]' : ''}`,
+    imageClass: `object-cover object-center transition-transform duration-[var(--dur-base)] scale-100${useRichMotion ? ' group-hover:scale-[1.03]' : ''}`,
     showRestrictedOverlay: false,
     useRestrictedAlt: false,
     maskText: false,
   };
+}
+
+/** Poster-style card used across shelves and the discovery grid. */
+function HomeCoverCard({
+  comic,
+  coverUi,
+  isTouchDevice,
+  isPreviewOpen,
+  onLockedTap,
+  sizes,
+}: {
+  comic: LibraryComic;
+  coverUi: HomeAdultCoverUi;
+  isTouchDevice: boolean;
+  isPreviewOpen: boolean;
+  onLockedTap?: () => void;
+  sizes: string;
+}) {
+  return (
+    <Link
+      href={resolveComicHref(comic)}
+      className="group ic-cover"
+      onClickCapture={(event) => {
+        if (!isTouchDevice || !coverUi.maskText || isPreviewOpen) return;
+        event.preventDefault();
+        onLockedTap?.();
+      }}
+    >
+      <div className="ic-cover__poster">
+        <SafeCoverImage
+          src={comic.coverUrl}
+          alt={coverUi.useRestrictedAlt ? 'Restricted' : comic.title}
+          sizes={sizes}
+          className={coverUi.imageClass}
+        />
+        {coverUi.showRestrictedOverlay ? (
+          <div className="ic-cover__lock">
+            <Lock size={16} aria-hidden />
+            <span>18+ · Verify age</span>
+          </div>
+        ) : null}
+      </div>
+      <div className="min-h-[3.4rem] space-y-1">
+        <h3 className="ic-cover__title">
+          {coverUi.maskText ? 'Age restricted' : comic.title}
+        </h3>
+        <p className="ic-eyebrow line-clamp-1">
+          {coverUi.maskText
+            ? isTouchDevice && !isPreviewOpen
+              ? 'Tap to confirm age'
+              : 'Verify age to view'
+            : [comic.meta, comic.rating].filter(Boolean).join(' · ')}
+        </p>
+      </div>
+    </Link>
+  );
 }
 
 type HomeClientProps = {
@@ -354,6 +352,7 @@ export default function HomeClient({
   const [mangaLanguage, setMangaLanguage] = useState<MangaLanguage>(() => initialMangaLanguage);
   const [personalRecs, setPersonalRecs] = useState<LibraryComic[]>([]);
   const [isRecsLoading, setIsRecsLoading] = useState(false);
+  const [continueItems, setContinueItems] = useState<ContinueItem[]>([]);
 
   // Infinite Scroll State
   const [infiniteItems, setInfiniteItems] = useState<LibraryComic[]>([]);
@@ -515,6 +514,21 @@ export default function HomeClient({
       const merged = mergeActivityIntoProfile(localProfile, history, bookmarks);
       setPreferenceProfile(merged);
       persistHomePreferenceProfile(merged);
+
+      // Surface in-progress titles for "Continue reading".
+      const resume = Object.values(history)
+        .filter((entry) => entry?.id && entry?.comicTitle && entry?.comicSource && entry.progressStatus !== 'completed')
+        .map((entry) => ({
+          id: entry.id as string,
+          source: entry.comicSource as string,
+          title: entry.comicTitle as string,
+          coverUrl: entry.comicCoverUrl,
+          progressPercent: typeof entry.progressPercent === 'number' ? entry.progressPercent : undefined,
+          timestamp: entry.timestamp || 0,
+        }))
+        .sort((a, b) => b.timestamp - a.timestamp)
+        .slice(0, 12);
+      setContinueItems(resume);
     };
 
     void syncPreferenceProfile();
@@ -686,10 +700,8 @@ export default function HomeClient({
   const heroRating = featuredComic ? getHeroRatingPresentation(featuredComic) : null;
   const heroAdultContent = Boolean(featuredComic && isAdultComic(featuredComic));
   const heroAgeBlocked = heroAdultContent && !isAgeVerified;
-  const heroPoliteBlur = heroAdultContent && isAgeVerified;
 
   const featuredBackgroundSrc = featuredComic?.bannerUrl || featuredComic?.coverUrl || DEFAULT_IMAGE_SRC;
-  const featuredPosterSrc = featuredComic?.coverUrl || featuredComic?.bannerUrl || DEFAULT_IMAGE_SRC;
   const renderedShelves = activeTab === 'all'
     ? visibleShelves
     : visibleShelves.filter((shelf) => shelf.key === activeTab);
@@ -732,13 +744,18 @@ export default function HomeClient({
     return () => window.clearInterval(interval);
   }, [useRichMotion, renderedShelves.length]);
 
+  const goToHeroSlide = (delta: number) => {
+    if (heroCarouselSlides.length === 0) return;
+    setHeroSlideIndex((i) => (i + delta + heroCarouselSlides.length) % heroCarouselSlides.length);
+  };
+
   return (
     <LazyMotion features={domAnimation} strict>
-    <div className="min-h-screen bg-white text-neutral-900 dark:bg-[#06070b] dark:text-neutral-100">
+    <div className="min-h-screen bg-app text-fg">
       <Navbar />
 
-      <main className="relative overflow-hidden bg-white pt-nav-catalog dark:bg-[#06070b]">
-        {/* --- DYNAMIC HERO BANNER --- */}
+      <main className="relative pt-nav-catalog">
+        {/* --- FEATURED HERO --- */}
         <section className="relative w-full">
           <AnimatePresence mode="wait">
             {showHeroSkeleton ? (
@@ -747,19 +764,15 @@ export default function HomeClient({
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className="relative w-full"
+                className="hero"
               >
-                <div className="bg-gradient-to-b from-neutral-100 via-white to-white pb-12 pt-4 dark:from-neutral-950 dark:via-neutral-950 dark:to-[#06070b]">
-                  <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-                    <div className="grid gap-8 border border-neutral-200 bg-neutral-50 p-6 lg:grid-cols-[1.05fr_0.95fr] lg:gap-12 lg:p-10 dark:border-white/10 dark:bg-black/40">
-                      <div className="space-y-5">
-                        <div className="h-6 w-36 animate-pulse bg-neutral-200 dark:bg-white/10" />
-                        <div className="h-14 w-full max-w-md animate-pulse bg-neutral-200 dark:bg-white/10" />
-                        <div className="h-10 w-3/4 max-w-sm animate-pulse bg-neutral-200 dark:bg-white/10" />
-                        <div className="h-11 w-44 animate-pulse bg-[#ff5a1f]/40" />
-                      </div>
-                      <div className="aspect-[3/4] max-h-[22rem] animate-pulse bg-neutral-200 lg:max-h-none lg:justify-self-end lg:w-full lg:max-w-sm dark:bg-white/10" />
-                    </div>
+                <div className="wrap hero__in">
+                  <div className="hero__content w-full max-w-[560px]">
+                    <div className="sk sk-line" style={{ width: 120 }} />
+                    <div className="sk mt-4 h-12 w-full max-w-md rounded-md" />
+                    <div className="sk sk-line mt-4 w-3/4" />
+                    <div className="sk sk-line mt-2 w-2/3" />
+                    <div className="sk mt-6 h-12 w-44 rounded-btn" />
                   </div>
                 </div>
               </m.div>
@@ -769,8 +782,8 @@ export default function HomeClient({
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                transition={{ duration: 1, ease: [0.22, 1, 0.36, 1] }}
-                className="group relative w-full"
+                transition={{ duration: 0.36, ease: [0.22, 0.61, 0.36, 1] }}
+                className="group/hero"
                 onPointerEnter={() => {
                   heroCarouselPausedRef.current = true;
                 }}
@@ -778,146 +791,106 @@ export default function HomeClient({
                   heroCarouselPausedRef.current = false;
                 }}
               >
-                <div className="bg-gradient-to-b from-neutral-100 via-white to-white pb-10 dark:from-neutral-950 dark:via-neutral-950 dark:to-[#06070b]">
-                  <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-                    <div className="relative min-h-[clamp(20rem,48vw,30rem)] overflow-hidden border border-neutral-200 bg-neutral-50 lg:min-h-[26rem] dark:border-white/10 dark:bg-black">
-                    <AnimatePresence initial={false} mode="wait">
-                      <m.div
-                        key={heroFeaturedKey}
-                        initial={
-                          prefersReducedMotion ? false : { opacity: 0 }
-                        }
-                        animate={{ opacity: 1 }}
-                        exit={prefersReducedMotion ? undefined : { opacity: 0 }}
-                        transition={{
-                          duration: prefersReducedMotion ? 0 : 0.38,
-                          ease: [0.22, 1, 0.36, 1],
-                        }}
-                        className="relative min-h-[clamp(20rem,48vw,30rem)] lg:min-h-[26rem]"
+                <section className="hero" aria-roledescription="carousel">
+                  <AnimatePresence initial={false} mode="wait">
+                    <m.div
+                      key={heroFeaturedKey}
+                      initial={prefersReducedMotion ? false : { opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={prefersReducedMotion ? undefined : { opacity: 0 }}
+                      transition={{
+                        duration: prefersReducedMotion ? 0 : 0.36,
+                        ease: [0.22, 0.61, 0.36, 1],
+                      }}
+                      className="absolute inset-0"
+                    >
+                      <div
+                        className={`hero__bg ${heroAdultContent ? 'is-adult' : ''}`}
                       >
-                        <div className="pointer-events-none absolute inset-0 z-0">
-                          {!isTouchDevice ? (
-                            <>
-                              <SafeCoverImage
-                                src={featuredBackgroundSrc}
-                                alt={`${featuredComic.title} — featured series background`}
-                                priority
-                                quality={72}
-                                sizes="(max-width: 1280px) 100vw, 1400px"
-                                className={
-                                  heroAdultContent
-                                    ? `object-cover object-center opacity-[0.35] transition-[filter,transform] duration-300 motion-safe:duration-300 scale-105 blur-md ${
-                                        heroPoliteBlur
-                                          ? 'group-hover:blur-none group-hover:scale-100 group-focus-within:blur-none group-focus-within:scale-100 group-active:blur-none group-active:scale-100'
-                                          : ''
-                                      }`
-                                    : 'object-cover object-center opacity-[0.35]'
-                                }
-                              />
-                              <div className="absolute inset-0 bg-gradient-to-r from-white via-white/92 to-white/70 dark:from-black dark:via-black/88 dark:to-black/55" />
-                            </>
-                          ) : (
-                            <div className="absolute inset-0 bg-neutral-100 dark:bg-neutral-950" />
-                          )}
-                        </div>
+                        <SafeCoverImage
+                          src={featuredBackgroundSrc}
+                          alt={heroAgeBlocked ? 'Restricted featured title' : `${featuredComic.title} — featured background`}
+                          priority
+                          quality={72}
+                          sizes="100vw"
+                          className="object-cover"
+                        />
+                      </div>
 
-                        <div className="relative z-10 grid gap-8 px-6 py-8 sm:px-10 sm:py-10 lg:grid-cols-[1.05fr_0.95fr] lg:items-center lg:gap-12 lg:px-12 lg:py-12">
-                      <div className="relative z-20 max-w-2xl lg:py-8">
-                        <div className="mt-1 text-3xl font-bold uppercase leading-[1.08] tracking-tight text-neutral-900 sm:text-4xl xl:text-5xl dark:text-white">
-                          {shelfCopy.pageH1}
-                        </div>
-                        <p className="mt-3 max-w-xl text-sm font-medium leading-relaxed text-neutral-600 dark:text-white/65 sm:text-[0.95rem]">
-                          {shelfCopy.desc}
-                        </p>
-                        <p className="mt-6 text-[10px] font-semibold uppercase tracking-[0.35em] text-neutral-600 dark:text-white/55">
-                          {shelfCopy.featuredSeries} · {featuredComic.source}
-                        </p>
-
-                        <h2 className="mt-2 min-h-[2.4em] text-4xl font-bold uppercase leading-[1.05] tracking-tight text-neutral-900 sm:min-h-[2.2em] sm:text-5xl xl:text-6xl dark:text-white">
-                          {featuredComic.title}
-                        </h2>
-
-                        {heroRating?.showBlock ? (
-                          <div className="mt-6 flex min-h-[2.25rem] flex-wrap items-baseline gap-x-3 gap-y-1">
-                            <span className="text-[10px] font-semibold uppercase tracking-[0.28em] text-neutral-600 dark:text-white/45">
-                              {heroRating.label}
-                            </span>
-                            <span className="text-lg font-semibold uppercase tracking-wide text-neutral-900 dark:text-white">
-                              {heroRating.value}
-                            </span>
-                          </div>
-                        ) : (
-                          <div className="mt-6 min-h-[2.25rem]" aria-hidden />
-                        )}
-
-                        <Link
-                          href={resolveComicHref(featuredComic)}
-                          className="group mt-9 inline-block focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#ff5a1f]"
-                        >
-                          <span className="inline-flex -skew-x-6 bg-[#ff5a1f] px-8 py-3 text-[11px] font-bold uppercase tracking-[0.2em] text-white shadow-lg transition-transform group-hover:-translate-y-0.5 group-active:translate-y-0">
-                            <span className="skew-x-6">{shelfCopy.readFeaturedCta}</span>
+                      <div className="wrap hero__in">
+                        <div className="hero__content">
+                          <span className="ic-eyebrow !text-white/70">
+                            {shelfCopy.featuredSeries} · {featuredComic.source}
                           </span>
-                        </Link>
-                      </div>
-
-                      <div className="relative z-20 mx-auto w-full max-w-[14rem] sm:max-w-[17rem] lg:mx-0 lg:ml-auto lg:max-w-[18rem]">
-                        <div className="relative aspect-[2/3] overflow-hidden border border-neutral-200 bg-neutral-100 shadow-lg shadow-neutral-900/10 dark:border-white/15 dark:bg-neutral-900 dark:shadow-[0_24px_80px_rgba(0,0,0,0.55)]">
-                          <SafeCoverImage
-                            key={featuredPosterSrc}
-                            src={featuredPosterSrc}
-                            alt={heroAgeBlocked ? 'Restricted' : featuredComic.title}
-                            priority
-                            quality={82}
-                            sizes="(max-width: 1024px) 55vw, 320px"
-                            className={
-                              heroAdultContent
-                                ? `object-cover object-center transition-[filter,transform] duration-300 motion-safe:duration-300 scale-105 blur-md ${
-                                    heroPoliteBlur
-                                      ? 'group-hover:blur-none group-hover:scale-100 group-focus-within:blur-none group-focus-within:scale-100 group-active:blur-none group-active:scale-100'
-                                      : ''
-                                  }`
-                                : 'object-cover object-center'
-                            }
-                          />
-                          {heroAgeBlocked ? (
-                            <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center bg-neutral-950/20 backdrop-blur-[2px]">
-                              <span className="border border-white/40 bg-black/70 px-2.5 py-1 text-[8px] font-bold uppercase tracking-[0.2em] text-white">
-                                Restricted
-                              </span>
-                            </div>
+                          <h2 className="hero__title">
+                            {heroAgeBlocked ? 'Age restricted' : featuredComic.title}
+                          </h2>
+                          {featuredComic.description && !heroAgeBlocked ? (
+                            <p className="hero__blurb">{featuredComic.description}</p>
                           ) : null}
-                          {heroRating?.badge ? (
-                            <div className="absolute right-3 top-3 border border-neutral-200 bg-white/90 px-3 py-1 text-[9px] font-semibold uppercase tracking-[0.2em] text-neutral-800 dark:border-white/20 dark:bg-black/70 dark:text-white/85">
-                              {heroRating.badge}
-                            </div>
-                          ) : null}
+                          <div className="hero__meta">
+                            {heroRating?.showBlock ? (
+                              <>
+                                <span className="ic-eyebrow !text-white/60">{heroRating.label}</span>
+                                <span className="font-mono text-xs font-semibold text-white">
+                                  {heroRating.value}
+                                </span>
+                              </>
+                            ) : null}
+                          </div>
+                          <div className="hero__cta">
+                            <Link
+                              href={resolveComicHref(featuredComic)}
+                              className="ic-btn ic-btn--primary ic-btn--lg"
+                            >
+                              <BookOpen size={18} aria-hidden />
+                              {shelfCopy.readFeaturedCta}
+                            </Link>
+                            <Link
+                              href="/library"
+                              className="ic-btn ic-btn--lg border-white/25 bg-white/10 text-white backdrop-blur-md hover:bg-white/20"
+                            >
+                              {shelfCopy.cta}
+                            </Link>
+                          </div>
                         </div>
                       </div>
-                        </div>
-                      </m.div>
-                    </AnimatePresence>
-                  </div>
+                    </m.div>
+                  </AnimatePresence>
 
                   {heroCarouselSlides.length > 1 ? (
-                    <div className="mt-6 flex justify-center gap-2">
+                    <div className="hero__dots">
+                      <div className="hero__navbtns">
+                        <button
+                          type="button"
+                          aria-label="Previous featured title"
+                          className="ic-iconbtn ic-iconbtn--md ic-iconbtn--ghost-scrim"
+                          onClick={() => goToHeroSlide(-1)}
+                        >
+                          <ChevronLeft size={18} />
+                        </button>
+                        <button
+                          type="button"
+                          aria-label="Next featured title"
+                          className="ic-iconbtn ic-iconbtn--md ic-iconbtn--ghost-scrim"
+                          onClick={() => goToHeroSlide(1)}
+                        >
+                          <ChevronRight size={18} />
+                        </button>
+                      </div>
                       {heroCarouselSlides.map((_, i) => (
                         <button
                           key={`hero-dot-${heroDeckKey}-${i}`}
                           type="button"
                           aria-label={`Featured slide ${i + 1}`}
                           aria-current={i === heroSlideIndex}
-                          className={`inline-flex min-h-11 min-w-11 items-center justify-center rounded-full transition-colors ${
-                            i === heroSlideIndex ? '[&>span]:bg-[#ff5a1f]' : '[&>span]:bg-neutral-300 hover:[&>span]:bg-neutral-400 dark:[&>span]:bg-white/25 dark:hover:[&>span]:bg-white/40'
-                          }`}
+                          className={`dot ${i === heroSlideIndex ? 'is-active' : ''}`}
                           onClick={() => setHeroSlideIndex(i)}
-                        >
-                          <span className="block h-2 w-2 rounded-full" aria-hidden />
-                        </button>
+                        />
                       ))}
                     </div>
                   ) : null}
-                  </div>
-                </div>
+                </section>
               </m.div>
             ) : (
               <m.div
@@ -925,339 +898,253 @@ export default function HomeClient({
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
-                className="relative w-full"
+                transition={{ duration: 0.36, ease: [0.22, 0.61, 0.36, 1] }}
+                className="wrap"
               >
-                <div className="bg-gradient-to-b from-neutral-100 via-white to-white pb-10 pt-4 dark:from-neutral-950 dark:via-neutral-950 dark:to-[#06070b]">
-                  <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-                    <div className="border border-neutral-200 bg-neutral-50 px-8 py-12 sm:px-10 sm:py-14 dark:border-white/10 dark:bg-black/40">
-                      <div className="max-w-3xl text-3xl font-bold uppercase leading-[1.08] tracking-tight text-neutral-900 sm:text-4xl xl:text-5xl dark:text-white">
-                        {shelfCopy.pageH1}
-                      </div>
-                      <p className="mt-4 max-w-xl text-sm font-medium leading-relaxed text-neutral-600 dark:text-white/65 sm:text-[0.95rem]">
-                        {shelfCopy.desc}
-                      </p>
-                      <Link
-                        href="/library"
-                        className="group mt-10 inline-block focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#ff5a1f]"
-                      >
-                        <span className="inline-flex -skew-x-6 bg-[#ff5a1f] px-8 py-3 text-[11px] font-bold uppercase tracking-[0.2em] text-white shadow-lg transition-transform group-hover:-translate-y-0.5 group-active:translate-y-0">
-                          <span className="skew-x-6">{shelfCopy.cta}</span>
-                        </span>
-                      </Link>
-                    </div>
-                  </div>
+                <div className="mt-8 rounded-sheet border border-line bg-base px-8 py-12 sm:px-10 sm:py-14">
+                  <h2 className="ic-display max-w-3xl text-[clamp(2rem,5vw,3rem)] text-fg">
+                    {shelfCopy.pageH1}
+                  </h2>
+                  <p className="mt-4 max-w-xl text-sm leading-relaxed text-fg-secondary">
+                    {shelfCopy.desc}
+                  </p>
+                  <Link href="/library" className="ic-btn ic-btn--primary ic-btn--lg mt-8">
+                    {shelfCopy.cta}
+                    <ArrowRight size={16} aria-hidden />
+                  </Link>
                 </div>
               </m.div>
             )}
           </AnimatePresence>
         </section>
-        {/* Shelves Layout */}
-        <section className="relative z-20 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pb-20 sm:pb-24 lg:pb-28">
-          <div className="space-y-16 sm:space-y-20 pt-10 sm:pt-12">
+
+        <div className="wrap pb-20 sm:pb-24">
+          {/* --- CONTINUE READING --- */}
+          {continueItems.length > 0 && !shelfSearchNorm ? (
+            <section className="section">
+              <div className="section__head">
+                <div className="section__titles">
+                  <span className="ic-eyebrow">Pick up where you left off</span>
+                  <h2 className="section__heading">Continue reading</h2>
+                </div>
+                <Link href="/library" className="seeall">
+                  Your library <ArrowRight size={15} aria-hidden />
+                </Link>
+              </div>
+              <div className="continue">
+                {continueItems.map((item) => (
+                  <Link
+                    key={`${item.source}:${item.id}`}
+                    href={`/library/${item.source}/${item.id}`}
+                    className="cont-card"
+                  >
+                    <span className="cont-card__thumb">
+                      <SafeCoverImage
+                        src={item.coverUrl}
+                        alt={`${item.title} — cover`}
+                        sizes="56px"
+                        quality={60}
+                        className="object-cover"
+                      />
+                    </span>
+                    <span className="cont-card__body">
+                      <span className="cont-card__title">{item.title}</span>
+                      {typeof item.progressPercent === 'number' ? (
+                        <>
+                          <span className="cont-card__ch">{Math.round(item.progressPercent)}%</span>
+                          <span className="ic-progress">
+                            <span
+                              className="ic-progress__fill block"
+                              style={{ width: `${Math.min(100, Math.max(0, item.progressPercent))}%` }}
+                            />
+                          </span>
+                        </>
+                      ) : null}
+                    </span>
+                  </Link>
+                ))}
+              </div>
+            </section>
+          ) : null}
+
+          {/* --- QUICK SEARCH --- */}
+          <div className="section">
             <HomeQuickSearch
               mangaLanguage={mangaLanguage}
               isAgeVerified={isAgeVerified}
               onDebouncedShelfFilter={setHomeShelfSearch}
             />
-            {renderedShelves.every((s) =>
-              shelfState[s.key]?.items.filter(
-                (c) =>
-                  c.title.toLowerCase().includes(shelfSearchNorm) ||
-                  c.description.toLowerCase().includes(shelfSearchNorm),
-              ).length === 0,
-            ) &&
-              shelfSearchNorm && (
-                <div className="py-20 text-center">
-                  <div className="mb-6 inline-flex h-16 w-16 items-center justify-center border border-neutral-200 bg-neutral-100 text-neutral-400 dark:border-white/10 dark:bg-white/5 dark:text-neutral-500">
-                    <Search size={28} strokeWidth={1.5} />
-                  </div>
-                  <h2 className="mb-2 text-xl font-bold uppercase tracking-tight text-neutral-900 dark:text-white">
-                    {shelfCopy.shelfNoMatchesTitle}
-                  </h2>
-                  <p className="text-sm text-neutral-600 dark:text-neutral-400">{shelfCopy.shelfNoMatchesBody}</p>
-                </div>
-              )}
-
-            <AnimatePresence>
-              {renderedShelves.map((shelf) => {
-                const state = shelf.key === 'for-you' ? { items: personalRecs, loading: isRecsLoading } : shelfState[shelf.key];
-                if (!state) return null;
-
-                const filteredItems = rankComicsForHome(
-                  state.items.filter(
-                    (comic) =>
-                      comic.title.toLowerCase().includes(shelfSearchNorm) ||
-                      comic.description.toLowerCase().includes(shelfSearchNorm),
-                  ),
-                  {
-                    profile: preferenceProfile,
-                    ageVerified: isAgeVerified,
-                    shelfKey: shelf.key,
-                  }
-                );
-
-                if (shelf.key === 'for-you' && filteredItems.length === 0 && !isRecsLoading) return null;
-                if (shelfSearchNorm && filteredItems.length === 0) return null;
-
-                return (
-                  <m.div
-                    key={shelf.key}
-                    id={shelf.key}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -20 }}
-                    transition={{ duration: 0.4 }}
-                    className="space-y-5"
-                  >
-                    <div className="flex items-end justify-between gap-4 border-b border-neutral-200 pb-4 dark:border-white/10">
-                      <div className="min-w-0">
-                        <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-neutral-600 dark:text-neutral-400">
-                          {shelf.subtitle}
-                        </p>
-                        <h2 className="mt-1 text-xl font-bold uppercase tracking-tight text-neutral-900 sm:text-2xl dark:text-white">
-                          {shelf.title}
-                        </h2>
-                      </div>
-                      <Link
-                        href={`/library?tab=${encodeURIComponent(shelf.title)}`}
-                        className="group flex shrink-0 items-center gap-2 text-[11px] font-bold uppercase tracking-wide text-[#ff5a1f]"
-                      >
-                        See all
-                        <ArrowRight size={14} className="transition-transform group-hover:translate-x-0.5" />
-                      </Link>
-                    </div>
-
-                    <div
-                      ref={(node) => {
-                        autoCarouselRefs.current[shelf.key] = node;
-                      }}
-                      onPointerEnter={() => {
-                        carouselPausedRef.current = true;
-                      }}
-                      onPointerLeave={() => {
-                        carouselPausedRef.current = false;
-                      }}
-                      onTouchStart={() => {
-                        carouselPausedRef.current = true;
-                      }}
-                      onTouchEnd={() => {
-                        window.setTimeout(() => {
-                          carouselPausedRef.current = false;
-                        }, 1200);
-                      }}
-                      className="-mx-4 flex snap-x snap-mandatory touch-pan-x gap-x-4 gap-y-8 overflow-x-auto overscroll-x-contain px-4 pb-2 [scrollbar-width:none] sm:-mx-6 sm:px-6 lg:-mx-8 lg:gap-x-5 lg:px-8 [&::-webkit-scrollbar]:hidden"
-                    >
-                      {state.loading ? (
-                        Array.from({ length: 6 }).map((_, i) => (
-                          <div
-                            key={i}
-                            className="flex w-[38vw] max-w-[10.5rem] shrink-0 snap-start flex-col gap-3 sm:w-[10.5rem] lg:w-[11rem]"
-                          >
-                            <div className="aspect-[2/3] animate-pulse bg-neutral-200 dark:bg-white/10" />
-                            <div className="h-3 w-4/5 animate-pulse bg-neutral-200 dark:bg-white/10" />
-                            <div className="h-3 w-3/5 animate-pulse bg-neutral-100 dark:bg-white/5" />
-                          </div>
-                        ))
-                      ) : (
-                        filteredItems.slice(0, shelfCardLimit).map((comic) => {
-                          const cardKey = `${shelf.key}:${comic.source}:${comic.id}`;
-                          const adultContent = isAdultComic(comic);
-                          const isPreviewOpen = adultContent && previewCardKey === cardKey;
-                          const coverUi = homeAdultCoverUi(comic, isAgeVerified, useRichMotion);
-
-                          return (
-                            <m.article
-                              key={`${shelf.key}:${comicKey(comic)}`}
-                              initial={false}
-                              whileHover={useRichMotion ? { y: -4 } : undefined}
-                              transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
-                              className="group relative w-[38vw] max-w-[10.5rem] shrink-0 snap-start snap-always cursor-pointer sm:w-[10.5rem] lg:w-[11rem]"
-                            >
-                              <Link
-                                href={resolveComicHref(comic)}
-                                onClickCapture={(event) => {
-                                  if (!isTouchDevice || !adultContent || isAgeVerified) return;
-                                  if (!isPreviewOpen) {
-                                    event.preventDefault();
-                                    setPreviewCardKey(cardKey);
-                                  }
-                                }}
-                              >
-                                <div className="flex flex-col">
-                                  <div
-                                    className={`relative aspect-[2/3] w-full overflow-hidden border border-neutral-200 bg-neutral-50 shadow-sm transition-all duration-300 dark:border-white/10 dark:bg-white/[0.04] dark:shadow-black/20 ${
-                                      useRichMotion ? 'group-hover:border-neutral-400 group-hover:shadow-md dark:group-hover:border-white/25 dark:group-hover:shadow-black/30' : ''
-                                    }`}
-                                  >
-                                    <SafeCoverImage
-                                      key={`${shelf.key}:${comicKey(comic)}`}
-                                      src={comic.coverUrl}
-                                      alt={coverUi.useRestrictedAlt ? 'Restricted' : comic.title}
-                                      sizes="(max-width: 640px) 150px, (max-width: 1024px) 168px, 176px"
-                                      className={coverUi.imageClass}
-                                    />
-
-                                    {coverUi.showRestrictedOverlay ? (
-                                      <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-neutral-950/25 backdrop-blur-[2px]">
-                                        <Zap size={20} className="mb-2 text-[#ff5a1f]" />
-                                        <span className="border border-white/40 bg-black/70 px-2.5 py-1 text-[8px] font-bold uppercase tracking-[0.2em] text-white">
-                                          Restricted
-                                        </span>
-                                      </div>
-                                    ) : null}
-                                  </div>
-
-                                  <div className="mt-3 min-h-[3.75rem] space-y-1">
-                                    <h3 className="line-clamp-3 text-[11px] font-bold uppercase leading-snug tracking-tight text-neutral-900 dark:text-white">
-                                      {coverUi.maskText ? 'Age restricted' : comic.title}
-                                    </h3>
-                                    <p className="line-clamp-2 text-[10px] leading-relaxed text-neutral-600 dark:text-neutral-400">
-                                      {coverUi.maskText
-                                        ? isTouchDevice && !isPreviewOpen
-                                          ? 'Tap to confirm age'
-                                          : 'Verify age to view details'
-                                        : [comic.meta, comic.rating].filter(Boolean).join(' · ')}
-                                    </p>
-                                  </div>
-                                </div>
-                              </Link>
-                            </m.article>
-
-                          );
-                        })
-                      )}
-                    </div>
-                  </m.div>
-                );
-              })}
-            </AnimatePresence>
           </div>
-        </section>
 
-        <section className="border-t border-neutral-200 bg-neutral-100 py-16 sm:py-20 dark:border-white/10 dark:bg-black/25">
-            <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-              <div className="mb-10 border-b border-neutral-200 pb-5 dark:border-white/10">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-neutral-600 dark:text-neutral-400">
-                  Discover
-                </p>
-                <h2 className="mt-1 text-xl font-bold uppercase tracking-tight text-neutral-900 sm:text-2xl dark:text-white">
-                  More titles
-                </h2>
-                <p className="mt-2 max-w-lg text-sm text-neutral-600 dark:text-neutral-400">
-                  Scroll to load more — picks refresh as you explore.
-                </p>
-              </div>
+          {renderedShelves.every((s) =>
+            shelfState[s.key]?.items.filter(
+              (c) =>
+                c.title.toLowerCase().includes(shelfSearchNorm) ||
+                c.description.toLowerCase().includes(shelfSearchNorm),
+            ).length === 0,
+          ) &&
+            shelfSearchNorm && (
+              <section className="section">
+                <div className="state-block">
+                  <Search size={28} strokeWidth={1.5} aria-hidden />
+                  <h4>{shelfCopy.shelfNoMatchesTitle}</h4>
+                  <p>{shelfCopy.shelfNoMatchesBody}</p>
+                </div>
+              </section>
+            )}
 
-              <div className="grid grid-cols-2 gap-6 sm:gap-8 md:grid-cols-4 lg:grid-cols-6">
-                {infiniteItems.map((comic, idx) => {
-                  const cardKey = `discover:${comic.source}:${comic.id}`;
-                  const adultContent = isAdultComic(comic);
-                  const isPreviewOpen = adultContent && previewCardKey === cardKey;
-                  const coverUi = homeAdultCoverUi(comic, isAgeVerified, useRichMotion);
+          {/* --- SHELVES --- */}
+          <AnimatePresence>
+            {renderedShelves.map((shelf) => {
+              const state = shelf.key === 'for-you' ? { items: personalRecs, loading: isRecsLoading } : shelfState[shelf.key];
+              if (!state) return null;
 
-                  return (
-                    <m.div
-                      key={`${comicKey(comic)}:${idx}`}
-                      initial={useRichMotion ? { opacity: 0, scale: 0.97 } : false}
-                      whileInView={{ opacity: 1, scale: 1 }}
-                      viewport={{ once: true, margin: '-40px' }}
-                      transition={{
-                        delay: useRichMotion ? (idx % 6) * 0.04 : 0,
-                        duration: useRichMotion ? 0.45 : 0.15,
-                        ease: useRichMotion ? [0.22, 1, 0.36, 1] : 'linear',
-                      }}
+              const filteredItems = rankComicsForHome(
+                state.items.filter(
+                  (comic) =>
+                    comic.title.toLowerCase().includes(shelfSearchNorm) ||
+                    comic.description.toLowerCase().includes(shelfSearchNorm),
+                ),
+                {
+                  profile: preferenceProfile,
+                  ageVerified: isAgeVerified,
+                  shelfKey: shelf.key,
+                }
+              );
+
+              if (shelf.key === 'for-you' && filteredItems.length === 0 && !isRecsLoading) return null;
+              if (shelfSearchNorm && filteredItems.length === 0) return null;
+
+              return (
+                <m.section
+                  key={shelf.key}
+                  id={shelf.key}
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.3, ease: [0.22, 0.61, 0.36, 1] }}
+                  className="section"
+                >
+                  <div className="section__head">
+                    <div className="section__titles">
+                      <span className="ic-eyebrow">{shelf.subtitle}</span>
+                      <h2 className="section__heading">
+                        {shelf.title}
+                        {shelf.key === 'for-you' ? <span className="pz">personalized</span> : null}
+                      </h2>
+                    </div>
+                    <Link
+                      href={`/library?tab=${encodeURIComponent(shelf.title)}`}
+                      className="seeall"
                     >
-                      <Link
-                        href={comic.href || `/library/${comic.source}/${comic.id}`}
-                        className="group block"
-                        onClickCapture={(event) => {
-                          if (!isTouchDevice || !adultContent || isAgeVerified) return;
-                          if (!isPreviewOpen) {
-                            event.preventDefault();
-                            setPreviewCardKey(cardKey);
-                          }
-                        }}
-                      >
-                        <div className="flex flex-col">
-                          <div
-                            className={`relative aspect-[2/3] w-full overflow-hidden border border-neutral-200 bg-white shadow-sm transition-all duration-300 dark:border-white/10 dark:bg-white/[0.04] dark:shadow-black/20 ${
-                              useRichMotion ? 'group-hover:border-neutral-400 group-hover:shadow-md dark:group-hover:border-white/25 dark:group-hover:shadow-black/30' : ''
-                            }`}
-                          >
-                            <SafeCoverImage
-                              key={comic.coverUrl || '/logo.png'}
-                              src={comic.coverUrl || '/logo.png'}
-                              alt={coverUi.useRestrictedAlt ? 'Restricted' : comic.title}
-                              sizes="(max-width: 640px) 187px, (max-width: 768px) 180px, (max-width: 1024px) 160px, 200px"
-                              className={coverUi.imageClass}
-                            />
-
-                            {coverUi.showRestrictedOverlay ? (
-                              <div className="absolute inset-0 z-10 flex items-center justify-center bg-neutral-950/25 backdrop-blur-[2px]">
-                                <span className="border border-white/40 bg-black/70 px-2.5 py-1 text-[7px] font-bold uppercase tracking-[0.2em] text-white">
-                                  Restricted
-                                </span>
-                              </div>
-                            ) : null}
-                          </div>
-
-                          <div className="mt-3 min-h-[3.5rem] space-y-1">
-                            <div className="line-clamp-3 text-[11px] font-bold uppercase leading-snug tracking-tight text-neutral-900 dark:text-white">
-                              {coverUi.maskText ? 'Age restricted' : comic.title}
-                            </div>
-                            <div className="line-clamp-2 text-[10px] text-neutral-600 dark:text-neutral-400">
-                              {coverUi.maskText
-                                ? isTouchDevice && !isPreviewOpen
-                                  ? 'Tap to confirm age'
-                                  : 'Verify age to view details'
-                                : [comic.meta, comic.rating].filter(Boolean).join(' · ')}
-                            </div>
-                          </div>
-                        </div>
-                      </Link>
-                    </m.div>
-
-                  );
-                })}
-              </div>
-
-              <div ref={loaderRef} className="flex flex-col items-center justify-center gap-5 py-16">
-                {hasMoreInfinite ? (
-                  <>
-                    <div className="relative h-12 w-12">
-                      {useRichMotion ? (
-                        <>
-                          <m.div
-                            animate={{ rotate: 360 }}
-                            transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-                            className="absolute inset-0 rounded-full border-2 border-transparent border-t-[#ff5a1f]"
-                          />
-                          <m.div
-                            animate={{ scale: [1, 1.15, 1] }}
-                            transition={{ duration: 1, repeat: Infinity }}
-                            className="absolute inset-4 rounded-full bg-[#ff5a1f]/15"
-                          />
-                        </>
-                      ) : prefersReducedMotion ? (
-                        <div className="absolute inset-0 rounded-full border-2 border-[#ff5a1f]/35" />
-                      ) : (
-                        <div className="absolute inset-0 animate-spin rounded-full border-2 border-neutral-300 border-t-[#ff5a1f] dark:border-white/15" style={{ animationDuration: '1.2s' }} />
-                      )}
-                    </div>
-                    <div className="text-[10px] font-semibold uppercase tracking-[0.35em] text-neutral-600 dark:text-neutral-400">
-                      Loading more
-                    </div>
-                  </>
-                ) : (
-                  <div className="text-[10px] font-semibold uppercase tracking-[0.35em] text-[#ff5a1f]">
-                    You&apos;re all caught up
+                      See all
+                      <ArrowRight size={15} aria-hidden />
+                    </Link>
                   </div>
-                )}
+
+                  <div
+                    ref={(node) => {
+                      autoCarouselRefs.current[shelf.key] = node;
+                    }}
+                    onPointerEnter={() => {
+                      carouselPausedRef.current = true;
+                    }}
+                    onPointerLeave={() => {
+                      carouselPausedRef.current = false;
+                    }}
+                    onTouchStart={() => {
+                      carouselPausedRef.current = true;
+                    }}
+                    onTouchEnd={() => {
+                      window.setTimeout(() => {
+                        carouselPausedRef.current = false;
+                      }, 1200);
+                    }}
+                    className="shelf"
+                  >
+                    {state.loading ? (
+                      Array.from({ length: 8 }).map((_, i) => (
+                        <div key={i}>
+                          <div className="sk sk-cover" />
+                          <div className="sk sk-line" style={{ width: '85%' }} />
+                          <div className="sk sk-line" style={{ width: '55%' }} />
+                        </div>
+                      ))
+                    ) : (
+                      filteredItems.slice(0, shelfCardLimit).map((comic) => {
+                        const cardKey = `${shelf.key}:${comic.source}:${comic.id}`;
+                        const adultContent = isAdultComic(comic);
+                        const isPreviewOpen = adultContent && previewCardKey === cardKey;
+                        const coverUi = homeAdultCoverUi(comic, isAgeVerified, useRichMotion);
+
+                        return (
+                          <HomeCoverCard
+                            key={`${shelf.key}:${comicKey(comic)}`}
+                            comic={comic}
+                            coverUi={coverUi}
+                            isTouchDevice={isTouchDevice}
+                            isPreviewOpen={isPreviewOpen}
+                            onLockedTap={() => setPreviewCardKey(cardKey)}
+                            sizes="(max-width: 680px) 132px, 168px"
+                          />
+                        );
+                      })
+                    )}
+                  </div>
+                </m.section>
+              );
+            })}
+          </AnimatePresence>
+
+          {/* --- INFINITE DISCOVERY GRID --- */}
+          <section className="section">
+            <div className="section__head">
+              <div className="section__titles">
+                <span className="ic-eyebrow">Discover</span>
+                <h2 className="section__heading">More titles</h2>
               </div>
             </div>
-        </section>
+            <p className="-mt-2 mb-5 text-sm text-fg-muted">
+              Scroll to load more — picks refresh as you explore.
+            </p>
 
+            <div className="mtgrid">
+              {infiniteItems.map((comic, idx) => {
+                const cardKey = `discover:${comic.source}:${comic.id}`;
+                const adultContent = isAdultComic(comic);
+                const isPreviewOpen = adultContent && previewCardKey === cardKey;
+                const coverUi = homeAdultCoverUi(comic, isAgeVerified, useRichMotion);
+
+                return (
+                  <HomeCoverCard
+                    key={`${comicKey(comic)}:${idx}`}
+                    comic={comic}
+                    coverUi={coverUi}
+                    isTouchDevice={isTouchDevice}
+                    isPreviewOpen={isPreviewOpen}
+                    onLockedTap={() => setPreviewCardKey(cardKey)}
+                    sizes="(max-width: 680px) 45vw, (max-width: 1024px) 25vw, 180px"
+                  />
+                );
+              })}
+            </div>
+
+            <div ref={loaderRef} className="mt-loadwrap flex-col items-center gap-3 py-12">
+              {hasMoreInfinite ? (
+                <>
+                  <span
+                    className="h-7 w-7 animate-spin rounded-full border-2 border-line border-t-accent"
+                    style={prefersReducedMotion ? { animation: 'none' } : undefined}
+                    aria-hidden
+                  />
+                  <span className="ic-eyebrow">Loading more…</span>
+                </>
+              ) : (
+                <div className="mt-end w-full">You&apos;re all caught up</div>
+              )}
+            </div>
+          </section>
+        </div>
       </main>
 
       <AnimatePresence>
@@ -1273,48 +1160,7 @@ export default function HomeClient({
         )}
       </AnimatePresence>
 
-      <footer className="border-t border-neutral-200 bg-neutral-100 text-neutral-900 dark:border-white/10 dark:bg-black dark:text-white">
-        <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
-          <div className="flex flex-col items-center gap-8 text-center sm:flex-row sm:items-start sm:justify-between sm:text-left">
-            <div>
-              <div className="font-accent text-xl tracking-wide">
-                <span className="text-neutral-900 dark:text-white">iComics</span>
-                <span className="mx-px text-[#ffd36b]">·</span>
-                <span className="text-[#ff5a1f]">wiki</span>
-              </div>
-              <p className="mt-2 max-w-xs text-[11px] font-medium uppercase tracking-[0.22em] text-neutral-600 dark:text-neutral-500">
-                Manga, manhwa & comics
-              </p>
-            </div>
-            <nav className="flex flex-wrap justify-center gap-x-8 gap-y-3 text-[10px] font-semibold uppercase tracking-[0.2em] text-neutral-600 dark:text-neutral-400">
-              <Link href="/guides" className="transition-colors hover:text-[#ff5a1f] dark:hover:text-white">
-                Guides
-              </Link>
-              <Link href="/reading" className="transition-colors hover:text-[#ff5a1f] dark:hover:text-white">
-                Reading hub
-              </Link>
-              <Link href="/faq" className="transition-colors hover:text-[#ff5a1f] dark:hover:text-white">
-                FAQ
-              </Link>
-              <Link href="/library" className="transition-colors hover:text-[#ff5a1f] dark:hover:text-white">
-                Library
-              </Link>
-              <Link href="/about" className="transition-colors hover:text-[#ff5a1f] dark:hover:text-white">
-                About
-              </Link>
-              <Link href="/privacy" className="transition-colors hover:text-[#ff5a1f] dark:hover:text-white">
-                Privacy
-              </Link>
-              <Link href="/terms" className="transition-colors hover:text-[#ff5a1f] dark:hover:text-white">
-                Terms
-              </Link>
-            </nav>
-          </div>
-          <div className="mt-12 border-t border-neutral-200 pt-8 text-center text-[10px] font-medium uppercase tracking-[0.35em] text-neutral-600 dark:border-white/10 dark:text-neutral-500">
-            © {new Date().getFullYear()} iComics.wiki
-          </div>
-        </div>
-      </footer>
+      <Footer />
     </div>
     </LazyMotion>
   );

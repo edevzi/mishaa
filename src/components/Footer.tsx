@@ -26,63 +26,57 @@ export default function Footer() {
   }, []);
 
   return (
-    <footer className="relative overflow-hidden border-t-8 border-neutral-900 bg-neutral-100 py-16 text-neutral-900 sm:py-20 lg:py-24 dark:border-black dark:bg-[#111111] dark:text-white">
-      <div className="absolute inset-0 halftone-bg pointer-events-none opacity-[0.07] dark:opacity-10" />
-      <div className="container relative z-10 mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex flex-col justify-between gap-12 lg:flex-row lg:gap-24">
-          <div className="space-y-8 sm:space-y-10 lg:space-y-12">
-            <div className="flex items-center gap-4 sm:gap-6">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl border-2 border-neutral-900 bg-neutral-900 sm:h-14 sm:w-14 lg:h-16 lg:w-16 lg:border-4 dark:border-white dark:bg-black">
-              <span className="text-3xl font-display font-black text-white max-md:text-xl">iC</span>
-            </div>
-              <div className="flex flex-col">
-                <h2 className="text-3xl font-display uppercase leading-none text-neutral-900 sm:text-4xl dark:text-white">iComics.wiki</h2>
-                <span className="text-[10px] font-black uppercase tracking-[0.4em] text-[#ff4d00]">{t.brandSubtitle}</span>
-              </div>
-            </div>
-            <div className="max-w-xs space-y-4">
-              <p className="text-[10px] font-black uppercase tracking-[0.4em] leading-loose text-neutral-600 opacity-80 dark:text-white dark:opacity-40">
-                {t.taglineLine1}
-                <br />
-                {t.taglineLine2}
-                <br />
-                {t.taglineLine3}
-              </p>
-              <p className="text-[9px] font-bold uppercase tracking-[0.28em] leading-relaxed text-neutral-500 dark:text-white/45">
-                {t.wikiOfficialLine}
-              </p>
-            </div>
+    <footer className="mt-24 border-t border-line-subtle bg-app text-fg">
+      <div className="wrap py-12 sm:py-16">
+        <div className="flex flex-col justify-between gap-12 lg:flex-row lg:gap-16">
+          <div className="max-w-md space-y-5">
+            {/* Brand mark — the logo stays as-is (fixed asset) */}
+            <Link href="/" className="inline-flex items-center gap-3">
+              <span className="font-accent text-xl leading-none tracking-wider select-none" style={{ letterSpacing: '0.04em' }}>
+                <span className="text-neutral-900 dark:text-white">iComics</span>
+                <span style={{ color: '#ffd36b', margin: '0 1px' }}>·</span>
+                <span style={{ color: '#ff5a1f' }}>wiki</span>
+              </span>
+            </Link>
+            <p className="text-xs leading-relaxed text-fg-muted">
+              {t.taglineLine1} {t.taglineLine2} {t.taglineLine3}
+            </p>
+            <p className="text-xs leading-relaxed text-fg-muted">
+              {t.wikiOfficialLine}
+            </p>
+            <p className="font-mono text-[11px] tracking-[0.04em] text-fg-muted">
+              {t.copyrightNotice}
+            </p>
           </div>
-          
-          <div className="grid grid-cols-1 gap-10 sm:grid-cols-3 sm:gap-12 lg:gap-24">
-            <div className="space-y-5 sm:space-y-6 lg:space-y-8">
-              <span className="text-[11px] font-black uppercase tracking-[0.4em] text-[#ff4d00]">{t.studio}</span>
-              <div className="flex flex-col gap-4 text-[10px] font-black uppercase tracking-widest text-neutral-600 dark:text-white/60">
-                <Link href="/library" className="transition-all hover:translate-x-2 hover:text-[#ff4d00] dark:hover:text-white">{t.launch}</Link>
-                <Link href="/about" className="transition-all hover:translate-x-2 hover:text-[#ff4d00] dark:hover:text-white">{t.about}</Link>
+
+          <div className="grid grid-cols-1 gap-10 sm:grid-cols-3 sm:gap-12 lg:gap-16">
+            <div className="space-y-4">
+              <span className="ic-eyebrow">{t.studio}</span>
+              <div className="flex flex-col gap-3 text-sm">
+                <Link href="/library" className="text-fg-secondary transition-colors hover:text-fg">{t.launch}</Link>
+                <Link href="/about" className="text-fg-secondary transition-colors hover:text-fg">{t.about}</Link>
               </div>
             </div>
-            <div className="space-y-5 sm:space-y-6 lg:space-y-8">
-              <span className="text-[11px] font-black uppercase tracking-[0.4em] text-[#ff4d00]">{t.support}</span>
-              <div className="flex flex-col gap-4 text-[10px] font-black uppercase tracking-widest text-neutral-600 dark:text-white/60">
-                <Link href="/faq" className="transition-all hover:translate-x-2 hover:text-[#ff4d00] dark:hover:text-white">{t.faq}</Link>
-                <Link href="/guides" className="transition-all hover:translate-x-2 hover:text-[#ff4d00] dark:hover:text-white">{t.guides}</Link>
-                <Link href="/reading" className="transition-all hover:translate-x-2 hover:text-[#ff4d00] dark:hover:text-white">{t.readingHub}</Link>
-                <Link href="/support" className="transition-all hover:translate-x-2 hover:text-[#ff4d00] dark:hover:text-white">{t.customer}</Link>
-                <Link href="/link-to-us" className="transition-all hover:translate-x-2 hover:text-[#ff4d00] dark:hover:text-white">{t.linkToUs}</Link>
-                <Link href="/settings" className="transition-all hover:translate-x-2 hover:text-[#ff4d00] dark:hover:text-white">{t.settingsLink}</Link>
-                <a href={TELEGRAM_CHANNEL_URL} target="_blank" rel="noreferrer" className="transition-all hover:translate-x-2 hover:text-[#ff4d00] dark:hover:text-white">{t.telegramChannel}</a>
+            <div className="space-y-4">
+              <span className="ic-eyebrow">{t.support}</span>
+              <div className="flex flex-col gap-3 text-sm">
+                <Link href="/faq" className="text-fg-secondary transition-colors hover:text-fg">{t.faq}</Link>
+                <Link href="/guides" className="text-fg-secondary transition-colors hover:text-fg">{t.guides}</Link>
+                <Link href="/reading" className="text-fg-secondary transition-colors hover:text-fg">{t.readingHub}</Link>
+                <Link href="/support" className="text-fg-secondary transition-colors hover:text-fg">{t.customer}</Link>
+                <Link href="/link-to-us" className="text-fg-secondary transition-colors hover:text-fg">{t.linkToUs}</Link>
+                <Link href="/settings" className="text-fg-secondary transition-colors hover:text-fg">{t.settingsLink}</Link>
+                <a href={TELEGRAM_CHANNEL_URL} target="_blank" rel="noreferrer" className="text-fg-secondary transition-colors hover:text-fg">{t.telegramChannel}</a>
               </div>
             </div>
-            <div className="space-y-5 sm:space-y-6 lg:space-y-8">
-              <span className="text-[11px] font-black uppercase tracking-[0.4em] text-[#ff4d00]">{t.legal}</span>
-              <div className="flex flex-col gap-4 text-[10px] font-black uppercase tracking-widest text-neutral-600 dark:text-white/60">
-                <Link href="/privacy" className="transition-all hover:translate-x-2 hover:text-[#ff4d00] dark:hover:text-white">{t.privacyPolicy}</Link>
-                <Link href="/terms" className="transition-all hover:translate-x-2 hover:text-[#ff4d00] dark:hover:text-white">{t.termsShort}</Link>
-                <Link href="/content-policy" className="transition-all hover:translate-x-2 hover:text-[#ff4d00] dark:hover:text-white">{t.contentPolicy}</Link>
-                <Link href="/dmca" className="transition-all hover:translate-x-2 hover:text-[#ff4d00] dark:hover:text-white">{t.dmca}</Link>
-                <Link href="/contact" className="transition-all hover:translate-x-2 hover:text-[#ff4d00] dark:hover:text-white">{t.contactEmail}</Link>
-                <span className="text-neutral-500 opacity-70 dark:text-white dark:opacity-30">{t.copyrightNotice}</span>
+            <div className="space-y-4">
+              <span className="ic-eyebrow">{t.legal}</span>
+              <div className="flex flex-col gap-3 text-sm">
+                <Link href="/privacy" className="text-fg-secondary transition-colors hover:text-fg">{t.privacyPolicy}</Link>
+                <Link href="/terms" className="text-fg-secondary transition-colors hover:text-fg">{t.termsShort}</Link>
+                <Link href="/content-policy" className="text-fg-secondary transition-colors hover:text-fg">{t.contentPolicy}</Link>
+                <Link href="/dmca" className="text-fg-secondary transition-colors hover:text-fg">{t.dmca}</Link>
+                <Link href="/contact" className="text-fg-secondary transition-colors hover:text-fg">{t.contactEmail}</Link>
               </div>
             </div>
           </div>

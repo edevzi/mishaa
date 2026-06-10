@@ -1,0 +1,35 @@
+<!-- @dsCard group="Colors" viewport="700x160" name="Content ratings & reader themes" subtitle="Rating dots + the three reading canvases" -->
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8" />
+<link rel="stylesheet" href="../styles.css" />
+<style>
+  body { padding: 22px; display:flex; gap: 40px; flex-wrap: wrap; }
+  .col { display:flex; flex-direction:column; gap: 12px; }
+  .row { display:flex; align-items:center; gap: 10px; }
+  .dot { width: 13px; height: 13px; border-radius: 99px; }
+  .name { font-family: var(--font-mono); font-size: 11px; color: var(--text-secondary); letter-spacing:.04em; text-transform:uppercase; }
+  .themes { display:flex; gap: 12px; }
+  .canvas { width: 92px; height: 92px; border-radius: var(--radius-md); border: 1px solid var(--border); display:flex; align-items:center; justify-content:center;
+            font-family: var(--font-mono); font-size: 10px; letter-spacing:.04em; text-transform:uppercase; }
+  .cap { font-family: var(--font-mono); font-size: 10px; color: var(--text-muted); margin-top: 6px; text-align:center; }
+</style>
+</head>
+<body>
+<div class="col">
+  <span class="ic-eyebrow">Content ratings</span>
+  <div class="row"><span class="dot" style="background:var(--rating-safe)"></span><span class="name">Safe</span></div>
+  <div class="row"><span class="dot" style="background:var(--rating-suggestive)"></span><span class="name">Suggestive</span></div>
+  <div class="row"><span class="dot" style="background:var(--rating-erotica)"></span><span class="name">Erotica · gated</span></div>
+</div>
+<div class="col">
+  <span class="ic-eyebrow">Reader canvases</span>
+  <div class="themes">
+    <div><div class="canvas" style="background:var(--reader-dark-bg);color:var(--reader-dark-fg)">Aa</div><div class="cap">Dark</div></div>
+    <div><div class="canvas" style="background:var(--reader-light-bg);color:var(--reader-light-fg)">Aa</div><div class="cap">Light</div></div>
+    <div><div class="canvas" style="background:var(--reader-sepia-bg);color:var(--reader-sepia-fg)">Aa</div><div class="cap">Sepia</div></div>
+  </div>
+</div>
+</body>
+</html>

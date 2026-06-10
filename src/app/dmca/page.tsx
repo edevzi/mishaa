@@ -16,7 +16,7 @@ export default function DmcaPage() {
       badge="DMCA"
       title="Copyright Notice"
       subtitle="Use this page for copyright takedowns, ownership disputes, and formal removal requests."
-      icon={<Scale size={14} className="text-[#ff4d00]" />}
+      icon={<Scale size={14} className="text-accent" />}
       sections={[
         {
           eyebrow: 'Notice',

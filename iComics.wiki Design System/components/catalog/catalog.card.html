@@ -1,0 +1,51 @@
+<!-- @dsCard group="Components" viewport="700x500" name="Catalog — cover cards, score, rating, progress, logo" subtitle="The pieces the reader is built from" -->
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8" />
+<link rel="stylesheet" href="../../styles.css" />
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script src="../../_ds_bundle.js"></script>
+<style>
+  body { padding: 28px; }
+  .covers { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; max-width: 600px; }
+  .meta-row { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; margin-top: 26px; }
+  .grp { margin-top: 22px; }
+  .grp > .ic-eyebrow { display: block; margin-bottom: 10px; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+  const NS = window.IComicsWikiDesignSystem_3734a1;
+  const { CoverCard, ScoreBadge, RatingChip, ProgressBar, Logo } = NS;
+  function Demo() {
+    const [rev, setRev] = React.useState(false);
+    return (
+      <div>
+        <Logo size={30} />
+        <div className="covers" style={{ marginTop: 22 }}>
+          <CoverCard title="Sousou no Frieren" source="MangaDex" status="Hiatus" score={8.9} rating="safe" />
+          <CoverCard title="Blue Lock" source="MangaDex" score={8.2} rating="suggestive" progress={62} />
+          <CoverCard title="Eleceed" source="MangaDex" status="Ongoing" rating="safe" />
+          <CoverCard title="Doujinshi vol.3" source="nhentai" adult revealed={rev} rating="erotica" onClick={() => setRev(v => !v)} />
+        </div>
+        <div className="grp">
+          <span className="ic-eyebrow">Score · rating · progress</span>
+          <div className="meta-row">
+            <ScoreBadge score={8.2} />
+            <RatingChip rating="safe" />
+            <RatingChip rating="suggestive" />
+            <RatingChip rating="erotica" />
+            <div style={{ width: 160 }}><ProgressBar value={62} thick /></div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+  ReactDOM.createRoot(document.getElementById("root")).render(<Demo />);
+</script>
+</body>
+</html>

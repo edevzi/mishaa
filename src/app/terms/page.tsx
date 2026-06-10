@@ -16,7 +16,7 @@ export default function TermsPage() {
       badge="Terms Of Use"
       title="Terms & Conditions"
       subtitle="These terms explain how iComics.wiki works, what users can do, and where the limits are."
-      icon={<FileText size={14} className="text-[#ff4d00]" />}
+      icon={<FileText size={14} className="text-accent" />}
       sections={[
         {
           eyebrow: 'Access',

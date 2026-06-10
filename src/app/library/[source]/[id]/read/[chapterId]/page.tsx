@@ -16,11 +16,11 @@ import { ICS_SITE_DISPLAY_NAME } from '@/lib/seo/page-metadata';
 /** Node.js runtime avoids Edge bundle limits for heavy comic imports. */
 export const runtime = 'nodejs';
 
-/** Matches reader shell defaults; ComicReaderClient also syncs meta theme-color when the user switches reader theme. */
+/** Matches reader shell defaults (--reader-light-bg / --reader-dark-bg tokens); ComicReaderClient also syncs meta theme-color when the user switches reader theme. */
 export const viewport: Viewport = {
   themeColor: [
-    { media: '(prefers-color-scheme: light)', color: '#f7f4ee' },
-    { media: '(prefers-color-scheme: dark)', color: '#050505' },
+    { media: '(prefers-color-scheme: light)', color: '#F6F3EC' },
+    { media: '(prefers-color-scheme: dark)', color: '#0C0B10' },
   ],
 };
 
