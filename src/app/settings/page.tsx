@@ -2,7 +2,9 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { motion } from 'framer-motion';
+import { useRouter } from 'next/navigation';
+import { LazyMotion, domAnimation, m } from 'framer-motion';
+import { htmlLangFromUiLang } from '@/lib/i18n/lang';
 import {
   Settings as SettingsIcon,
   Bookmark,
@@ -36,6 +38,7 @@ import {
 } from '@/lib/library-storage';
 
 export default function SettingsPage() {
+  const router = useRouter();
   const [lang, setLang] = useState<Lang>('en');
   const [mangaLanguage, setMangaLanguage] = useState<MangaLanguage>('en');
   const [ageEnabled, setAgeEnabled] = useState(false);
@@ -80,6 +83,11 @@ export default function SettingsPage() {
     persistUiLangCookie(nextLang);
     persistStoredMangaLanguage(uiLangToPreferredMangaLanguage(nextLang));
     window.dispatchEvent(new CustomEvent('langChange', { detail: nextLang }));
+    // Flip <html lang> immediately, then re-render the server tree from the new cookie.
+    if (typeof document !== 'undefined') {
+      document.documentElement.lang = htmlLangFromUiLang(nextLang);
+    }
+    router.refresh();
   };
 
   const applyMangaLanguage = (nextLanguage: MangaLanguage) => {
@@ -127,7 +135,8 @@ export default function SettingsPage() {
       <Navbar />
 
       <main className="pt-nav-catalog">
-        <motion.div
+        <LazyMotion features={domAnimation} strict>
+        <m.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.28, ease: [0.22, 0.61, 0.36, 1] }}
@@ -332,7 +341,8 @@ export default function SettingsPage() {
               {s.openSupportForm}
             </Link>
           </section>
-        </motion.div>
+        </m.div>
+        </LazyMotion>
       </main>
 
       <Footer />

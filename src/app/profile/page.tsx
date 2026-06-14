@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef, type ChangeEvent, type FormEvent } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { motion } from 'framer-motion';
+import { LazyMotion, domAnimation, m } from 'framer-motion';
 import Navbar from '@/components/Navbar';
 import { translations, Lang } from '@/lib/translations';
 import { readStorageItem } from '@/lib/browser-storage';
@@ -126,6 +126,7 @@ export default function ProfilePage() {
   };
 
   return (
+    <LazyMotion features={domAnimation} strict>
     <div className="min-h-screen bg-app text-fg">
       <Navbar />
 
@@ -235,15 +236,15 @@ export default function ProfilePage() {
                   </div>
 
                   {error && (
-                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="rounded-btn border border-line bg-inset p-4 text-center text-sm text-danger">
+                    <m.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="rounded-btn border border-line bg-inset p-4 text-center text-sm text-danger">
                       {t.errorPrefix}: {error}
-                    </motion.div>
+                    </m.div>
                   )}
 
                   {success && (
-                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="rounded-btn border border-line bg-inset p-4 text-center text-sm text-success">
+                    <m.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="rounded-btn border border-line bg-inset p-4 text-center text-sm text-success">
                       {t.successPrefix}: {success}
-                    </motion.div>
+                    </m.div>
                   )}
 
                   <button
@@ -318,5 +319,6 @@ export default function ProfilePage() {
         </div>
       </main>
     </div>
+    </LazyMotion>
   );
 }

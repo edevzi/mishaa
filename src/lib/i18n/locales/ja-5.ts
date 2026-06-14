@@ -39,6 +39,8 @@ export const jaPart5: DeepPartial<typeof en> = {
     yourLibrary: 'あなたのライブラリ',
     stories: 'ストーリー',
     characters: 'キャラ',
+    reading: '読書中',
+    completed: '読了',
     backHome: 'ホームへ',
     logOut: 'ログアウト',
   },

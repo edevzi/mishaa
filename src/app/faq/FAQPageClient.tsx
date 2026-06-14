@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { LazyMotion, domAnimation, m } from 'framer-motion';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import Link from 'next/link';
@@ -40,11 +40,12 @@ export default function FAQPageClient() {
   ];
 
   return (
+    <LazyMotion features={domAnimation} strict>
     <div className="min-h-screen overflow-x-hidden bg-app text-fg">
       <Navbar />
 
       <main className="pt-nav-catalog">
-        <motion.div
+        <m.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.28, ease: [0.22, 0.61, 0.36, 1] }}
@@ -71,11 +72,11 @@ export default function FAQPageClient() {
                     <span className="font-mono text-xs text-accent-text">0{i + 1}</span>
                     <h3 className="text-base font-semibold leading-snug sm:text-lg">{faq.q}</h3>
                   </div>
-                  <motion.div animate={{ rotate: openIndex === i ? 180 : 0 }} className="text-fg-muted">
+                  <m.div animate={{ rotate: openIndex === i ? 180 : 0 }} className="text-fg-muted">
                     <ChevronDown size={20} />
-                  </motion.div>
+                  </m.div>
                 </div>
-                <motion.div
+                <m.div
                   initial={false}
                   animate={{ height: openIndex === i ? 'auto' : 0, opacity: openIndex === i ? 1 : 0 }}
                   className="overflow-hidden"
@@ -83,7 +84,7 @@ export default function FAQPageClient() {
                   <div className="border-t border-line-subtle px-5 pb-6 pt-4 sm:px-6">
                     <p className="max-w-2xl text-sm leading-relaxed text-fg-secondary sm:text-base">{faq.a}</p>
                   </div>
-                </motion.div>
+                </m.div>
               </div>
             ))}
           </div>
@@ -126,10 +127,11 @@ export default function FAQPageClient() {
               </a>
             </div>
           </div>
-        </motion.div>
+        </m.div>
       </main>
 
       <Footer />
     </div>
+    </LazyMotion>
   );
 }

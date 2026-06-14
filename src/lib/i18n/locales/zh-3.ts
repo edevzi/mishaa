@@ -39,6 +39,8 @@ export const zhPart3: DeepPartial<typeof en> = {
     yourLibrary: '您的书库',
     stories: '故事',
     characters: '角色',
+    reading: '在读',
+    completed: '已读完',
     backHome: '返回首页',
     logOut: '退出登录',
   },

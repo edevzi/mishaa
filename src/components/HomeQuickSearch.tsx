@@ -189,14 +189,12 @@ export default function HomeQuickSearch({
             ) : (
               <>
                 {results.map((comic) => (
-                  <button
+                  <Link
                     key={`${comic.source}:${comic.id}`}
-                    type="button"
+                    href={`/library/${comic.source}/${comic.id}`}
+                    prefetch={false}
                     className="qresult w-full text-left"
-                    onClick={() => {
-                      setOpen(false);
-                      router.push(`/library/${comic.source}/${comic.id}`);
-                    }}
+                    onClick={() => setOpen(false)}
                   >
                     <span className="qresult__thumb">
                       <Image
@@ -213,7 +211,7 @@ export default function HomeQuickSearch({
                       <span className="qresult__t block truncate">{comic.title}</span>
                       <span className="qresult__m block">{comic.source}</span>
                     </span>
-                  </button>
+                  </Link>
                 ))}
                 <Link
                   href={libraryHref}

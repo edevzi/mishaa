@@ -2,11 +2,22 @@ import { MetadataRoute } from 'next';
 import { searchComics, getChapters } from '@/actions/comic';
 import { getPublicSiteUrl } from '@/lib/og-metadata';
 import { GUIDES_ORDER } from '@/lib/guides/registry';
-import { UI_LANGS } from '@/lib/i18n/lang';
-import { UI_LANG_SEARCH_PARAM } from '@/lib/seo/hreflang-urls';
+
+/**
+ * Re-run the heavy MangaDex/Marvel fan-out at most every 6h. The route already had
+ * implicit ISR, but pinning it keeps the ~60+ upstream fetches off the per-request path
+ * and out of build-time bursts that risk MangaDex 429s.
+ */
+export const revalidate = 21600;
 
 /** MangaDex listing pages merged into sitemap (36 titles per page via SEARCH_PAGE_LIMIT). */
 const MANGA_SITEMAP_MAX_PAGES = 55;
+
+/** Listing-fetch fan-out is chunked into batches of this size to avoid a MangaDex 429 burst. */
+const SITEMAP_FETCH_BATCH = 10;
+
+/** Marvel issue detail pages (bounded — issues are static metadata, no reader/chapter URLs). */
+const MARVEL_SITEMAP_MAX_PAGES = 4;
 
 /** Sample chapter URLs for long-tail discovery (first listing page → subset of titles × capped chapters). */
 const CHAPTER_SITEMAP_TITLE_CAP = 12;
@@ -45,41 +56,12 @@ function routeEntry(
   };
 }
 
-/** UI-language discovery URLs (`?ui=`) for major hubs — pairs with hreflang alternates in metadata. */
-const HUB_ROUTES_FOR_UI_VARIANT: `/${string}`[] = [
-  '/',
-  '/library',
-  '/reading',
-  '/guides',
-  '/icomics-wiki',
-  '/faq',
-  '/about',
-  '/contact',
-  '/link-to-us',
-];
-
-function addUiVariantHubUrls(
-  map: Map<string, MetadataRoute.Sitemap[0]>,
-  origin: string,
-  lastModified: Date,
-) {
-  for (const route of HUB_ROUTES_FOR_UI_VARIANT) {
-    const absoluteBase = route === '/' ? `${origin}/` : `${origin}${route}`;
-    for (const lang of UI_LANGS) {
-      const u = new URL(absoluteBase);
-      u.searchParams.set(UI_LANG_SEARCH_PARAM, lang);
-      const url = u.href;
-      if (!map.has(url)) {
-        map.set(url, {
-          url,
-          lastModified,
-          changeFrequency: 'weekly',
-          priority: 0.55,
-        });
-      }
-    }
-  }
-}
+/**
+ * Note: we intentionally do NOT emit `?ui=<lang>` variant URLs here. The hubs are
+ * self-canonical to their clean path and carry the language signal via per-page
+ * hreflang <link> alternates in metadata. Listing the param twins in the sitemap only
+ * manufactured near-duplicate entries (and some hubs lacked reciprocal hreflang).
+ */
 
 /**
  * Static / editorial routes. `catalogLastModified` is the newest catalog change and
@@ -135,25 +117,25 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = getPublicSiteUrl().replace(/\/$/, '');
 
   try {
-    const mangaResults = await Promise.allSettled(
-      Array.from({ length: MANGA_SITEMAP_MAX_PAGES }, (_, page) =>
-        searchComics({
-          source: 'mangadex',
-          page,
-          query: '',
-        }),
-      ),
-    );
-
-    const mangaPages = mangaResults
-      .filter((r): r is PromiseFulfilledResult<Awaited<ReturnType<typeof searchComics>>> => r.status === 'fulfilled')
-      .map((r) => r.value);
-
-    if (mangaPages.length === 0 && mangaResults.some((r) => r.status === 'rejected')) {
-      console.error(
-        'Sitemap: all MangaDex listing fetches failed',
-        mangaResults.find((r) => r.status === 'rejected'),
+    // Chunk the 55 listing fetches into batches so we never open 55 simultaneous
+    // connections to MangaDex (which triggers 429s that cascade into thin pages).
+    type MangaPage = Awaited<ReturnType<typeof searchComics>>;
+    const mangaPages: MangaPage[] = [];
+    let anyListingRejected = false;
+    for (let start = 0; start < MANGA_SITEMAP_MAX_PAGES; start += SITEMAP_FETCH_BATCH) {
+      const batch = await Promise.allSettled(
+        Array.from({ length: Math.min(SITEMAP_FETCH_BATCH, MANGA_SITEMAP_MAX_PAGES - start) }, (_, i) =>
+          searchComics({ source: 'mangadex', page: start + i, query: '' }),
+        ),
       );
+      for (const r of batch) {
+        if (r.status === 'fulfilled') mangaPages.push(r.value);
+        else anyListingRejected = true;
+      }
+    }
+
+    if (mangaPages.length === 0 && anyListingRejected) {
+      console.error('Sitemap: all MangaDex listing fetches failed');
     }
 
     /** Newest catalog `updatedAt` → honest lastmod for the catalog-backed hubs. */
@@ -171,7 +153,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     for (const entry of buildStaticRoutes(baseUrl, latestCatalogUpdate)) {
       byUrl.set(entry.url, entry);
     }
-    addUiVariantHubUrls(byUrl, baseUrl, CONTENT_REVISION);
 
     for (const page of mangaPages) {
       for (const item of page.items) {
@@ -187,11 +168,40 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       }
     }
 
+    // Marvel issue detail pages — a whole indexable vertical that was previously absent
+    // from the sitemap (and unreachable via crawlable links). Bounded + allSettled so a
+    // Marvel API outage degrades gracefully instead of breaking the whole sitemap.
+    const marvelResults = await Promise.allSettled(
+      Array.from({ length: MARVEL_SITEMAP_MAX_PAGES }, (_, page) =>
+        searchComics({ source: 'marvel', page, query: '' }),
+      ),
+    );
+    for (const r of marvelResults) {
+      if (r.status !== 'fulfilled') continue;
+      for (const item of r.value.items) {
+        const url = `${baseUrl}/library/marvel/${item.id}`;
+        if (!byUrl.has(url)) {
+          byUrl.set(url, {
+            url,
+            lastModified: parseDate(item.updatedAt) ?? CONTENT_REVISION,
+            changeFrequency: 'monthly',
+            priority: 0.6,
+          });
+        }
+      }
+    }
+
+    // Sample chapter URLs for long-tail discovery — fetch the spotlight titles' feeds in
+    // parallel (was a sequential loop that added a ~10s serial tail to a cold render).
     const spotlightTitles = (mangaPages[0]?.items ?? []).slice(0, CHAPTER_SITEMAP_TITLE_CAP);
-    for (const item of spotlightTitles) {
-      const chapters = await getChapters('mangadex', item.id);
+    const chapterLists = await Promise.allSettled(
+      spotlightTitles.map((item) => getChapters('mangadex', item.id)),
+    );
+    spotlightTitles.forEach((item, idx) => {
+      const result = chapterLists[idx];
+      if (result.status !== 'fulfilled') return;
       const itemLastModified = parseDate(item.updatedAt) ?? CONTENT_REVISION;
-      for (const ch of chapters.slice(0, CHAPTERS_PER_TITLE_CAP)) {
+      for (const ch of result.value.slice(0, CHAPTERS_PER_TITLE_CAP)) {
         const url = `${baseUrl}/library/mangadex/${item.id}/read/${ch.id}`;
         if (!byUrl.has(url)) {
           byUrl.set(url, {
@@ -202,7 +212,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
           });
         }
       }
-    }
+    });
 
     return [...byUrl.values()];
   } catch (e) {
@@ -211,7 +221,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     for (const entry of buildStaticRoutes(baseUrl, CONTENT_REVISION)) {
       fallback.set(entry.url, entry);
     }
-    addUiVariantHubUrls(fallback, baseUrl, CONTENT_REVISION);
     return [...fallback.values()];
   }
 }

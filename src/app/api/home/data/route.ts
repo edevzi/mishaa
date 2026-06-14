@@ -1,13 +1,17 @@
 export const runtime = "edge";
 import { NextResponse } from "next/server";
-import { getHomeData, getHomeFeed, dedupeHomeShelvesForRows } from "@/lib/home-data";
+import { getHomeData, getHomeFeed } from "@/lib/home-data";
 import { AGE_VERIFICATION_COOKIE } from "@/lib/age-verification";
-import { fetchTrendingAniListManga } from "@/lib/anilist";
 import type { MangaLanguage } from "@/lib/manga-language";
 import { isTruthyCookieFromHeader } from "@/lib/http/cookie-header";
 
+/**
+ * Align with the real UI/MangaLanguage set (en/ru/ja/ko/zh). The old list whitelisted
+ * es/fr (not UI langs, so they minted dead `unstable_cache` entries) while silently
+ * dropping ja/ko/zh to 'en' — so CJK users never got a localized, correctly-keyed shelf.
+ */
 const normalizeLanguage = (value: string | null): MangaLanguage => {
-  return value === 'en' || value === 'ru' || value === 'es' || value === 'fr'
+  return value === 'en' || value === 'ru' || value === 'ja' || value === 'ko' || value === 'zh'
     ? value
     : 'en';
 };
@@ -39,41 +43,15 @@ export async function GET(req: Request) {
     });
   }
 
-  const baseShelves = await getHomeData(lang, { includeAdultContent });
+  // `getHomeData` is `unstable_cache`d (1h) and already assembles a `trending` shelf
+  // with AniList→MangaDex-resolved ON-SITE hrefs (`/library/mangadex/...`). The previous
+  // per-request AniList refetch threw that away, blocked the response on a fresh GraphQL
+  // call, and overwrote trending with OFF-SITE `item.siteUrl` links (a navigation bug).
+  const shelves = await getHomeData(lang, { includeAdultContent });
 
-  try {
-    const trendingPromise = fetchTrendingAniListManga(12)
-      .then((items) => items.map((item, index) => ({
-        id: item.id.toString(),
-        title: item.title.userPreferred || item.title.english || item.title.romaji,
-        description: item.description?.replace(/<[^>]*>?/gm, '').substring(0, 150) || 'Global trending pick',
-        coverUrl: item.coverImage.extraLarge || item.coverImage.large,
-        source: 'mangadex',
-        href: item.siteUrl || '/library',
-        meta: `TRENDING #${index + 1}`,
-        rating: (item.averageScore / 10).toFixed(1) || '8.5',
-      })))
-      .catch(() => []);
-
-    const trending = await trendingPromise;
-
-    const shelvesMerged = {
-      ...baseShelves,
-      trending: trending || baseShelves.trending || [],
-    };
-
-    return NextResponse.json({
-      shelves: dedupeHomeShelvesForRows(shelvesMerged),
-    }, {
-      headers: {
-        'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=86400'
-      }
-    });
-  } catch {
-    return NextResponse.json({ shelves: baseShelves }, {
-      headers: {
-        'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=86400'
-      }
-    });
-  }
+  return NextResponse.json({ shelves }, {
+    headers: {
+      'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=86400'
+    }
+  });
 }

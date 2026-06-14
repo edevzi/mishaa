@@ -1,20 +1,16 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('@/lib/site-url', () => ({
-  getSiteUrl: () => 'https://example.test',
-}));
-
 describe('fetchJsonThroughProxy', () => {
   beforeEach(() => {
     vi.restoreAllMocks();
   });
 
-  it('parses JSON from first successful endpoint', async () => {
+  it('parses JSON from a direct api.mangadex.org call (no proxy self-hop)', async () => {
     const payload = { data: [{ id: 'm1' }], total: 1 };
 
     const fetchSpy = vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
       const url = String(input);
-      if (url.startsWith('https://example.test/api/proxy/mangadex')) {
+      if (url.startsWith('https://api.mangadex.org/')) {
         return new Response(JSON.stringify(payload), { status: 200, headers: { 'Content-Type': 'application/json' } });
       }
       throw new Error('should not reach fallback');
@@ -22,23 +18,24 @@ describe('fetchJsonThroughProxy', () => {
 
     const { fetchJsonThroughProxy } = await import('./mangadex-client');
 
-    await expect(fetchJsonThroughProxy('manga?page=1', 'https://api.mangadex.org/FAIL')).resolves.toEqual(payload);
+    await expect(fetchJsonThroughProxy('manga?page=1')).resolves.toEqual(payload);
 
     expect(fetchSpy).toHaveBeenCalled();
     const firstUrl = fetchSpy.mock.calls[0]?.[0] as string;
-    expect(firstUrl).toContain('/api/proxy/mangadex');
-    expect(firstUrl).toContain(encodeURIComponent('manga?page=1'));
+    expect(firstUrl).toBe('https://api.mangadex.org/manga?page=1');
+    // Must NOT route through our own proxy route any more.
+    expect(firstUrl).not.toContain('/api/proxy/mangadex');
   });
 
-  it('falls back to direct URL when proxy fails', async () => {
+  it('retries the fallback endpoint when the primary fails', async () => {
     const payload = { ok: true };
 
     vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
       const url = String(input);
-      if (url.includes('proxy')) {
+      if (url === 'https://api.mangadex.org/unused') {
         return new Response('bad gateway', { status: 502 });
       }
-      if (url === 'https://api.mangadex.org/direct') {
+      if (url === 'https://fallback.test/direct') {
         return new Response(JSON.stringify(payload), { status: 200 });
       }
       return new Response('not found', { status: 404 });
@@ -47,7 +44,7 @@ describe('fetchJsonThroughProxy', () => {
     const { fetchJsonThroughProxy } = await import('./mangadex-client');
 
     await expect(
-      fetchJsonThroughProxy('unused', 'https://api.mangadex.org/direct'),
+      fetchJsonThroughProxy('unused', 'https://fallback.test/direct'),
     ).resolves.toEqual(payload);
   });
 

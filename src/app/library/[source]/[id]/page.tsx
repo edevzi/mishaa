@@ -21,6 +21,7 @@ import {
   libraryWorkTypeLabel,
 } from '@/lib/seo/library-work-metadata';
 import { buildComicCoverImageObjects } from '@/lib/seo/comic-jsonld';
+import { hreflangAlternates } from '@/lib/seo/hreflang-urls';
 
 export const runtime = 'nodejs';
 
@@ -234,6 +235,11 @@ export async function generateMetadata({ params }: MetadataProps): Promise<Metad
     },
     alternates: {
       canonical: canonicalUrl,
+      // Use resolvedId (matches the canonical) so localized alternates never point at a
+      // slug URL that 301-redirects. These long-tail series pages are where organic
+      // search concentrates; without hreflang Google can't link their ?ui= localized
+      // renders, so non-English searchers get the English variant or it reads as dupe.
+      languages: hreflangAlternates(siteUrl, `/library/${source}/${resolvedId}`),
     },
     robots: comic && workTitle ? { index: true, follow: true, googleBot: { 'max-image-preview': 'large' } } : { index: false, follow: true },
   };

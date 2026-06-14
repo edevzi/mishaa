@@ -1,6 +1,6 @@
 'use client';
 
-import { motion } from 'framer-motion';
+import { LazyMotion, domAnimation, m } from 'framer-motion';
 import type { ReactNode } from 'react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
@@ -29,11 +29,12 @@ export default function LegalPage({
   footerNote,
 }: LegalPageProps) {
   return (
+    <LazyMotion features={domAnimation} strict>
     <div className="min-h-screen overflow-x-hidden bg-app text-fg">
       <Navbar />
 
       <main className="pt-nav-catalog">
-        <motion.div
+        <m.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.28, ease: [0.22, 0.61, 0.36, 1] }}
@@ -66,10 +67,11 @@ export default function LegalPage({
             <p className="ic-eyebrow text-accent-text">Final note</p>
             <p className="mt-3 whitespace-pre-line text-sm leading-relaxed text-fg-secondary md:text-base">{footerNote}</p>
           </section>
-        </motion.div>
+        </m.div>
       </main>
 
       <Footer />
     </div>
+    </LazyMotion>
   );
 }

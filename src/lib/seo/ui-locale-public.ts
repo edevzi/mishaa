@@ -86,9 +86,10 @@ export function buildHomeMetadata(opts: {
   const t = translations[opts.uiLang];
   const title = `${t.hero.pageH1} — ${ICS_SITE_DISPLAY_NAME}`;
   const description = truncateMeta(t.hero.desc);
-  const canonical = isUiLang(opts.uiSearchParam)
-    ? `${site}/?${UI_LANG_SEARCH_PARAM}=${opts.uiSearchParam}`
-    : site;
+  // The homepage is ALWAYS self-canonical to the clean origin. The `?ui=<lang>` variants
+  // are hreflang ALTERNATES, not canonicals — making each one self-canonical minted five
+  // competing duplicate homepages that split ranking signal and wasted crawl budget.
+  const canonical = site;
 
   const ogTw = openGraphTwitterFromLogo({
     origin: site,

@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { motion } from 'framer-motion';
+import { LazyMotion, domAnimation, m } from 'framer-motion';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { Shield, Eye, Lock, FileText } from 'lucide-react';
@@ -27,11 +27,12 @@ export default function PrivacyPage() {
   }, []);
 
   return (
+    <LazyMotion features={domAnimation} strict>
     <div className="min-h-screen overflow-x-hidden bg-app text-fg">
       <Navbar />
 
       <main className="pt-nav-catalog">
-        <motion.div
+        <m.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.28, ease: [0.22, 0.61, 0.36, 1] }}
@@ -87,10 +88,11 @@ export default function PrivacyPage() {
               <div className="mx-auto max-w-lg text-xs leading-relaxed">{t.footerContact}</div>
             </div>
           </div>
-        </motion.div>
+        </m.div>
       </main>
 
       <Footer />
     </div>
+    </LazyMotion>
   );
 }

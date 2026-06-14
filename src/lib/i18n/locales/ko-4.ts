@@ -41,5 +41,7 @@ export const koPart4: DeepPartial<typeof en> = {
     titleAsc: '제목 A-Z',
     titleDesc: '제목 Z-A',
     savedOnly: '저장만',
+    nsfwToggleOn: '성인 소스 탭이 켜짐 — 클릭하면 NSFW 책장을 숨깁니다',
+    nsfwToggleOff: '성인 소스 탭이 꺼짐 — 클릭하면 NSFW 책장을 표시합니다',
   },
 };

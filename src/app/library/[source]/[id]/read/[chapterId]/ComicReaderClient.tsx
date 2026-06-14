@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { motion, AnimatePresence } from 'framer-motion';
+import { LazyMotion, domAnimation, m, AnimatePresence } from 'framer-motion';
 import { 
   ChevronLeft, X, Settings,
   ChevronRight, Loader2,
@@ -1149,6 +1149,7 @@ export default function ComicReaderClient({ initialComic, initialChapters, sourc
 
   if (restrictedSource && !isAgeVerified) {
     return (
+      <LazyMotion features={domAnimation} strict>
       <div className="min-h-dvh overflow-hidden" style={{ backgroundColor: READER_THEMES[readerTheme].shellBg, color: READER_THEMES[readerTheme].text }}>
         <AnimatePresence>
           <AgeGateOverlay
@@ -1162,6 +1163,7 @@ export default function ComicReaderClient({ initialComic, initialChapters, sourc
           />
         </AnimatePresence>
       </div>
+      </LazyMotion>
     );
   }
 
@@ -1183,6 +1185,7 @@ export default function ComicReaderClient({ initialComic, initialChapters, sourc
   if (!comic) return null;
 
   return (
+    <LazyMotion features={domAnimation} strict>
     <div
       className="min-h-screen overflow-hidden"
       style={{
@@ -1204,7 +1207,7 @@ export default function ComicReaderClient({ initialComic, initialChapters, sourc
         )}
       </AnimatePresence>
 
-      <motion.div 
+      <m.div 
         ref={readerRef} 
         initial={{ opacity: 0 }} 
         animate={{ opacity: 1 }} 
@@ -1216,7 +1219,7 @@ export default function ComicReaderClient({ initialComic, initialChapters, sourc
       >
         <AnimatePresence mode="wait">
           {readerLoading && (
-            <motion.div
+            <m.div
               key="loader"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -1243,13 +1246,13 @@ export default function ComicReaderClient({ initialComic, initialChapters, sourc
                   Opening chapter
                 </p>
               </div>
-            </motion.div>
+            </m.div>
           )}
         </AnimatePresence>
 
         <AnimatePresence>
           {!readerLoading && pages.length > 0 && scrolled && (
-            <motion.div
+            <m.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
@@ -1263,14 +1266,14 @@ export default function ComicReaderClient({ initialComic, initialChapters, sourc
                <div className="font-mono text-[11px] font-medium uppercase tracking-[0.12em]" style={{ color: READER_THEMES[readerTheme].scrimText }}>
                   Chapter {chapters[currentChapterIdx]?.chapterNum}
                </div>
-            </motion.div>
+            </m.div>
           )}
         </AnimatePresence>
 
         <AnimatePresence>
           {uiVisible && pages.length > 0 && (
             <>
-              <motion.div
+              <m.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
@@ -1278,7 +1281,7 @@ export default function ComicReaderClient({ initialComic, initialChapters, sourc
                 onClick={() => setUiVisible(false)}
                 className="fixed inset-0 z-[10020] bg-[rgba(12,11,16,0.6)] backdrop-blur-sm"
               />
-              <motion.div
+              <m.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
@@ -1370,7 +1373,7 @@ export default function ComicReaderClient({ initialComic, initialChapters, sourc
                      </div>
                   </div>
                 </div>
-              </motion.div>
+              </m.div>
             </>
           )}
         </AnimatePresence>
@@ -1468,8 +1471,8 @@ export default function ComicReaderClient({ initialComic, initialChapters, sourc
         <AnimatePresence>
           {showSettings && (
             <div className="fixed inset-0 z-[20000] flex items-center justify-center p-4">
-              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.22, ease: [0.22, 0.61, 0.36, 1] }} onClick={() => setShowSettings(false)} className="absolute inset-0 backdrop-blur-sm" style={{ backgroundColor: 'rgba(12,11,16,0.6)' }} />
-              <motion.div
+              <m.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.22, ease: [0.22, 0.61, 0.36, 1] }} onClick={() => setShowSettings(false)} className="absolute inset-0 backdrop-blur-sm" style={{ backgroundColor: 'rgba(12,11,16,0.6)' }} />
+              <m.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
@@ -1624,14 +1627,14 @@ export default function ComicReaderClient({ initialComic, initialChapters, sourc
                     </button>
                   </div>
                 </div>
-              </motion.div>
+              </m.div>
             </div>
           )}
         </AnimatePresence>
 
         <AnimatePresence>
           {!readerLoading && resumeOfferPage !== null && resumeOfferPage > 0 && (
-            <motion.div
+            <m.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
@@ -1702,14 +1705,14 @@ export default function ComicReaderClient({ initialComic, initialChapters, sourc
                   </button>
                 </div>
               </div>
-            </motion.div>
+            </m.div>
           )}
         </AnimatePresence>
 
         <AnimatePresence>
           {showReaderHelp && (
             <div className="fixed inset-0 z-[21000] flex items-center justify-center p-4">
-              <motion.div
+              <m.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
@@ -1718,7 +1721,7 @@ export default function ComicReaderClient({ initialComic, initialChapters, sourc
                 className="absolute inset-0 backdrop-blur-sm"
                 style={{ backgroundColor: 'rgba(12,11,16,0.6)' }}
               />
-              <motion.div
+              <m.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
@@ -1812,7 +1815,7 @@ export default function ComicReaderClient({ initialComic, initialChapters, sourc
                     {t.readerShortcutsDontShow}
                   </button>
                 </div>
-              </motion.div>
+              </m.div>
             </div>
           )}
         </AnimatePresence>
@@ -1928,7 +1931,7 @@ export default function ComicReaderClient({ initialComic, initialChapters, sourc
                          <div className="w-12 h-12 border-2 rounded-full animate-spin" style={{ borderColor: 'rgba(242,153,74,0.25)', borderTopColor: '#F2994A' }} />
                        </div>
                      ) : (
-                       <motion.img
+                       <m.img
                          key={`classic-${currentPage}`}
                          initial={{ opacity: 0 }}
                          animate={{ opacity: 1 }}
@@ -2037,7 +2040,7 @@ export default function ComicReaderClient({ initialComic, initialChapters, sourc
 
          <AnimatePresence>
            {showGrid && (
-             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.26, ease: [0.22, 0.61, 0.36, 1] }} className="fixed inset-0 z-[10050] bg-[rgba(12,11,16,0.92)] overflow-y-auto p-4 md:p-16">
+             <m.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.26, ease: [0.22, 0.61, 0.36, 1] }} className="fixed inset-0 z-[10050] bg-[rgba(12,11,16,0.92)] overflow-y-auto p-4 md:p-16">
                 <div className="fixed top-0 left-0 right-0 h-24 bg-[rgba(12,11,16,0.78)] backdrop-blur-xl z-[10060] px-6 flex items-center justify-between border-b border-white/10 pt-[env(safe-area-inset-top)]">
                   <button aria-label="Back to reader" onClick={() => setShowGrid(false)} className="flex items-center gap-2 text-sm font-medium text-white/60 transition-colors hover:text-white">
                       <ChevronLeft size={20} /> Back to reader
@@ -2052,14 +2055,15 @@ export default function ComicReaderClient({ initialComic, initialChapters, sourc
                      </button>
                    ))}
                 </div>
-             </motion.div>
+             </m.div>
            )}
          </AnimatePresence>
-      </motion.div>
+      </m.div>
 
       <style jsx global>{`
         input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; height: 18px; width: 18px; border-radius: 50%; background: #F2994A; cursor: pointer; border: 2px solid #2A1705; }
       `}</style>
     </div>
+    </LazyMotion>
   );
 }

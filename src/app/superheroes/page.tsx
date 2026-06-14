@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Navbar from '@/components/Navbar';
-import { motion, AnimatePresence } from 'framer-motion';
+import { LazyMotion, domAnimation, m, AnimatePresence } from 'framer-motion';
 import { Zap, Search, Swords, Users, RefreshCw, X, Check, Star, Crosshair } from 'lucide-react';
 import { translations, Lang } from '@/lib/translations';
 import { readStorageItem } from '@/lib/browser-storage';
@@ -136,7 +136,7 @@ export default function SuperheroesDashboard() {
           <span className="text-white/95">{num}</span>
         </div>
         <div className="h-1 w-full overflow-hidden rounded-full bg-white/15">
-          <motion.div
+          <m.div
             initial={{ width: 0 }}
             animate={{ width: `${num}%` }}
             transition={{ duration: 0.36, ease: 'easeOut' }}
@@ -185,6 +185,7 @@ export default function SuperheroesDashboard() {
   );
 
   return (
+    <LazyMotion features={domAnimation} strict>
     <div className="min-h-screen bg-app text-fg">
        <Navbar />
        <div className="pt-nav-catalog">
@@ -219,7 +220,7 @@ export default function SuperheroesDashboard() {
           {/* TAB CONTENT */}
           <AnimatePresence mode="wait">
             {activeTab === 'home' && (
-              <motion.div key="home" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-12">
+              <m.div key="home" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-12">
                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
                     <div className="space-y-6">
                        <h2 className="ic-display border-l-2 border-accent pl-4 text-2xl">{tr.heroOfCycle}</h2>
@@ -253,11 +254,11 @@ export default function SuperheroesDashboard() {
                        </div>
                     </div>
                  </div>
-              </motion.div>
+              </m.div>
             )}
 
             {activeTab === 'arena' && (
-              <motion.div key="arena" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-12">
+              <m.div key="arena" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-12">
                  <div className="text-center">
                     <h2 className="ic-display text-3xl text-fg">{tr.combatSim}</h2>
                     <p className="mt-2 text-sm text-fg-muted">{tr.combatSub}</p>
@@ -354,19 +355,19 @@ export default function SuperheroesDashboard() {
                  {/* Results Banner */}
                  <AnimatePresence>
                    {winner && (
-                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-3 rounded-card border border-line bg-accent-tint p-8 text-center">
+                     <m.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-3 rounded-card border border-line bg-accent-tint p-8 text-center">
                         <h3 className="ic-display text-3xl text-fg">
                           {winner === 'draw' ? tr.stalemate : `${tr.victoryPrefix} ${winner.name}`}
                         </h3>
                         {winner !== 'draw' && <p className="ic-eyebrow text-accent-text">{tr.victorySubline}</p>}
-                     </motion.div>
+                     </m.div>
                    )}
                  </AnimatePresence>
-              </motion.div>
+              </m.div>
             )}
 
             {activeTab === 'team' && (
-              <motion.div key="team" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-12">
+              <m.div key="team" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-12">
                  <div className="flex flex-col md:flex-row gap-8 justify-between items-end border-b border-line pb-8">
                     <div>
                       <h2 className="ic-display text-3xl text-fg">{tr.squadTitle}</h2>
@@ -427,11 +428,12 @@ export default function SuperheroesDashboard() {
                        </div>
                     )}
                  </div>
-              </motion.div>
+              </m.div>
             )}
           </AnimatePresence>
        </div>
        </div>
     </div>
+    </LazyMotion>
   );
 }

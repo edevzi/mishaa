@@ -42,5 +42,7 @@ export const jaPart7: DeepPartial<typeof en> = {
     titleAsc: 'タイトル A-Z',
     titleDesc: 'タイトル Z-A',
     savedOnly: '保存のみ',
+    nsfwToggleOn: 'アダルトソースのタブは表示中 — クリックでNSFW棚を隠す',
+    nsfwToggleOff: 'アダルトソースのタブは非表示 — クリックでNSFW棚を表示',
   },
 };

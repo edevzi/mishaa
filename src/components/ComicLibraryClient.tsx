@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef, useCallback, useSyncExternalStore, useMemo } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { LazyMotion, domMax, m, AnimatePresence } from 'framer-motion';
+import { LazyMotion, domAnimation, m, AnimatePresence } from 'framer-motion';
 import {
   BookOpen, Search, X, ChevronLeft, ChevronRight, ChevronDown,
   Eye, EyeOff,
@@ -358,7 +358,7 @@ export default function ComicLibraryClient({ initialAgeVerified = false }: Comic
     });
   }, [activeCategory, categoryQueries, isAgeVerified, updateLibraryUrl]);
 
-  const lastComicRef = useCallback((node: HTMLDivElement) => {
+  const lastComicRef = useCallback((node: HTMLElement | null) => {
     if (loading || loadingMore) return;
     if (observer.current) observer.current.disconnect();
     observer.current = new IntersectionObserver(entries => {
@@ -715,7 +715,7 @@ export default function ComicLibraryClient({ initialAgeVerified = false }: Comic
   }, [selectedComic, viewMode, pages.length]);
 
   return (
-    <LazyMotion features={domMax} strict>
+    <LazyMotion features={domAnimation} strict>
     <>
     <Navbar />
     <div className="min-h-screen bg-app pt-nav-catalog text-fg">
@@ -865,12 +865,11 @@ export default function ComicLibraryClient({ initialAgeVerified = false }: Comic
                             <div className="ic-eyebrow p-8 text-center">{t_hero.quickSearchNone}</div>
                           ) : (
                             autoCompletePreview.map(comic => (
-                              <button
+                              <Link
                                 key={`${comic.source}:${comic.id}`}
-                                onClick={() => {
-                                  closeSearchDropdown();
-                                  router.push(`/library/${comic.source}/${comic.id}`);
-                                }}
+                                href={`/library/${comic.source}/${comic.id}`}
+                                prefetch={false}
+                                onClick={() => closeSearchDropdown()}
                                 className="qresult group w-full border-b border-line-subtle text-left"
                               >
                                 <div className="qresult__thumb">
@@ -884,7 +883,7 @@ export default function ComicLibraryClient({ initialAgeVerified = false }: Comic
                                   </div>
                                 </div>
                                 <ChevronRight size={14} className="shrink-0 text-fg-muted transition-colors group-hover:text-accent-text" />
-                              </button>
+                              </Link>
                             ))
                           )}
                         </div>
@@ -1026,17 +1025,19 @@ export default function ComicLibraryClient({ initialAgeVerified = false }: Comic
                 const coverClassName = 'object-cover';
 
                 return (
-                  <m.div
+                  // Real crawlable anchor (was an onClick-only <div>, invisible to Googlebot
+                  // so the ~2k catalog detail pages were orphaned). prefetch={false} avoids
+                  // mass-prefetching an infinite grid. Age gate still intercepts via preventDefault.
+                  <Link
                     ref={visibleComics.length === index + 1 ? lastComicRef : null}
                     key={`${comic.source}:${comic.id}`}
+                    href={`/library/${comic.source}/${comic.id}`}
+                    prefetch={false}
                     onClick={(event) => {
                       if (adultContent && !isAgeVerified) {
                         event.preventDefault();
                         setShowAgeGate(true);
-                        return;
                       }
-
-                      router.push(`/library/${comic.source}/${comic.id}`);
                     }}
                     className={`ic-cover group${shouldBlur ? ' ic-cover--adult' : ''}`}
                   >
@@ -1115,7 +1116,7 @@ export default function ComicLibraryClient({ initialAgeVerified = false }: Comic
                         <span className="ic-badge ic-badge--neutral">{comic.pageCount ? `${comic.pageCount} p.` : 'No pages'}</span>
                       </div>
                     )}
-                  </m.div>
+                  </Link>
                 );
               })}
             </div>

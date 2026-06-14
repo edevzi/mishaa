@@ -41,5 +41,7 @@ export const zhPart4: DeepPartial<typeof en> = {
     titleAsc: '标题 A-Z',
     titleDesc: '标题 Z-A',
     savedOnly: '仅已保存',
+    nsfwToggleOn: '成人来源标签已开启 — 点击隐藏 NSFW 书架',
+    nsfwToggleOff: '成人来源标签已关闭 — 点击显示 NSFW 书架',
   },
 };

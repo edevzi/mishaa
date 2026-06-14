@@ -31,6 +31,14 @@ export function hreflangAlternates(origin: string, pathname: string): Record<str
   const xDefault = path === '/' ? originClean : `${originClean}${path}`;
   const out: Record<string, string> = {};
   for (const lang of UI_LANGS) {
+    // The default language (en) is served by the clean, self-canonical URL. Emitting
+    // its hreflang as `?ui=en` would point at a different, self-canonicalizing URL than
+    // the canonical page, so the cluster would have no valid return tag for English and
+    // Google routinely drops the whole hreflang cluster. Point `en` at the clean URL.
+    if (lang === 'en') {
+      out[hreflangCodeForUiLang(lang)] = xDefault;
+      continue;
+    }
     const u = new URL(absoluteBase);
     u.searchParams.set(UI_LANG_SEARCH_PARAM, lang);
     out[hreflangCodeForUiLang(lang)] = u.href;

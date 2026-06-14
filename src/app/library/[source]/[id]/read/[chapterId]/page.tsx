@@ -12,6 +12,7 @@ import {
   libraryWorkTypeLabel,
 } from '@/lib/seo/library-work-metadata';
 import { ICS_SITE_DISPLAY_NAME } from '@/lib/seo/page-metadata';
+import { hreflangAlternates } from '@/lib/seo/hreflang-urls';
 
 /** Node.js runtime avoids Edge bundle limits for heavy comic imports. */
 export const runtime = 'nodejs';
@@ -107,6 +108,7 @@ export async function generateMetadata({ params }: MetadataProps): Promise<Metad
     },
     alternates: {
       canonical: canonicalUrl,
+      languages: hreflangAlternates(siteUrl, `/library/${source}/${id}/read/${chapterId}`),
     },
     robots:
       comic && baseTitle !== 'Comic'
@@ -115,7 +117,10 @@ export async function generateMetadata({ params }: MetadataProps): Promise<Metad
   };
 }
 
-export const dynamic = 'force-dynamic';
+// NOTE: intentionally NOT force-dynamic. The route still renders dynamically because it
+// reads the `age_verified` cookie below, but dropping force-dynamic re-enables the Next
+// Data Cache (`next: { revalidate }`) on the MangaDex fetches, so re-opening an already
+// fetched title is a cache HIT instead of re-hitting MangaDex on every chapter open.
 
 export default async function Page({ params }: { params: Promise<RouteParams> }) {
   const { source, id, chapterId: currentChapterId } = await params;

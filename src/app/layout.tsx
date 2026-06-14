@@ -1,6 +1,5 @@
 import type { Metadata, Viewport } from "next";
 import { Suspense } from "react";
-import { cookies, headers } from "next/headers";
 import { Onest, Instrument_Serif, IBM_Plex_Mono, Bricolage_Grotesque } from "next/font/google";
 import "./globals.css";
 import { getPublicSiteUrl } from "@/lib/og-metadata";
@@ -11,17 +10,8 @@ import GlobalAgeGate from "@/components/GlobalAgeGate";
 import AnalyticsBridge from "@/components/AnalyticsBridge";
 import JsonLd from "@/components/JsonLd";
 import { buildOrganizationJsonLd, buildWebSiteJsonLd } from "@/lib/seo/global-jsonld";
-import { readRegionSignalsFromHeaders } from "@/lib/regional/geo-headers";
-import { translations } from "@/lib/translations";
-import { isUiLang } from "@/lib/i18n/lang";
 import LocaleBootstrap from "@/components/LocaleBootstrap";
-import { UI_LANG_COOKIE } from "@/lib/i18n/cookies";
-
-function htmlLangFromUiCookie(value: string | undefined): string {
-  if (!isUiLang(value)) return "en";
-  if (value === "zh") return "zh-Hans";
-  return value;
-}
+import SkipToContentLink from "@/components/SkipToContentLink";
 
 const SITE_ORIGIN = getPublicSiteUrl().replace(/\/$/, "");
 
@@ -53,8 +43,11 @@ const bricolage = Bricolage_Grotesque({
   display: "swap",
 });
 
-/* Apply the persisted theme before first paint (dark is the default). */
-const THEME_BOOTSTRAP = `try{var t=localStorage.getItem("icw-theme");document.documentElement.dataset.theme=t==="light"?"light":"dark"}catch(e){}`;
+/* Apply the persisted theme AND UI language before first paint. The document renders a
+   static lang="en" shell (so the whole app can prerender / CDN-cache); this script flips
+   <html data-theme> and <html lang> from storage/cookie before paint, so neither the
+   theme nor the language attribute flashes for returning or geo-defaulted visitors. */
+const PREPAINT_BOOTSTRAP = `try{var d=document.documentElement;var t=localStorage.getItem("icw-theme");d.dataset.theme=t==="light"?"light":"dark";var l=localStorage.getItem("lang");if(!(l==="en"||l==="ru"||l==="ja"||l==="ko"||l==="zh")){var m=document.cookie.match(/(?:^|; )ics_ui_lang=([^;]+)/);l=m&&decodeURIComponent(m[1])}if(l==="en"||l==="ru"||l==="ja"||l==="ko"||l==="zh"){d.lang=l==="zh"?"zh-Hans":l}}catch(e){}`;
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -143,41 +136,24 @@ export const metadata: Metadata = {
   }
 };
 
-export default async function RootLayout({
+export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const hdrs = await headers();
-  const { analyticsConsentRequired, eastAsiaAgeCopy, europeAgeCopy } = readRegionSignalsFromHeaders(hdrs);
-  const cookieStore = await cookies();
-  const htmlLang = htmlLangFromUiCookie(cookieStore.get(UI_LANG_COOKIE)?.value);
-  const uiForCopy = cookieStore.get(UI_LANG_COOKIE)?.value;
-  const copyLang = isUiLang(uiForCopy) ? uiForCopy : "en";
-  const skipToContentLabel = translations[copyLang].common.skipToContent;
-
   return (
     <html
-      lang={htmlLang}
+      lang="en"
       data-theme="dark"
       suppressHydrationWarning
       className={`${onest.variable} ${instrumentSerif.variable} ${plexMono.variable} ${bricolage.variable} h-full min-h-dvh antialiased`}
     >
       <head>
-        <script dangerouslySetInnerHTML={{ __html: THEME_BOOTSTRAP }} />
+        <script dangerouslySetInnerHTML={{ __html: PREPAINT_BOOTSTRAP }} />
       </head>
       <body className="min-h-dvh flex flex-col pb-[env(safe-area-inset-bottom)]">
-        <RegionalShell
-          analyticsConsentRequired={analyticsConsentRequired}
-          eastAsiaAgeCopy={eastAsiaAgeCopy}
-          europeAgeCopy={europeAgeCopy}
-        >
-          <a
-            href="#main-content"
-            className="sr-only focus:not-sr-only fixed left-4 top-4 z-[99999] rounded-btn bg-accent px-4 py-3 font-mono text-[11px] font-medium uppercase tracking-[0.12em] text-on-accent"
-          >
-            {skipToContentLabel}
-          </a>
+        <RegionalShell>
+          <SkipToContentLink />
           <LocaleBootstrap />
           <GlobalAgeGate />
           <JsonLd data={buildOrganizationJsonLd()} />

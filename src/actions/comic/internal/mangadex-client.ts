@@ -5,7 +5,6 @@ import {
   resolveMangaDexIdFromTitle,
 } from '@/lib/mangadex';
 import { fetchAniListManga } from '@/lib/anilist';
-import { getSiteUrl } from '@/lib/site-url';
 
 /**
  * MangaDex metadata changes slowly, so cache successful responses in the Next
@@ -16,17 +15,38 @@ import { getSiteUrl } from '@/lib/site-url';
 const MANGADEX_REVALIDATE_SECONDS = 3600;
 const MANGADEX_FETCH_TIMEOUT_MS = 8000;
 
+/** Headers MangaDex expects (it blocks requests without a browser-like UA). */
+const MANGADEX_HEADERS = {
+  'User-Agent':
+    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+  Accept: 'application/json',
+  'Accept-Language': 'en-US,en;q=0.9',
+} as const;
+
+/**
+ * Server-side MangaDex JSON fetch. Calls api.mangadex.org DIRECTLY — previously this
+ * hopped through our own `/api/proxy/mangadex` route over the public origin, costing an
+ * extra HTTPS round-trip + a second serverless invocation on every detail/chapter/reader
+ * render (the busiest routes). The public proxy route still exists for genuine
+ * client-side/CORS callers; server code must use this direct path (AGENTS.md rule).
+ *
+ * `fallbackUrl` is an optional secondary endpoint retried if the primary fails.
+ * `at-home/server/*` carries a ~15-min token, so it is fetched fresh (never cached).
+ */
 export async function fetchJsonThroughProxy(path: string, fallbackUrl?: string) {
-  const proxyUrl = `${getSiteUrl()}/api/proxy/mangadex?path=${encodeURIComponent(path)}`;
-  const endpoints = fallbackUrl ? [proxyUrl, fallbackUrl] : [proxyUrl];
+  const directUrl = `https://api.mangadex.org/${path}`;
+  const endpoints =
+    fallbackUrl && fallbackUrl !== directUrl ? [directUrl, fallbackUrl] : [directUrl];
+  const revalidate = path.startsWith('at-home/server') ? 0 : MANGADEX_REVALIDATE_SECONDS;
 
   for (const url of endpoints) {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), MANGADEX_FETCH_TIMEOUT_MS);
     try {
       const res = await fetch(url, {
+        headers: MANGADEX_HEADERS,
         signal: controller.signal,
-        next: { revalidate: MANGADEX_REVALIDATE_SECONDS },
+        next: { revalidate },
       });
       const text = await res.text();
       if (!res.ok) {

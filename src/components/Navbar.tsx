@@ -4,9 +4,10 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
-import { LazyMotion, domMax, m, AnimatePresence } from 'framer-motion';
+import { LazyMotion, domAnimation, m, AnimatePresence } from 'framer-motion';
 import { X, Menu, UserCircle2, Settings2, Sun, Moon } from 'lucide-react';
 import { translations, Lang } from '@/lib/translations';
+import { htmlLangFromUiLang } from '@/lib/i18n/lang';
 import { readStorageItem, writeStorageItem } from '@/lib/browser-storage';
 import { persistUiLangCookie } from '@/lib/i18n/ui-lang-cookie-client';
 import { uiLangToPreferredMangaLanguage } from '@/lib/i18n/ui-lang-to-manga';
@@ -44,11 +45,12 @@ export default function Navbar() {
   useEffect(() => {
     setTheme(document.documentElement.dataset.theme === 'light' ? 'light' : 'dark');
 
-    let t_timeout: NodeJS.Timeout;
-    // Load persisted language after mount to avoid hydration mismatch
+    // Apply the persisted language synchronously on mount (no setTimeout). The first
+    // render is 'en' on both server and client, so updating state here causes no
+    // hydration mismatch — just an immediate swap instead of a deferred flash.
     const savedLang = readStorageItem('lang') as Lang;
     if (savedLang && translations[savedLang]) {
-      t_timeout = setTimeout(() => setLang(prev => (savedLang !== prev ? savedLang : prev)), 0);
+      setLang(prev => (savedLang !== prev ? savedLang : prev));
     }
 
     const fetchUser = async () => {
@@ -69,7 +71,6 @@ export default function Navbar() {
     window.addEventListener('langChange', handleLang);
     return () => {
       window.removeEventListener('langChange', handleLang);
-      clearTimeout(t_timeout);
     };
   }, []);
 
@@ -107,6 +108,13 @@ export default function Navbar() {
     persistUiLangCookie(nextLang);
     persistStoredMangaLanguage(uiLangToPreferredMangaLanguage(nextLang));
     window.dispatchEvent(new CustomEvent('langChange', { detail: nextLang }));
+    // Flip <html lang> immediately for screen readers, then re-render the server tree
+    // (sr-only H1, skip-link, any SSR copy) from the freshly-written cookie — without a
+    // hard reload or losing client state. Fixes "language only half-switches".
+    if (typeof document !== 'undefined') {
+      document.documentElement.lang = htmlLangFromUiLang(nextLang);
+    }
+    router.refresh();
   };
 
   const langSwitcher: { short: string; code: Lang; ariaName: string }[] = [
@@ -118,7 +126,7 @@ export default function Navbar() {
   ];
 
   return (
-    <LazyMotion features={domMax} strict>
+    <LazyMotion features={domAnimation} strict>
     <nav className="fixed left-0 right-0 top-0 z-[1000] border-b border-line-subtle bg-[color-mix(in_oklab,var(--surface-app)_82%,transparent)] pt-[env(safe-area-inset-top,0px)] backdrop-blur-xl">
       <div className="mx-auto flex h-16 max-w-[var(--page-max)] items-center gap-4 px-5 sm:px-8">
         {/* Branding — the logo stays as-is (fixed asset) */}

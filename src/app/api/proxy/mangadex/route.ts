@@ -38,11 +38,17 @@ export async function GET(req: NextRequest) {
     'Accept-Language': 'en-US,en;q=0.9',
   };
 
+  // MangaDex @home base URLs carry a token that expires in ~15 min. Caching them for
+  // 15 min + serving stale for 24h hands readers an expired token, so the per-page image
+  // fetches 403/410 and the chapter renders blank. Fetch at-home/server (near-)fresh and
+  // never serve it stale; keep the long cache only for slow-changing manga/statistics.
+  const isAtHome = path.startsWith('at-home/server');
+
   try {
     const targetUrl = `https://api.mangadex.org/${path}`;
     const res = await fetch(targetUrl, {
       headers,
-      next: { revalidate: 900 },
+      next: { revalidate: isAtHome ? 0 : 900 },
     });
 
     const contentType = res.headers.get('content-type') || 'application/json';
@@ -52,7 +58,9 @@ export async function GET(req: NextRequest) {
       status: res.status,
       headers: {
         'Content-Type': contentType,
-        'Cache-Control': 'public, max-age=900, stale-while-revalidate=86400',
+        'Cache-Control': isAtHome
+          ? 'private, no-store'
+          : 'public, max-age=900, stale-while-revalidate=86400',
       },
     });
   } catch (error: unknown) {

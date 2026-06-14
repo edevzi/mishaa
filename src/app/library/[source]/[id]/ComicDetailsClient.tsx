@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback, useMemo, useRef, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
-import { motion, AnimatePresence } from 'framer-motion';
+import { LazyMotion, domAnimation, m, AnimatePresence } from 'framer-motion';
 import { 
   ChevronLeft, Play, Star, Clock, Globe, BookOpen, Share2, 
   Bookmark, ChevronRight, Loader2, Sparkles, X, Send, Copy, Check, ExternalLink,
@@ -470,9 +470,10 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
 
   if (comic.source === 'marvel' && marvelIssue) {
     return (
+      <LazyMotion features={domAnimation} strict>
       <div className="min-h-dvh overflow-x-hidden bg-app text-fg">
         <main className="relative z-10 pt-24 md:pt-28 pb-24 px-4 md:px-20 max-w-7xl mx-auto">
-          <motion.button
+          <m.button
             initial={{ opacity: 0, x: -12 }}
             animate={{ opacity: 1, x: 0 }}
             onClick={() => router.back()}
@@ -480,10 +481,10 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
           >
             <ChevronLeft size={16} className="transition-transform group-hover:-translate-x-0.5" />
             Back
-          </motion.button>
+          </m.button>
 
           <div className="grid grid-cols-1 lg:grid-cols-[360px_1fr] gap-12 lg:gap-20 items-start">
-            <motion.div
+            <m.div
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               className="space-y-6 lg:sticky lg:top-28"
@@ -567,9 +568,9 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
                   </div>
                 </div>
               )}
-            </motion.div>
+            </m.div>
 
-            <motion.div
+            <m.div
               initial={{ opacity: 0, x: 30 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.1 }}
@@ -734,10 +735,11 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
                   </div>
                 </div>
               )}
-            </motion.div>
+            </m.div>
           </div>
         </main>
       </div>
+      </LazyMotion>
     );
   }
 
@@ -758,6 +760,7 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
   const backdropTintStyle = { backgroundColor: `rgba(${dominantColor}, 0.06)` };
 
   return (
+    <LazyMotion features={domAnimation} strict>
     <div className="min-h-dvh overflow-x-hidden bg-app text-fg">
       {/* Age Gate Overlay */}
       <AnimatePresence>
@@ -778,14 +781,14 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
       <div className="pointer-events-none fixed inset-0 z-0" style={backdropTintStyle} aria-hidden />
 
       <main className="relative z-10 mx-auto max-w-[min(100%,88rem)] px-4 pb-28 pt-20 sm:px-6 lg:px-10">
-        <motion.div initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }}>
+        <m.div initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }}>
           <Link
             href="/library"
             className="group mb-10 flex items-center gap-2 text-sm font-medium text-fg-secondary transition-colors hover:text-accent-text"
           >
             <ChevronLeft size={18} className="transition-transform group-hover:-translate-x-0.5" /> {t.backToLibrary}
           </Link>
-        </motion.div>
+        </m.div>
 
         <article
           itemScope
@@ -793,7 +796,7 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
           className="space-y-14 lg:space-y-20"
         >
           <section className="flex flex-col gap-10 lg:flex-row lg:items-start lg:gap-12 xl:gap-16">
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mx-auto w-full max-w-[14rem] shrink-0 sm:max-w-[15rem] lg:mx-0 lg:max-w-[15.5rem] xl:max-w-[16.5rem] lg:sticky lg:top-24">
+          <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mx-auto w-full max-w-[14rem] shrink-0 sm:max-w-[15rem] lg:mx-0 lg:max-w-[15.5rem] xl:max-w-[16.5rem] lg:sticky lg:top-24">
             <div className="relative aspect-[2/3] w-full overflow-hidden rounded-cover bg-card [box-shadow:var(--cover-frame),var(--shadow-md)]">
                <Image 
                  src={comic.coverUrl} 
@@ -826,7 +829,7 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
                )}
 
                {lastReadChapter && (
-                 <motion.div
+                 <m.div
                    initial={{ opacity: 0, y: 4 }}
                    animate={{ opacity: 1, y: 0 }}
                  >
@@ -851,7 +854,7 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
                        </span>
                      )}
                    </button>
-                 </motion.div>
+                 </m.div>
                )}
               <div className="grid grid-cols-2 gap-3">
                   <button
@@ -876,11 +879,11 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
                   </button>
                </div>
             </div>
-          </motion.div>
+          </m.div>
 
           <div className="flex min-w-0 flex-1 flex-col gap-10 lg:gap-12">
           {/* Main Info */}
-          <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }} className="min-w-0 space-y-6">
+          <m.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }} className="min-w-0 space-y-6">
             <div className="min-w-0 space-y-5">
               <div className="flex min-w-0 max-w-full flex-wrap items-center gap-x-4 gap-y-3">
                  <span className="ic-score shrink-0">
@@ -950,7 +953,7 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
                 ))}
               </div>
             </div>
-          </motion.div>
+          </m.div>
 
             <div className="min-w-0 space-y-12 lg:space-y-14">
             <section className="space-y-4">
@@ -1255,7 +1258,7 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
       <AnimatePresence>
         {showShareModal && (
           <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4">
-            <motion.div
+            <m.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
@@ -1263,7 +1266,7 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
               className="absolute inset-0 bg-black/60 backdrop-blur-sm"
             />
 
-            <motion.div
+            <m.div
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 12 }}
@@ -1343,7 +1346,7 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
               </div>
 
               <div className="ic-rule mt-8" />
-            </motion.div>
+            </m.div>
           </div>
         )}
       </AnimatePresence>
@@ -1357,5 +1360,6 @@ export default function ComicDetailsClient({ initialComic, initialChapters, sour
         .description-content em { color: var(--text-secondary); font-style: italic; }
       `}</style>
     </div>
+    </LazyMotion>
   );
 }

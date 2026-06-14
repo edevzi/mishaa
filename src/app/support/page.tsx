@@ -4,7 +4,7 @@ import { Suspense, useEffect, useMemo, useState, type FormEvent } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { trackEvent } from '@/lib/analytics';
-import { motion } from 'framer-motion';
+import { LazyMotion, domAnimation, m } from 'framer-motion';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import AppRouteLoading from '@/components/AppRouteLoading';
@@ -111,11 +111,12 @@ function SupportPageContent() {
   };
 
   return (
+    <LazyMotion features={domAnimation} strict>
     <div className="min-h-screen overflow-x-hidden bg-app text-fg">
       <Navbar />
 
       <main className="pt-nav-catalog">
-        <motion.div
+        <m.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.28, ease: [0.22, 0.61, 0.36, 1] }}
@@ -230,11 +231,12 @@ function SupportPageContent() {
               </button>
             </div>
           </form>
-        </motion.div>
+        </m.div>
       </main>
 
       <Footer />
     </div>
+    </LazyMotion>
   );
 }
 

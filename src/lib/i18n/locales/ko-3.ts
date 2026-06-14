@@ -39,6 +39,8 @@ export const koPart3: DeepPartial<typeof en> = {
     yourLibrary: '내 라이브러리',
     stories: '스토리',
     characters: '캐릭터',
+    reading: '읽는 중',
+    completed: '완독',
     backHome: '홈으로',
     logOut: '로그아웃',
   },

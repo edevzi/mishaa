@@ -3,7 +3,7 @@
 import { Suspense, useState, useEffect } from 'react';
 import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { motion, AnimatePresence } from 'framer-motion';
+import { LazyMotion, domAnimation, m, AnimatePresence } from 'framer-motion';
 import { Eye, EyeOff, ArrowRight, ShieldCheck, User, Lock, Globe } from 'lucide-react';
 import Link from 'next/link';
 import { translations, Lang } from '@/lib/translations';
@@ -95,6 +95,7 @@ function AuthPageContent() {
   };
 
   return (
+    <LazyMotion features={domAnimation} strict>
     <div className="min-h-screen flex flex-col items-center justify-center bg-app p-6 font-sans text-fg">
       {/* Back Button */}
       <Link href="/" className="group absolute top-8 left-8 z-[100] flex items-center gap-3 text-fg-muted transition-colors hover:text-fg">
@@ -104,7 +105,7 @@ function AuthPageContent() {
         <span className="text-sm font-medium">{t.abortMission}</span>
       </Link>
 
-      <motion.div
+      <m.div
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.28, ease: [0.22, 0.61, 0.36, 1] }}
@@ -113,13 +114,13 @@ function AuthPageContent() {
         <div className="relative overflow-hidden rounded-sheet border border-line bg-card p-8 shadow-[var(--shadow-sm)] md:p-10">
           {/* Top Branding */}
           <div className="text-center mb-10 space-y-4">
-            <motion.div
+            <m.div
               initial={{ scale: 0.5, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               className="inline-flex items-center justify-center w-16 h-16 bg-white rounded-2xl shadow-[0_0_40px_rgba(255,255,255,0.2)] mb-2"
             >
               <span className="text-3xl font-display font-black text-black">iC</span>
-            </motion.div>
+            </m.div>
             <div className="space-y-2">
               <h1 className="ic-display text-3xl text-fg">
                 {mode === 'login' ? t.titleLogin : t.titleSignup}
@@ -149,7 +150,7 @@ function AuthPageContent() {
           <form onSubmit={handleSubmit} className="space-y-5">
             <AnimatePresence mode="wait">
               {mode === 'signup' && (
-                <motion.div
+                <m.div
                   key="signup"
                   initial={{ opacity: 0, height: 0 }}
                   animate={{ opacity: 1, height: 'auto' }}
@@ -200,7 +201,7 @@ function AuthPageContent() {
                        />
                     </div>
                   </div>
-                </motion.div>
+                </m.div>
               )}
             </AnimatePresence>
 
@@ -240,9 +241,9 @@ function AuthPageContent() {
             </div>
 
             {displayError && (
-              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="rounded-btn border border-line bg-inset p-4 text-center text-sm text-danger">
+              <m.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="rounded-btn border border-line bg-inset p-4 text-center text-sm text-danger">
                 {t.errLabel}: {displayError}
-              </motion.div>
+              </m.div>
             )}
 
             <button
@@ -291,7 +292,7 @@ function AuthPageContent() {
             </button>
           </div>
         </div>
-      </motion.div>
+      </m.div>
 
       {/* Quiet footer note */}
       <div className="ic-eyebrow mt-8 flex items-center gap-4">
@@ -300,6 +301,7 @@ function AuthPageContent() {
          <Globe size={14}/> {t.footerGlobalUplink}
       </div>
     </div>
+    </LazyMotion>
   );
 }
 
